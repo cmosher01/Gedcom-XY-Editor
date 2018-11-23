@@ -1,0 +1,35 @@
+plugins {
+    id "com.google.osdetector" version "1.4.0"
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
+
+group 'nu.mine.mosher.gedcom'
+version '1.0.0-SNAPSHOT'
+mainClassName = 'nu.mine.mosher.gedcom.xy.GenXyEditor'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://mosher.mine.nu/nexus/repository/maven-public/'
+    }
+}
+
+dependencies {
+    implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
+    implementation group: 'org.openjfx', name: 'javafx-graphics', version: '11.0.1', classifier: "$platform"
+    implementation group: 'org.openjfx', name: 'javafx-controls', version: '11.0.1', classifier: "$platform"
+    implementation group: 'org.openjfx', name: 'javafx-base', version: '11.0.1', classifier: "$platform"
+}
+
+run {
+    doFirst {
+        jvmArgs = [
+                '--module-path', classpath.asPath,
+                '--add-modules', 'javafx.controls'
+        ]
+    }
+}
