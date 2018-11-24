@@ -2,7 +2,9 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.scene.Node;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class FamilyChart {
     private final List<Indi> indis;
@@ -19,6 +21,7 @@ public class FamilyChart {
     }
 
     public void setFromOrig() {
+        this.indis.forEach(Indi::calc);
         this.famis.forEach(Fami::calc);
         this.indis.forEach(Indi::setFromCoords);
     }

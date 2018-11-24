@@ -1,7 +1,10 @@
 package nu.mine.mosher.gedcom.xy.util;
 
-import javafx.geometry.*;
-import javafx.scene.*;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 

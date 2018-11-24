@@ -2,14 +2,26 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.Point2D;
 import nu.mine.mosher.collection.TreeNode;
-import nu.mine.mosher.gedcom.*;
+import nu.mine.mosher.gedcom.GedcomLine;
+import nu.mine.mosher.gedcom.GedcomTag;
+import nu.mine.mosher.gedcom.GedcomTree;
 import nu.mine.mosher.gedcom.date.DatePeriod;
 import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
 
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalDouble;
 
 public final class FamilyChartBuilder {
+    private static final double MAX_NATURAL_DISTANCE = 1000.0D;
+
     private FamilyChartBuilder() {
         throw new IllegalStateException("not intended to be instantiated");
     }
@@ -18,9 +30,18 @@ public final class FamilyChartBuilder {
         final Map<String, Indi> mapIdToIndi = new HashMap<>();
         final List<Indi> indis = buildIndis(tree, mapIdToIndi);
         final List<Fami> famis = buildFamis(tree, Collections.unmodifiableMap(mapIdToIndi));
-        layout(indis, famis);
+        final Metrics metrics = metrics(indis, famis);
+        famis.forEach(f -> f.setMetrics(metrics));
+        indis.forEach(i -> i.setMetrics(metrics));
+        layout(indis, famis, metrics);
         normalize(indis);
         return new FamilyChart(indis, famis);
+    }
+
+    private static Metrics metrics(List<Indi> indis, List<Fami> famis) {
+        final double marlen = famis.stream().mapToDouble(Fami::getMarrDistance).filter(d -> d < MAX_NATURAL_DISTANCE).average().orElse(0D);
+        final double genlen = famis.stream().mapToDouble(Fami::getGenDistance).filter(d -> d < MAX_NATURAL_DISTANCE).average().orElse(0D);
+        return new Metrics(marlen, genlen);
     }
 
     private static List<Indi> buildIndis(final GedcomTree tree, final Map<String, Indi> mapIdToIndi) {
@@ -37,8 +58,8 @@ public final class FamilyChartBuilder {
     }
 
     private static void normalize(final List<Indi> indis) {
-        final OptionalDouble x = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getX).min();
-        final OptionalDouble y = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getY).min();
+        final double x = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getX).min().orElse(0D);
+        final double y = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getY).min().orElse(0D);
         indis.forEach(i -> i.shiftOrig(x, y));
     }
 
@@ -161,14 +182,14 @@ public final class FamilyChartBuilder {
         return fami;
     }
 
-    private static void layout(final List<Indi> indis, final List<Fami> famis) {
+    private static void layout(final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
         /* don't layout if _XY was found on anyone */
         for (final Indi indi : indis) {
-            if (indi.getCircle().getCenterX() != 0 || indi.getCircle().getCenterY() != 0) {
+            if (indi.getCoordsOrig().magnitude() != 0) {
                 return;
             }
         }
         System.err.println("No _XY coordinates found; laying out dropline chart automatically...");
-        new Layout(indis, famis).cleanAll();
+        new Layout(indis, famis, metrics).cleanAll();
     }
 }

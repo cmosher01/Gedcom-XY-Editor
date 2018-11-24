@@ -2,26 +2,41 @@ package nu.mine.mosher.gedcom.xy;
 
 import nu.mine.mosher.time.Time;
 
-import java.awt.geom.*;
-import java.util.*;
-import java.util.stream.*;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class Layout {
-    private static final int DX_CHILD = 18;
-    private static final int DX_FAMILY = DX_CHILD * 4;
+    private final double dxChild;
+    private final double dxFamily;
 
-    public Layout(final List<Indi> indis, final List<Fami> famis) {
+    public Layout(final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
+        this.dxChild = metrics.getWidthMax()*1.20D;
+        this.dxFamily = this.dxChild * 4;
+
         this.indis = IntStream.range(0, indis.size())
-            .mapToObj(i -> new CIndividual(indis.get(i), i))
-            .collect(Collectors.toList());
+                .mapToObj(i -> new CIndividual(indis.get(i), i))
+                .collect(Collectors.toList());
 
         final Map<Indi, CIndividual> mapIndis = new HashMap<>();
         this.indis.forEach(i -> mapIndis.put(i.indi, i));
 
         this.famis = IntStream.range(0, famis.size())
-            .mapToObj(i -> new CFamily(famis.get(i), i))
-            .collect(Collectors.toList());
+                .mapToObj(i -> new CFamily(famis.get(i), i))
+                .collect(Collectors.toList());
 
         final Map<Fami, CFamily> mapFamis = new HashMap<>();
         this.famis.forEach(i -> mapFamis.put(i.fami, i));
@@ -300,7 +315,7 @@ public class Layout {
         private void displaySpouses(final List<Double> lev_bounds, final CIndividual pindi) {
             pindi.MoveTo(new Point2D.Double(lev_bounds.get(pindi.level), pindi.frame.getY()));
             pindi.mark = true;
-            lev_bounds.set(pindi.level, pindi.frame.getMaxX() + DX_CHILD);
+            lev_bounds.set(pindi.level, pindi.frame.getMaxX() + dxChild);
         }
 
         private Time getSimpleBirth() {
@@ -370,10 +385,10 @@ public class Layout {
 
 
         final Deque<CIndividual> qToClean =
-            this.indis.stream()
-                .filter(i -> i.maxMale != 0)
-                .sorted(primaryHouse())
-                .collect(Collectors.toCollection(LinkedList::new));
+                this.indis.stream()
+                        .filter(i -> i.maxMale != 0)
+                        .sorted(primaryHouse())
+                        .collect(Collectors.toCollection(LinkedList::new));
 
 
         // Labeling branches
@@ -489,7 +504,7 @@ public class Layout {
                             final List<CIndividual> cleannext2 = new ArrayList<>();
                             pchil.setSeqWithSpouses(lev_bounds, left, cleannext2);
                             nexthouse.addAll(cleannext2);
-                            lev_bounds.set(pchil.level, lev_bounds.get(pchil.level) + DX_CHILD);
+                            lev_bounds.set(pchil.level, lev_bounds.get(pchil.level) + dxChild);
                             left = false;
                             if (pchil.sex == 1 && !guard.contains(pchil)) {
                                 todo.add(pchil);
@@ -512,7 +527,7 @@ public class Layout {
                 }
             }
             if (any) {
-                maxx += DX_FAMILY;
+                maxx += dxFamily;
                 for (int j = 0; j < cLev; ++j) {
                     lev_bounds.set(j, maxx);
                 }
@@ -526,16 +541,17 @@ public class Layout {
             }
         }
 
+        this.indis.forEach(i -> i.indi.setOrigCoords(i.frame.getX(), i.frame.getY()));
 //        this.indis.forEach(i -> i.indi.move(new Dim2D(i.frame.getX(), i.frame.getY())));
     }
 
 
     private static Comparator<CIndividual> primaryHouse() {
         return Comparator
-            .comparingInt((CIndividual i) -> i.maxMale)
-            .thenComparingInt(i -> i.level)
-            .thenComparingInt(i -> i.sex)
-            .reversed();
+                .comparingInt((CIndividual i) -> i.maxMale)
+                .thenComparingInt(i -> i.level)
+                .thenComparingInt(i -> i.sex)
+                .reversed();
     }
 
 

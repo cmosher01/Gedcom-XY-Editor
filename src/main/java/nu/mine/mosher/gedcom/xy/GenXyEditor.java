@@ -1,16 +1,28 @@
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.application.*;
-import javafx.event.*;
-import javafx.scene.*;
-import javafx.scene.control.*;
-import javafx.scene.input.*;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Group;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
-import javafx.stage.*;
-import nu.mine.mosher.gedcom.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import nu.mine.mosher.gedcom.Gedcom;
+import nu.mine.mosher.gedcom.GedcomTree;
 import nu.mine.mosher.gedcom.xy.util.ZoomPane;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
 import java.nio.file.Files;
 import java.util.Objects;
 
@@ -22,8 +34,8 @@ public final class GenXyEditor extends Application {
         Platform.runLater(() -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("GEDCOM files", "*.ged"),
-                new FileChooser.ExtensionFilter("all files", "*.*"));
+                    new FileChooser.ExtensionFilter("GEDCOM files", "*.ged"),
+                    new FileChooser.ExtensionFilter("all files", "*.*"));
             final File fileToOpen = fileChooser.showOpenDialog(null);
             if (Objects.isNull(fileToOpen)) {
                 return;

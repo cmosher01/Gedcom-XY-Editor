@@ -1,20 +1,38 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.binding.DoubleBinding;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.*;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static nu.mine.mosher.gedcom.xy.Indi.CORNERS;
 
 public class Fami {
-    public static final double BAR_HEIGHT = 4.0D;
-    public static final double CHILD_HEIGHT = 20.0D;
-    public static final double MARRIAGE_SPACING = CHILD_HEIGHT * 5.0D;
-    public static final double CHILD_LINE_DISTANCE = MARRIAGE_SPACING / 2.0D + 3.0D;
     public static final double MIN_DISTANCE = 1.51D;
 
+
+    private Metrics metrics;
 
     private Indi husb;
     private Indi wife;
@@ -23,6 +41,7 @@ public class Fami {
     private Line parentBar1;
     private Line parentBar2;
     private final List<Circle> phantoms = new ArrayList<>(0);
+    private final List<StackPane> phantomPanes = new ArrayList<>(0);
 
     private Line descentBar1;
     private Line descentBar2;
@@ -30,6 +49,10 @@ public class Fami {
 
     private Line childBar;
     private Line[] rChildBar;
+
+    public void setMetrics(final Metrics metrics) {
+        this.metrics = metrics;
+    }
 
     public void setHusb(Indi indi) {
         husb = indi;
@@ -65,15 +88,15 @@ public class Fami {
         if (couple.exists()) {
             parentBar1 = createLine();
             parentBar1.startXProperty().bind(couple.getPt1().layoutXProperty());
-            parentBar1.startYProperty().bind(couple.getPt1().layoutYProperty().subtract(BAR_HEIGHT));
+            parentBar1.startYProperty().bind(couple.getPt1().layoutYProperty().subtract(barHeight()));
             parentBar1.endXProperty().bind(couple.getPt2().layoutXProperty());
-            parentBar1.endYProperty().bind(couple.getPt2().layoutYProperty().subtract(BAR_HEIGHT));
+            parentBar1.endYProperty().bind(couple.getPt2().layoutYProperty().subtract(barHeight()));
 
             parentBar2 = createLine();
             parentBar2.startXProperty().bind(couple.getPt1().layoutXProperty());
-            parentBar2.startYProperty().bind(couple.getPt1().layoutYProperty().add(BAR_HEIGHT));
+            parentBar2.startYProperty().bind(couple.getPt1().layoutYProperty().add(barHeight()));
             parentBar2.endXProperty().bind(couple.getPt2().layoutXProperty());
-            parentBar2.endYProperty().bind(couple.getPt2().layoutYProperty().add(BAR_HEIGHT));
+            parentBar2.endYProperty().bind(couple.getPt2().layoutYProperty().add(barHeight()));
         }
 
         if (!rChild.isEmpty()) {
@@ -111,7 +134,7 @@ public class Fami {
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.getCircle().getLayoutY()).min().getAsDouble() - CHILD_HEIGHT;
+                    return rChild.stream().mapToDouble(c -> c.getCircle().getLayoutY()).min().getAsDouble() - childHeight();
                 }
             };
             childBar.startYProperty().bind(top);
@@ -143,17 +166,17 @@ public class Fami {
                 descentBar3.startXProperty().bind(midpoint);
                 descentBar3.startYProperty().bind(childBar.startYProperty());
                 descentBar3.endXProperty().bind(midpoint);
-                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(CHILD_HEIGHT / 2.0D));
+                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(childHeight() / 2.0D));
 
                 final DoubleBinding closestParentX = new DoubleBinding() {
                     {
                         super.bind(
-                            couple.pt1.layoutXProperty(),
-                            couple.pt1.layoutYProperty(),
-                            couple.pt2.layoutXProperty(),
-                            couple.pt2.layoutYProperty(),
-                            descentBar3.startXProperty(),
-                            descentBar3.startYProperty());
+                                couple.pt1.layoutXProperty(),
+                                couple.pt1.layoutYProperty(),
+                                couple.pt2.layoutXProperty(),
+                                couple.pt2.layoutYProperty(),
+                                descentBar3.startXProperty(),
+                                descentBar3.startYProperty());
                     }
 
                     @Override
@@ -172,12 +195,12 @@ public class Fami {
                 final DoubleBinding closestParentY = new DoubleBinding() {
                     {
                         super.bind(
-                            couple.pt1.layoutXProperty(),
-                            couple.pt1.layoutYProperty(),
-                            couple.pt2.layoutXProperty(),
-                            couple.pt2.layoutYProperty(),
-                            descentBar3.startXProperty(),
-                            descentBar3.startYProperty());
+                                couple.pt1.layoutXProperty(),
+                                couple.pt1.layoutYProperty(),
+                                couple.pt2.layoutXProperty(),
+                                couple.pt2.layoutYProperty(),
+                                descentBar3.startXProperty(),
+                                descentBar3.startYProperty());
                     }
 
                     @Override
@@ -209,12 +232,54 @@ public class Fami {
         }
     }
 
+    public double getMarrDistance() {
+        if (husb == null || wife == null) {
+            return 0D;
+        }
+        return husb.getCoordsOrig().distance(wife.getCoordsOrig());
+    }
+
+    public double getGenDistance() {
+        if (husb == null || wife == null) {
+            return 0D;
+        }
+        final double avgChildX = this.rChild.stream().mapToDouble(c -> c.getCoordsOrig().getX()).average().orElse(0D);
+        final double avgChildY = this.rChild.stream().mapToDouble(c -> c.getCoordsOrig().getY()).average().orElse(0D);
+        if (avgChildX < 1D && avgChildY < 1D) {
+            return 0D;
+        }
+        final Point2D avgChild = new Point2D(avgChildX, avgChildY);
+        if (husb == null) {
+            return wife.getCoordsOrig().distance(avgChild);
+        }
+        if (wife == null) {
+            return husb.getCoordsOrig().distance(avgChild);
+        }
+        return Math.min(husb.getCoordsOrig().distance(avgChild), wife.getCoordsOrig().distance(avgChild));
+    }
+
     private Point2D marpt(Point2D p1, Point2D p2) {
-        final Point2D pstart = new Point2D(p2.getX(), p2.getY() + BAR_HEIGHT);
-        final Point2D pend = new Point2D(p1.getX(), p1.getY() + BAR_HEIGHT);
+        final Point2D pstart = new Point2D(p2.getX(), p2.getY() + barHeight());
+        final Point2D pend = new Point2D(p1.getX(), p1.getY() + barHeight());
         final double pd = Math.max(pstart.distance(pend), MIN_DISTANCE);
-        final double dt = CHILD_LINE_DISTANCE / pd;
+        final double dt = descentLineDistance() / pd;
         return new Point2D((1 - dt) * pstart.getX() + dt * pend.getX(), (1 - dt) * pstart.getY() + dt * pend.getY());
+    }
+
+    private double barHeight() {
+        return this.metrics.getFontSize() / 2.0D;
+    }
+
+    private double childHeight() {
+        return this.metrics.getFontSize() * 4.0D;
+    }
+
+    private double marrSpacing() {
+        return this.metrics.getMarrDistance();
+    }
+
+    private double descentLineDistance() {
+        return this.metrics.getMarrDistance() / 2.0D;
     }
 
     private Line createLine() {
@@ -250,12 +315,12 @@ public class Fami {
                 pt2 = wife.getCircle();
                 pt1 = createPhantom();
                 pt1.layoutYProperty().bind(pt2.layoutYProperty());
-                pt1.layoutXProperty().bind(pt2.layoutXProperty().subtract(MARRIAGE_SPACING));
+                pt1.layoutXProperty().bind(pt2.layoutXProperty().subtract(marrSpacing()));
             } else if (wife == null) {
                 pt1 = husb.getCircle();
                 pt2 = createPhantom();
                 pt2.layoutYProperty().bind(pt1.layoutYProperty());
-                pt2.layoutXProperty().bind(pt1.layoutXProperty().add(MARRIAGE_SPACING));
+                pt2.layoutXProperty().bind(pt1.layoutXProperty().add(marrSpacing()));
             } else {
                 pt1 = husb.getCircle();
                 pt2 = wife.getCircle();
@@ -263,10 +328,29 @@ public class Fami {
         }
 
         private Circle createPhantom() {
-            final Circle phantom = new Circle(10, Color.LIGHTGRAY);
-            phantom.setStroke(Color.GREEN);
-            phantom.setStrokeWidth(1.2D);
+            final Circle phantom = new Circle(0D, Color.TRANSPARENT);
             Fami.this.phantoms.add(phantom);
+
+            final Text textshape = new Text();
+            textshape.setFont(Fami.this.metrics.getFont());
+            textshape.setTextAlignment(TextAlignment.CENTER);
+            textshape.setText("\u00A0?\u00A0");
+            new Scene(new Group(textshape));
+            textshape.applyCss();
+            final double inset = Fami.this.metrics.getFontSize() / 2.0D;
+            final double w = textshape.getLayoutBounds().getWidth() + inset * 2.0D;
+            final double h = textshape.getLayoutBounds().getHeight() + inset * 2.0D;
+
+            final StackPane plaque = new StackPane();
+            Fami.this.phantomPanes.add(plaque);
+            plaque.setBackground(new Background(new BackgroundFill(Color.CORNSILK, CORNERS, Insets.EMPTY)));
+            plaque.setBorder(new Border(new BorderStroke(Color.OLIVEDRAB, BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
+            StackPane.setMargin(textshape, new Insets(inset));
+            plaque.getChildren().addAll(textshape);
+
+            plaque.layoutXProperty().bind(phantom.layoutXProperty().subtract(w / 2.0D));
+            plaque.layoutYProperty().bind(phantom.layoutYProperty().subtract(h / 2.0D));
+
             return phantom;
         }
     }
@@ -282,6 +366,7 @@ public class Fami {
             Arrays.asList(this.rChildBar).forEach(c -> addGraphic(addto, c));
         }
         addto.addAll(this.phantoms);
+        addto.addAll(this.phantomPanes);
     }
 
     private void addGraphic(List<Node> addto, Line p) {
