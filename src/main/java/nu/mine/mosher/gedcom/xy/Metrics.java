@@ -15,20 +15,20 @@ public class Metrics {
     private final double heightNominal;
     private final Font font;
 
-    public Metrics(double marrDistance, double genDistance) {
+    public Metrics(final double marrDistance, final double genDistance) {
         this.marrDistance = (marrDistance < 1.4D ? 150.0D : marrDistance);
-        System.err.println("average marriage distance: " + marrDistance);
+        System.err.println("average marriage distance: " + this.marrDistance);
         this.genDistance = (genDistance < 1.4D ? 200.0D : genDistance);
-        System.err.println("average distance between generations: " + genDistance);
+        System.err.println("average distance between generations: " + this.genDistance);
 
-        final long fontSizeGuess = clamp(7, Math.round(Math.rint((this.marrDistance / 15.0D + this.genDistance / 20.0D) / 2.0D)), 24);
+        final long fontSizeGuess = clamp(7, Math.round(Math.rint((this.marrDistance / 10.0D + this.genDistance / 15.0D) / 2.0D)), 24);
         this.fontSize = fontSizeGuess;
-        System.err.println("heuristically determined font point size: " + fontSize);
+        System.err.println("heuristically determined font point size: " + this.fontSize);
 
-        this.font = Font.font(FONT_FAMILY_NAME, fontSize);
+        this.font = Font.font(FONT_FAMILY_NAME, this.fontSize);
         final String stringMax = "MMMMMMMMMMMMMMMM";
         final Text text = new Text(stringMax + "\nX");
-        text.setFont(font);
+        text.setFont(this.font);
         new Scene(new Group(text));
         text.applyCss();
         this.widthMax = text.getLayoutBounds().getWidth();

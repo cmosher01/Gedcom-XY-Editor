@@ -24,7 +24,7 @@ public class Layout {
     private final double dxFamily;
 
     public Layout(final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
-        this.dxChild = metrics.getWidthMax()*1.20D;
+        this.dxChild = metrics.getWidthMax();
         this.dxFamily = this.dxChild * 4;
 
         this.indis = IntStream.range(0, indis.size())
@@ -542,7 +542,6 @@ public class Layout {
         }
 
         this.indis.forEach(i -> i.indi.setOrigCoords(i.frame.getX(), i.frame.getY()));
-//        this.indis.forEach(i -> i.indi.move(new Dim2D(i.frame.getX(), i.frame.getY())));
     }
 
 

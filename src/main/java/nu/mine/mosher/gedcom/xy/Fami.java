@@ -40,7 +40,6 @@ public class Fami {
 
     private Line parentBar1;
     private Line parentBar2;
-    private final List<Circle> phantoms = new ArrayList<>(0);
     private final List<StackPane> phantomPanes = new ArrayList<>(0);
 
     private Line descentBar1;
@@ -151,37 +150,29 @@ public class Fami {
                 rChildBar[i].endYProperty().bind(c.layoutYProperty());
             }
 
+
+
+
+
+
+
+
             if (couple.exists()) {
-                descentBar3 = createLine();
-                final DoubleBinding midpoint = new DoubleBinding() {
-                    {
-                        super.bind(childBar.startXProperty(), childBar.endXProperty());
-                    }
-
-                    @Override
-                    protected double computeValue() {
-                        return (childBar.getStartX() + childBar.getEndX()) / 2.0D;
-                    }
-                };
-                descentBar3.startXProperty().bind(midpoint);
-                descentBar3.startYProperty().bind(childBar.startYProperty());
-                descentBar3.endXProperty().bind(midpoint);
-                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(childHeight() / 2.0D));
-
-                final DoubleBinding closestParentX = new DoubleBinding() {
+                final DoubleBinding descentLineEndParentX = new DoubleBinding() {
                     {
                         super.bind(
                                 couple.pt1.layoutXProperty(),
                                 couple.pt1.layoutYProperty(),
                                 couple.pt2.layoutXProperty(),
                                 couple.pt2.layoutYProperty(),
-                                descentBar3.startXProperty(),
-                                descentBar3.startYProperty());
+                                childBar.startXProperty(),
+                                childBar.endXProperty(),
+                                childBar.startYProperty());
                     }
 
                     @Override
                     protected double computeValue() {
-                        final Point2D child = new Point2D(descentBar3.getStartX(), descentBar3.getStartY());
+                        final Point2D child = new Point2D((childBar.getStartX() + childBar.getEndX()) / 2.0D, childBar.getStartY());
                         final Point2D p1 = new Point2D(couple.pt1.getLayoutX(), couple.pt1.getLayoutY());
                         final Point2D p2 = new Point2D(couple.pt2.getLayoutX(), couple.pt2.getLayoutY());
                         final Double d1 = child.distance(p1);
@@ -192,20 +183,22 @@ public class Fami {
                         return marpt(p1, p2).getX();
                     }
                 };
-                final DoubleBinding closestParentY = new DoubleBinding() {
+
+                final DoubleBinding descentLineEndParentY = new DoubleBinding() {
                     {
                         super.bind(
                                 couple.pt1.layoutXProperty(),
                                 couple.pt1.layoutYProperty(),
                                 couple.pt2.layoutXProperty(),
                                 couple.pt2.layoutYProperty(),
-                                descentBar3.startXProperty(),
-                                descentBar3.startYProperty());
+                                childBar.startXProperty(),
+                                childBar.endXProperty(),
+                                childBar.startYProperty());
                     }
 
                     @Override
                     protected double computeValue() {
-                        final Point2D child = new Point2D(descentBar3.getStartX(), descentBar3.getStartY());
+                        final Point2D child = new Point2D((childBar.getStartX() + childBar.getEndX()) / 2.0D, childBar.getStartY());
                         final Point2D p1 = new Point2D(couple.pt1.getLayoutX(), couple.pt1.getLayoutY());
                         final Point2D p2 = new Point2D(couple.pt2.getLayoutX(), couple.pt2.getLayoutY());
                         final Double d1 = child.distance(p1);
@@ -217,19 +210,58 @@ public class Fami {
                     }
                 };
 
+                final DoubleBinding descentLineStartChildrenX = new DoubleBinding() {
+                    {
+                        super.bind(childBar.startXProperty(), childBar.endXProperty(), descentLineEndParentX);
+                    }
+
+                    @Override
+                    protected double computeValue() {
+                        final double offset = childHeight();
+                        if (childBar.getEndX()-childBar.getStartX() < offset*2.0D) {
+                            return (childBar.getEndX()+childBar.getStartX())/2.0D;
+                        }
+                        return clamp(childBar.getStartX()+offset, descentLineEndParentX.get(), childBar.getEndX()-offset);
+                    }
+                };
+
+
+
+
+
+
+                descentBar3 = createLine();
+                descentBar3.startXProperty().bind(descentLineStartChildrenX);
+                descentBar3.startYProperty().bind(childBar.startYProperty());
+                descentBar3.endXProperty().bind(descentBar3.startXProperty());
+                descentBar3.endYProperty().bind(descentBar3.startYProperty().subtract(childHeight() / 2.0D));
+
                 descentBar2 = createLine();
                 descentBar2.startXProperty().bind(descentBar3.endXProperty());
                 descentBar2.startYProperty().bind(descentBar3.endYProperty());
-                descentBar2.endXProperty().bind(closestParentX);
-                descentBar2.endYProperty().bind(descentBar3.endYProperty());
+                descentBar2.endXProperty().bind(descentLineEndParentX);
+                descentBar2.endYProperty().bind(descentBar2.startYProperty());
 
                 descentBar1 = createLine();
-                descentBar1.startXProperty().bind(closestParentX);
+                descentBar1.startXProperty().bind(descentBar2.endXProperty());
                 descentBar1.startYProperty().bind(descentBar2.endYProperty());
-                descentBar1.endXProperty().bind(closestParentX);
-                descentBar1.endYProperty().bind(closestParentY);
+                descentBar1.endXProperty().bind(descentBar1.startXProperty());
+                descentBar1.endYProperty().bind(descentLineEndParentY);
             }
         }
+    }
+
+    private static double clamp(final double min, final double n, final double max) {
+        if (max < min) {
+            return n;
+        }
+        if (n < min) {
+            return min;
+        }
+        if (max < n) {
+            return max;
+        }
+        return n;
     }
 
     public double getMarrDistance() {
@@ -283,8 +315,12 @@ public class Fami {
     }
 
     private Line createLine() {
+        return createLine(Color.ORANGE);
+    }
+
+    private Line createLine(final Color color) {
         final Line line = new Line();
-        line.setStroke(Color.ORANGE);
+        line.setStroke(color);
         line.setStrokeWidth(1.0D);
         return line;
     }
@@ -329,7 +365,6 @@ public class Fami {
 
         private Circle createPhantom() {
             final Circle phantom = new Circle(0D, Color.TRANSPARENT);
-            Fami.this.phantoms.add(phantom);
 
             final Text textshape = new Text();
             textshape.setFont(Fami.this.metrics.getFont());
@@ -365,7 +400,6 @@ public class Fami {
         if (!rChild.isEmpty()) {
             Arrays.asList(this.rChildBar).forEach(c -> addGraphic(addto, c));
         }
-        addto.addAll(this.phantoms);
         addto.addAll(this.phantomPanes);
     }
 
