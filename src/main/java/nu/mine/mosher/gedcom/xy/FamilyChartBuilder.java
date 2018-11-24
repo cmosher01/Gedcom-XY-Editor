@@ -6,7 +6,7 @@ import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.date.DatePeriod;
 import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
 
-import java.io.*;
+import java.io.StringReader;
 import java.util.*;
 
 public final class FamilyChartBuilder {

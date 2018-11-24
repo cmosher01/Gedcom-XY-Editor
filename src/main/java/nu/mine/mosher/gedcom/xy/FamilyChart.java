@@ -1,9 +1,6 @@
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
-import javafx.scene.input.MouseEvent;
 
 import java.util.*;
 

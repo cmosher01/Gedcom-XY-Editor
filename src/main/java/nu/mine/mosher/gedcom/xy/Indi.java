@@ -110,8 +110,8 @@ public class Indi {
         if (textshape.getLayoutBounds().getWidth() > widthMax()) {
             textshape.setWrappingWidth(widthMax());
         }
-        final double w = textshape.getLayoutBounds().getWidth()+INSET*2.0D;
-        final double h = textshape.getLayoutBounds().getHeight()+INSET*2.0D;
+        final double w = textshape.getLayoutBounds().getWidth() + INSET * 2.0D;
+        final double h = textshape.getLayoutBounds().getHeight() + INSET * 2.0D;
 
         this.plaque = new StackPane();
         this.plaque.setBackground(new Background(new BackgroundFill(Color.CORNSILK, CORNERS, Insets.EMPTY)));

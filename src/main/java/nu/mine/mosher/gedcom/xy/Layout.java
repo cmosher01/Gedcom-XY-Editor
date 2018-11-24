@@ -16,15 +16,15 @@ public class Layout {
             .mapToObj(i -> new CIndividual(indis.get(i), i))
             .collect(Collectors.toList());
 
-        final Map<Indi,CIndividual> mapIndis = new HashMap<>();
-        this.indis.forEach(i -> mapIndis.put(i.indi,i));
+        final Map<Indi, CIndividual> mapIndis = new HashMap<>();
+        this.indis.forEach(i -> mapIndis.put(i.indi, i));
 
         this.famis = IntStream.range(0, famis.size())
             .mapToObj(i -> new CFamily(famis.get(i), i))
             .collect(Collectors.toList());
 
-        final Map<Fami,CFamily> mapFamis = new HashMap<>();
-        this.famis.forEach(i -> mapFamis.put(i.fami,i));
+        final Map<Fami, CFamily> mapFamis = new HashMap<>();
+        this.famis.forEach(i -> mapFamis.put(i.fami, i));
 
         this.famis.forEach(f -> {
             final Fami fami = f.fami;
@@ -53,8 +53,7 @@ public class Layout {
         });
     }
 
-    private static void addSpouse(Map<Indi, CIndividual> mapIndis, CFamily fami, Optional<Indi> indi, Optional<Indi> spouse)
-    {
+    private static void addSpouse(Map<Indi, CIndividual> mapIndis, CFamily fami, Optional<Indi> indi, Optional<Indi> spouse) {
         if (indi.isPresent()) {
             final CIndividual cindi = mapIndis.get(indi.get());
             cindi.ridxSpouseToFamily.add(fami.idx);
@@ -63,10 +62,8 @@ public class Layout {
     }
 
 
-
     private final List<CIndividual> indis;
     private final List<CFamily> famis;
-
 
 
     class CFamily {
@@ -87,7 +84,6 @@ public class Layout {
             riChild.sort(Comparator.comparing(i -> Layout.this.indis.get(i).getSimpleBirth()));
         }
     }
-
 
 
     class CIndividual {
@@ -111,7 +107,6 @@ public class Layout {
         private int level;
         private int maxMale;
         private CIndividual house;
-
 
 
         public CIndividual(final Indi indi, final int idx) {
@@ -314,17 +309,12 @@ public class Layout {
     }
 
 
-
-
-
-
     public void cleanAll() {
         // preliminary stuff
         final int cIndi = this.indis.size();
         if (cIndi <= 1) {
             return;
         }
-
 
 
         // set generation levels (also sets position on y-axis)
@@ -356,7 +346,6 @@ public class Layout {
         }
 
 
-
         // calc max male-branch-descendant-generations size for all indis
         {
             clearAllIndividuals();
@@ -380,15 +369,11 @@ public class Layout {
         }
 
 
-
         final Deque<CIndividual> qToClean =
             this.indis.stream()
                 .filter(i -> i.maxMale != 0)
                 .sorted(primaryHouse())
                 .collect(Collectors.toCollection(LinkedList::new));
-
-
-
 
 
         // Labeling branches
@@ -418,7 +403,6 @@ public class Layout {
         }
 
 
-
         // build new list with only house heads
         final Deque<CIndividual> rptoclean2 = new LinkedList<>();
         final Set<CIndividual> settoclean2 = new HashSet<>();
@@ -440,7 +424,6 @@ public class Layout {
                 }
             }
         }
-
 
 
         final List<Double> lev_bounds = new ArrayList<>();
@@ -547,7 +530,6 @@ public class Layout {
     }
 
 
-
     private static Comparator<CIndividual> primaryHouse() {
         return Comparator
             .comparingInt((CIndividual i) -> i.maxMale)
@@ -555,7 +537,6 @@ public class Layout {
             .thenComparingInt(i -> i.sex)
             .reversed();
     }
-
 
 
     private void clearAllIndividuals() {

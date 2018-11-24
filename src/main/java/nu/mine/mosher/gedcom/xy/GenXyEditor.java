@@ -1,14 +1,11 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.application.*;
-import javafx.beans.binding.Bindings;
 import javafx.event.*;
 import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.*;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.*;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.ZoomPane;

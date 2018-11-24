@@ -11,8 +11,8 @@ import java.util.*;
 public class Fami {
     public static final double BAR_HEIGHT = 4.0D;
     public static final double CHILD_HEIGHT = 20.0D;
-    public static final double MARRIAGE_SPACING = CHILD_HEIGHT*5.0D;
-    public static final double CHILD_LINE_DISTANCE = MARRIAGE_SPACING / 2.0D+3.0D;
+    public static final double MARRIAGE_SPACING = CHILD_HEIGHT * 5.0D;
+    public static final double CHILD_LINE_DISTANCE = MARRIAGE_SPACING / 2.0D + 3.0D;
     public static final double MIN_DISTANCE = 1.51D;
 
 
@@ -143,7 +143,7 @@ public class Fami {
                 descentBar3.startXProperty().bind(midpoint);
                 descentBar3.startYProperty().bind(childBar.startYProperty());
                 descentBar3.endXProperty().bind(midpoint);
-                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(CHILD_HEIGHT/2.0D));
+                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(CHILD_HEIGHT / 2.0D));
 
                 final DoubleBinding closestParentX = new DoubleBinding() {
                     {
