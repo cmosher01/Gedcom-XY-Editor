@@ -262,7 +262,7 @@ public class Fami {
         final Point2D pstart = new Point2D(p2.getX(), p2.getY() + barHeight());
         final Point2D pend = new Point2D(p1.getX(), p1.getY() + barHeight());
         final double pd = Math.max(pstart.distance(pend), MIN_DISTANCE);
-        final double dt = descentLineDistance() / pd;
+        final double dt = Math.min(descentLineDistance(), pd/2.0D)/ pd;
         return new Point2D((1 - dt) * pstart.getX() + dt * pend.getX(), (1 - dt) * pstart.getY() + dt * pend.getY());
     }
 

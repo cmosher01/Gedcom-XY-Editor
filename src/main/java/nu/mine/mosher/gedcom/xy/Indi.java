@@ -59,7 +59,6 @@ public class Indi {
     }
 
     public void addGraphicsTo(List<Node> addto) {
-        addto.add(this.center);
         addto.add(this.plaque);
     }
 
