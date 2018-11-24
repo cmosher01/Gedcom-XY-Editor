@@ -1,11 +1,11 @@
 package nu.mine.mosher.gedcom.xy;
 
+import javafx.geometry.Point2D;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.date.DatePeriod;
 import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
 
-import java.awt.geom.*;
 import java.io.*;
 import java.util.*;
 
@@ -37,15 +37,8 @@ public final class FamilyChartBuilder {
     }
 
     private static void normalize(final List<Indi> indis) {
-//        final Optional<Rectangle2D> bounds = indis.stream().map(Indi::getBounds).reduce(Rectangle2D::createUnion);
-//        if (bounds.isPresent()) {
-//            System.err.println("Total bounds: "+bounds.get());
-//            final Dim2D shift = new Dim2D(-bounds.get().getX(), -bounds.get().getY());
-//            indis.forEach(i -> i.move(shift));
-//        }
-        // TODO just find minX and minY and offset by those
-        OptionalDouble x = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getX).min();
-        OptionalDouble y = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getY).min();
+        final OptionalDouble x = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getX).min();
+        final OptionalDouble y = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getY).min();
         indis.forEach(i -> i.shiftOrig(x, y));
     }
 
@@ -76,7 +69,7 @@ public final class FamilyChartBuilder {
             System.err.println("WARNING: missing _XY for: " + name);
         }
 
-        return new Indi(nodeIndi, coords.orElse(new Point2D.Double(0, 0)), id, name, birth, death, refn, sex);
+        return new Indi(nodeIndi, coords.orElse(Point2D.ZERO), id, name, birth, death, refn, sex);
     }
 
     private static int toSex(final String sex) {
@@ -101,7 +94,7 @@ public final class FamilyChartBuilder {
             System.err.println("Could not parse _XY: " + xy);
             return Optional.empty();
         }
-        return Optional.of(new Point2D.Double(r[0], r[1]));
+        return Optional.of(new Point2D(r[0], r[1]));
     }
 
     private static double parseCoord(final String s) {

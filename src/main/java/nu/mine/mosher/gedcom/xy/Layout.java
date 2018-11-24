@@ -1,6 +1,5 @@
 package nu.mine.mosher.gedcom.xy;
 
-import nu.mine.mosher.gedcom.xy.util.Dim2D;
 import nu.mine.mosher.time.Time;
 
 import java.awt.geom.*;

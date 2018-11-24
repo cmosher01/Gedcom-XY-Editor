@@ -8,6 +8,10 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * From Stack Overflow.
+ * Copyright © 2017, by Dániel Hári <haridaniel0@gmail.com>, Budapest, Hungary.
+ */
 public class ZoomPane extends ScrollPane {
     private double scaleValue = 0.7D;
     private double zoomIntensity = 0.005D;

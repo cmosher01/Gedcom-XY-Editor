@@ -25,12 +25,4 @@ public class FamilyChart {
         this.famis.forEach(Fami::calc);
         this.indis.forEach(Indi::setFromCoords);
     }
-
-    public void setOnDrag(EventHandler<MouseEvent> drag2) {
-        this.indis.forEach(i -> i.setOnDrag(drag2));
-    }
-//    public void buildInto(final SvgBuilder svg) {
-//        this.indis.forEach(i -> i.buildInto(svg));
-//        this.famis.forEach(f -> f.buildInto(svg));
-//    }
 }

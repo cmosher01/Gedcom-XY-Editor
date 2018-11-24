@@ -49,19 +49,9 @@ public final class GenXyEditor extends Application {
         });
     }
 
-    private static class GrIndi {
-        private final Indi indi;
-        public GrIndi(Indi indi) {
-            this.indi = indi;
-        }
-    }
-
     private Parent buildGui(final Stage stage, final FamilyChart chart) {
-        final Pane canvas = new Pane();
-        canvas.setStyle("-fx-border-color: firebrick");
-        canvas.setMaxSize(5000.0D, 5000.0D);
+        final Group canvas = new Group();
 
-        chart.setOnDrag(drag2());
         chart.setFromOrig();
         chart.addGraphicsTo(canvas.getChildren());
 
@@ -73,15 +63,6 @@ public final class GenXyEditor extends Application {
         root.setCenter(workspace);
 
         return root;
-    }
-
-    private EventHandler<MouseEvent> drag2() {
-        return t -> {
-            t.consume();
-            Node n = (Node)t.getSource();
-            n.setLayoutX(n.getLayoutX() + t.getX());
-            n.setLayoutY(n.getLayoutY() + t.getY());
-        };
     }
 
     private static MenuBar buildMenuBar(final Stage stage) {

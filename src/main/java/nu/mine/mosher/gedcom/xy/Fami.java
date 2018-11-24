@@ -10,9 +10,9 @@ import java.util.*;
 
 public class Fami {
     public static final double BAR_HEIGHT = 4.0D;
-    public static final double MARRIAGE_SPACING = 50.0D;
-    public static final double CHILD_LINE_DISTANCE = MARRIAGE_SPACING / 2.0D;
-    public static final double CHILD_HEIGHT = CHILD_LINE_DISTANCE;
+    public static final double CHILD_HEIGHT = 20.0D;
+    public static final double MARRIAGE_SPACING = CHILD_HEIGHT*5.0D;
+    public static final double CHILD_LINE_DISTANCE = MARRIAGE_SPACING / 2.0D+3.0D;
     public static final double MIN_DISTANCE = 1.51D;
 
 
@@ -143,7 +143,7 @@ public class Fami {
                 descentBar3.startXProperty().bind(midpoint);
                 descentBar3.startYProperty().bind(childBar.startYProperty());
                 descentBar3.endXProperty().bind(midpoint);
-                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(CHILD_HEIGHT));
+                descentBar3.endYProperty().bind(childBar.endYProperty().subtract(CHILD_HEIGHT/2.0D));
 
                 final DoubleBinding closestParentX = new DoubleBinding() {
                     {
@@ -212,7 +212,7 @@ public class Fami {
     private Point2D marpt(Point2D p1, Point2D p2) {
         final Point2D pstart = new Point2D(p2.getX(), p2.getY() + BAR_HEIGHT);
         final Point2D pend = new Point2D(p1.getX(), p1.getY() + BAR_HEIGHT);
-        final double pd = pstart.distance(pend);
+        final double pd = Math.max(pstart.distance(pend), MIN_DISTANCE);
         final double dt = CHILD_LINE_DISTANCE / pd;
         return new Point2D((1 - dt) * pstart.getX() + dt * pend.getX(), (1 - dt) * pstart.getY() + dt * pend.getY());
     }
