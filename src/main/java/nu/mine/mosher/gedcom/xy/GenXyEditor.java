@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -14,6 +15,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.util.Objects;
 
 public final class GenXyEditor extends Application {
+    private boolean dragged;
     @Override
     public void start(final Stage stage) {
         stage.setTitle("GEDCOM _XY Editor");
@@ -65,7 +68,16 @@ public final class GenXyEditor extends Application {
         chart.addGraphicsTo(canvas.getChildren());
 
         final ZoomPane workspace = new ZoomPane(canvas);
-        workspace.setStyle("-fx-background-color: white;");
+        workspace.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
+            dragged = true;
+        });
+//        t -> {
+        workspace.setOnMouseClicked(t -> {
+            if (!dragged) {
+                chart.clearSelection();
+            }
+            dragged = false;
+        });
 
         final BorderPane root = new BorderPane();
         root.setTop(buildMenuBar(stage));

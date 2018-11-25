@@ -1,5 +1,9 @@
 package nu.mine.mosher.gedcom.xy;
 
+import javafx.beans.binding.ObjectBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
@@ -42,8 +46,10 @@ public class Indi {
     private final Circle center = new Circle(0, Color.TRANSPARENT);
     private final StackPane plaque = new StackPane();
 
-    private Point2D dragDelta;
-
+    private boolean wasSelected = false;
+    private boolean wasDragged = false;
+    private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
+    private FamilyChart.Selection selection;
 
 
     public int getSex() {
@@ -66,6 +72,9 @@ public class Indi {
         this.coordsOrig = new Point2D(this.coordsOrig.getX() - dx, this.coordsOrig.getY() - dy);
     }
 
+    public void select(final boolean select) {
+        this.selected.setValue(select);
+    }
 
 
     public Indi(final TreeNode<GedcomLine> node, final Point2D coords, String id, String name, DatePeriod birth, DatePeriod death, String refn, final int sex) {
@@ -92,7 +101,20 @@ public class Indi {
         final double w = textshape.getLayoutBounds().getWidth() + inset * 2.0D;
         final double h = textshape.getLayoutBounds().getHeight() + inset * 2.0D;
 
-        this.plaque.setBackground(new Background(new BackgroundFill(Color.CORNSILK, CORNERS, Insets.EMPTY)));
+        final Background bgNormal = new Background(new BackgroundFill(Color.CORNSILK, CORNERS, Insets.EMPTY));
+        final Background bgSelected = new Background(new BackgroundFill(Color.ORANGE, CORNERS, Insets.EMPTY));
+        final ObjectBinding<Background> bgBinding = new ObjectBinding<Background>() {
+            {
+                super.bind(selected);
+            }
+
+            @Override
+            protected Background computeValue() {
+                return selected.get() ? bgSelected : bgNormal;
+            }
+        };
+
+        this.plaque.backgroundProperty().bind(bgBinding);
         this.plaque.setBorder(new Border(new BorderStroke(Color.OLIVEDRAB, BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
         StackPane.setMargin(textshape, new Insets(inset));
         this.plaque.getChildren().addAll(textshape);
@@ -111,18 +133,33 @@ public class Indi {
 
         this.plaque.setOnMousePressed(t -> {
             t.consume();
-            dragDelta = new Point2D(t.getX(), t.getY());
             plaque.setCursor(Cursor.MOVE);
+            if (selected.get()) {
+                wasSelected = true;
+            }
+            selection.select(this, true);
+            selection.beginDrag(new Point2D(t.getX(), t.getY()));
         });
         this.plaque.setOnMouseDragged(t -> {
             t.consume();
-            center.setLayoutX(center.getLayoutX() + t.getX() - dragDelta.getX());
-            center.setLayoutY(center.getLayoutY() + t.getY() - dragDelta.getY());
+            wasDragged = true;
+            selection.drag(new Point2D(t.getX(), t.getY()));
         });
         this.plaque.setOnMouseReleased(t -> {
             t.consume();
             plaque.setCursor(Cursor.HAND);
+            if (wasSelected && !wasDragged) {
+                selection.select(this, false);
+            }
+            wasSelected = false;
+            wasDragged = false;
         });
+        this.plaque.setOnMouseClicked(Event::consume);
+    }
+
+    public void drag(final Point2D delta) {
+        center.setLayoutX(center.getLayoutX() + delta.getX());
+        center.setLayoutY(center.getLayoutY() + delta.getY());
     }
 
     private String buildLabel() {
@@ -175,5 +212,9 @@ public class Indi {
 
     public void setOrigCoords(double x, double y) {
         this.coordsOrig = new Point2D(x,y);
+    }
+
+    public  void setSelection(FamilyChart.Selection selection) {
+        this.selection = selection;
     }
 }
