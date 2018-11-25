@@ -16,6 +16,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -68,15 +69,10 @@ public final class GenXyEditor extends Application {
         chart.addGraphicsTo(canvas.getChildren());
 
         final ZoomPane workspace = new ZoomPane(canvas);
-        workspace.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
-            dragged = true;
-        });
-//        t -> {
         workspace.setOnMouseClicked(t -> {
-            if (!dragged) {
+            if (!workspace.consumeScroll()) {
                 chart.clearSelection();
             }
-            dragged = false;
         });
 
         final BorderPane root = new BorderPane();

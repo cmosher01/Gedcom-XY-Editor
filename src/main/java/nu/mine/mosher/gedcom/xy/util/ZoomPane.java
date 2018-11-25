@@ -1,9 +1,13 @@
 package nu.mine.mosher.gedcom.xy.util;
 
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.scene.*;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+
 
 /**
  * From Stack Overflow.
@@ -14,12 +18,15 @@ public class ZoomPane extends ScrollPane {
     private double zoomIntensity = 0.005D;
     private Node target;
     private Node zoomNode;
+    private boolean scrolled = false;
 
     public ZoomPane(Node target) {
         super();
         this.target = target;
         this.zoomNode = new Group(target);
-        setContent(outerNode(zoomNode));
+        Node outerNode = centeredNode(this.zoomNode);
+        setOnScrollxxx(outerNode);
+        setContent(outerNode);
 
         setPannable(true);
         setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -30,13 +37,20 @@ public class ZoomPane extends ScrollPane {
         updateScale();
     }
 
-    private Node outerNode(Node node) {
-        Node outerNode = centeredNode(node);
+    public boolean consumeScroll() {
+        final boolean s = this.scrolled;
+        this.scrolled = false;
+        return s;
+    }
+
+    private void setOnScrollxxx(Node outerNode) {
+        this.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
+            scrolled = true;
+        });
         outerNode.setOnScroll(e -> {
             e.consume();
             onScroll(e.getDeltaY(), new Point2D(e.getX(), e.getY()));
         });
-        return outerNode;
     }
 
     private Node centeredNode(Node node) {
