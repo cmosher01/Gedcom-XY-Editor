@@ -75,12 +75,18 @@ public class FamilyChart {
 
         out.println("0 HEAD");
         out.println("1 CHAR UTF-8");
-        // TODO: write HEAD
+        out.println("1 GEDC");
+        out.println("2 VERS 5.5.1");
+        out.println("2 FORM LINEAGE-LINKED");
+        out.println("1 SOUR XY-EDITOR");
+
         this.indis.stream().filter(Indi::dirty).forEach(i -> {
             i.saveXyToTree();
             extractSkeleton(i.node(), out);
         });
+
         out.println("0 TRLR");
+
         out.flush();
         out.close();
     }
