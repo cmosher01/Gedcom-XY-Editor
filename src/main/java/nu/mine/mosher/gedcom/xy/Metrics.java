@@ -2,8 +2,10 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import nu.mine.mosher.gedcom.util.Solarized;
 
 public class Metrics {
     private static final String FONT_FAMILY_NAME = java.awt.Font.SANS_SERIF;
@@ -21,8 +23,7 @@ public class Metrics {
         this.genDistance = (genDistance < 1.4D ? 200.0D : genDistance);
         System.err.println("average distance between generations: " + this.genDistance);
 
-        final long fontSizeGuess = clamp(7, Math.round(Math.rint((this.marrDistance / 10.0D + this.genDistance / 15.0D) / 2.0D)), 24);
-        this.fontSize = fontSizeGuess;
+        this.fontSize = clamp(6, Math.round(Math.rint((this.marrDistance / 15.0D + this.genDistance / 20.0D) / 2.0D)), 24);
         System.err.println("heuristically determined font point size: " + this.fontSize);
 
         this.font = Font.font(FONT_FAMILY_NAME, this.fontSize);
@@ -59,6 +60,38 @@ public class Metrics {
 
     public Font getFont() {
         return this.font;
+    }
+
+    public Color colorLines() {
+        return Solarized.YELLOW;
+    }
+
+    public Color colorIndiBorder() {
+        return Solarized.GREEN;
+    }
+
+    public Color colorIndiText() {
+        return Solarized.BASE00;
+    }
+
+    public Color colorIndiBg() {
+        return Solarized.BASE3;
+    }
+
+    public Color colorSelectionChooser() {
+        return Solarized.MAGENTA;
+    }
+
+    public Color colorIndiSelText() {
+        return Solarized.MAGENTA;
+    }
+
+    public Color colorIndiSelBg() {
+        return Solarized.BASE2;
+    }
+
+    public Color colorBg() {
+        return Color.TRANSPARENT;
     }
 
     private static long clamp(final long min, final long n,final  long max) {

@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -19,6 +20,7 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
@@ -89,6 +91,17 @@ public class Indi {
 
     public void calc() {
         final Text textshape = new Text();
+        final ObjectBinding<Color> fillBinding = new ObjectBinding<>() {
+            {
+                super.bind(selected);
+            }
+
+            @Override
+            protected Color computeValue() {
+                return selected.get() ? metrics.colorIndiSelText() : metrics.colorIndiText();
+            }
+        };
+        textshape.fillProperty().bind(fillBinding);
         textshape.setFont(this.metrics.getFont());
         textshape.setTextAlignment(TextAlignment.CENTER);
         textshape.setText(buildLabel());
@@ -101,8 +114,8 @@ public class Indi {
         final double w = textshape.getLayoutBounds().getWidth() + inset * 2.0D;
         final double h = textshape.getLayoutBounds().getHeight() + inset * 2.0D;
 
-        final Background bgNormal = new Background(new BackgroundFill(Color.CORNSILK, CORNERS, Insets.EMPTY));
-        final Background bgSelected = new Background(new BackgroundFill(Color.ORANGE, CORNERS, Insets.EMPTY));
+        final Background bgNormal = new Background(new BackgroundFill(metrics.colorIndiBg(), CORNERS, Insets.EMPTY));
+        final Background bgSelected = new Background(new BackgroundFill(metrics.colorIndiSelBg(), CORNERS, Insets.EMPTY));
         final ObjectBinding<Background> bgBinding = new ObjectBinding<Background>() {
             {
                 super.bind(selected);
@@ -113,9 +126,9 @@ public class Indi {
                 return selected.get() ? bgSelected : bgNormal;
             }
         };
-
         this.plaque.backgroundProperty().bind(bgBinding);
-        this.plaque.setBorder(new Border(new BorderStroke(Color.OLIVEDRAB, BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
+
+        this.plaque.setBorder(new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
         StackPane.setMargin(textshape, new Insets(inset));
         this.plaque.getChildren().addAll(textshape);
 
@@ -216,5 +229,9 @@ public class Indi {
 
     public  void setSelection(FamilyChart.Selection selection) {
         this.selection = selection;
+    }
+
+    public boolean intersects(double x, double y, double w, double h) {
+        return this.plaque.getBoundsInParent().intersects(x,y,w,h);
     }
 }

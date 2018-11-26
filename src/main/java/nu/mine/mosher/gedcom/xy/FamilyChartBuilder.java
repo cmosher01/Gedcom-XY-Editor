@@ -35,7 +35,7 @@ public final class FamilyChartBuilder {
         indis.forEach(i -> i.setMetrics(metrics));
         layout(indis, famis, metrics);
         normalize(indis);
-        return new FamilyChart(indis, famis);
+        return new FamilyChart(indis, famis, metrics);
     }
 
     private static Metrics metrics(List<Indi> indis, List<Fami> famis) {

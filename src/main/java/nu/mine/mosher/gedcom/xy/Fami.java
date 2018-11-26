@@ -234,7 +234,7 @@ public class Fami {
                 descentBar3.startXProperty().bind(descentLineStartChildrenX);
                 descentBar3.startYProperty().bind(childBar.startYProperty());
                 descentBar3.endXProperty().bind(descentBar3.startXProperty());
-                descentBar3.endYProperty().bind(descentBar3.startYProperty().subtract(childHeight() / 2.0D));
+                descentBar3.endYProperty().bind(descentBar3.startYProperty().subtract(rChild.size() == 1 ? 0.0D : childHeight() / 2.0D));
 
                 descentBar2 = createLine();
                 descentBar2.startXProperty().bind(descentBar3.endXProperty());
@@ -315,7 +315,7 @@ public class Fami {
     }
 
     private Line createLine() {
-        return createLine(Color.ORANGE);
+        return createLine(metrics.colorLines());
     }
 
     private Line createLine(final Color color) {
@@ -367,6 +367,7 @@ public class Fami {
             final Circle phantom = new Circle(0D, Color.TRANSPARENT);
 
             final Text textshape = new Text();
+            textshape.setFill(metrics.colorIndiText());
             textshape.setFont(Fami.this.metrics.getFont());
             textshape.setTextAlignment(TextAlignment.CENTER);
             textshape.setText("\u00A0?\u00A0");
@@ -378,8 +379,8 @@ public class Fami {
 
             final StackPane plaque = new StackPane();
             Fami.this.phantomPanes.add(plaque);
-            plaque.setBackground(new Background(new BackgroundFill(Color.CORNSILK, CORNERS, Insets.EMPTY)));
-            plaque.setBorder(new Border(new BorderStroke(Color.OLIVEDRAB, BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
+            plaque.setBackground(new Background(new BackgroundFill(metrics.colorIndiBg(), CORNERS, Insets.EMPTY)));
+            plaque.setBorder(new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
             StackPane.setMargin(textshape, new Insets(inset));
             plaque.getChildren().addAll(textshape);
 

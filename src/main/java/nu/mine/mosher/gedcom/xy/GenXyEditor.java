@@ -4,7 +4,8 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.event.EventType;
+import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,8 +17,14 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import nu.mine.mosher.gedcom.Gedcom;
@@ -28,9 +35,12 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class GenXyEditor extends Application {
-    private boolean dragged;
+    private Optional<Rectangle> selector = Optional.empty();
+    private Point2D ptSelStart;
+
     @Override
     public void start(final Stage stage) {
         stage.setTitle("GEDCOM _XY Editor");
@@ -63,7 +73,8 @@ public final class GenXyEditor extends Application {
     }
 
     private Parent buildGui(final Stage stage, final FamilyChart chart) {
-        final Group canvas = new Group();
+        final Pane canvas = new Pane();
+        canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colorBg(), CornerRadii.EMPTY, Insets.EMPTY)));
 
         chart.setFromOrig();
         chart.addGraphicsTo(canvas.getChildren());
@@ -72,6 +83,58 @@ public final class GenXyEditor extends Application {
         workspace.setOnMouseClicked(t -> {
             if (!workspace.consumeScroll()) {
                 chart.clearSelection();
+            }
+        });
+
+        canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, t -> {
+            if (t.isShiftDown()) {
+                this.ptSelStart = new Point2D(t.getX(), t.getY());
+                final Rectangle sel = new Rectangle(t.getX(), t.getY(), 0D, 0D);
+                sel.setFill(Color.TRANSPARENT);
+                sel.setStrokeWidth(1.0D);
+                sel.setStroke(chart.metrics().colorSelectionChooser());
+                sel.getStrokeDashArray().addAll(3.0D);
+                canvas.getChildren().add(sel);
+                chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());
+                selector = Optional.of(sel);
+                t.consume();
+            }
+        });
+
+        canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
+            if (selector.isPresent()) {
+                final Rectangle sel = selector.get();
+
+                final double x = this.ptSelStart.getX();
+                final double w = t.getX() - x;
+                if (w < 0D) {
+                    sel.setX(t.getX());
+                    sel.setWidth(-w);
+                } else {
+                    sel.setWidth(w);
+                }
+
+                final double y = this.ptSelStart.getY();
+                final double h = t.getY() - y;
+                if (h < 0D) {
+                    sel.setY(t.getY());
+                    sel.setHeight(-h);
+                } else {
+                    sel.setHeight(h);
+                }
+
+                chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());
+
+                t.consume();
+                workspace.consumeScroll();
+            }
+        });
+
+        canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, t -> {
+            if (this.selector.isPresent()) {
+                canvas.getChildren().remove(this.selector.get());
+                t.consume();
+                this.selector = Optional.empty();
             }
         });
 
