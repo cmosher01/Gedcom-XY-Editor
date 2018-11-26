@@ -6,7 +6,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -20,7 +19,6 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
@@ -31,7 +29,7 @@ import nu.mine.mosher.gedcom.date.DatePeriod;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.OptionalDouble;
+import java.util.Objects;
 
 public class Indi {
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
@@ -41,7 +39,8 @@ public class Indi {
     private Metrics metrics;
     private final TreeNode<GedcomLine> node;
     private final String id;
-    private Point2D coordsOrig;
+    private Point2D coords;
+    private Point2D coordsInit;
     private final int sex;
     private final DatePeriod birth;
 
@@ -71,7 +70,7 @@ public class Indi {
     }
 
     public void shiftOrig(final double dx, final double dy) {
-        this.coordsOrig = new Point2D(this.coordsOrig.getX() - dx, this.coordsOrig.getY() - dy);
+        this.coords = new Point2D(this.coords.getX() - dx, this.coords.getY() - dy);
     }
 
     public void select(final boolean select) {
@@ -82,7 +81,8 @@ public class Indi {
     public Indi(final TreeNode<GedcomLine> node, final Point2D coords, String id, String name, DatePeriod birth, DatePeriod death, String refn, final int sex) {
         this.node = node;
         this.id = id;
-        this.coordsOrig = coords;
+        this.coords = coords;
+        this.coordsInit = coords;
         this.sex = sex;
         this.birth = birth;
         this.death = death;
@@ -211,20 +211,20 @@ public class Indi {
         return this.id;
     }
 
-    public Point2D getCoordsOrig() {
-        return this.coordsOrig;
+    public Point2D getCoords() {
+        return this.coords;
     }
 
     public void setFromCoords() {
-        this.center.relocate(this.coordsOrig.getX(), this.coordsOrig.getY());
+        this.center.relocate(this.coords.getX(), this.coords.getY());
     }
 
     public Circle getCircle() {
         return this.center;
     }
 
-    public void setOrigCoords(double x, double y) {
-        this.coordsOrig = new Point2D(x,y);
+    public void setInitCoords(double x, double y) {
+        this.coordsInit = new Point2D(x,y);
     }
 
     public  void setSelection(FamilyChart.Selection selection) {
@@ -233,5 +233,49 @@ public class Indi {
 
     public boolean intersects(double x, double y, double w, double h) {
         return this.plaque.getBoundsInParent().intersects(x,y,w,h);
+    }
+
+    public boolean dirty() {
+        return !(near(this.center.getLayoutX(), this.coords.getX()) && near(this.center.getLayoutY(), this.coords.getY()));
+    }
+
+    private boolean near(double a, double b) {
+        return Math.abs(b-a) < .01D;
+    }
+
+    public String name() {
+        return this.name;
+    }
+
+    public void saveXyToTree() {
+        final String xy = newXY();
+        System.err.println("changing "+this.name+": "+xy);
+        boolean set = false;
+        for (final TreeNode<GedcomLine> c : this.node) {
+            if (c.getObject().getTagString().equals("_XY")) {
+                c.setObject(c.getObject().replaceValue(xy));
+                set = true;
+            }
+        }
+        if (!set) {
+            this.node.addChild(new TreeNode<>(this.node.getObject().createChild("_XY", xy)));
+        }
+
+        this.coords = new Point2D(this.center.getLayoutX(), this.center.getLayoutY());
+    }
+
+    private String newXY() {
+        double x = this.coordsInit.getX()+(this.center.getLayoutX()-this.coords.getX());
+        double y = this.coordsInit.getY()+(this.center.getLayoutY()-this.coords.getY());
+        return coord(x)+" "+coord(y);
+    }
+
+    private static String coord(final double c) {
+        // TODO should we store integers or doubles? (if doubles, two decimal places?)
+        return Long.toString(Math.round(Math.rint(c)));
+    }
+
+    public TreeNode<GedcomLine> node() {
+        return this.node;
     }
 }

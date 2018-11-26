@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
 
 public final class FamilyChartBuilder {
     private static final double MAX_NATURAL_DISTANCE = 1000.0D;
@@ -35,7 +34,7 @@ public final class FamilyChartBuilder {
         indis.forEach(i -> i.setMetrics(metrics));
         layout(indis, famis, metrics);
         normalize(indis);
-        return new FamilyChart(indis, famis, metrics);
+        return new FamilyChart(tree, indis, famis, metrics);
     }
 
     private static Metrics metrics(List<Indi> indis, List<Fami> famis) {
@@ -58,8 +57,8 @@ public final class FamilyChartBuilder {
     }
 
     private static void normalize(final List<Indi> indis) {
-        final double x = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getX).min().orElse(0D);
-        final double y = indis.stream().map(Indi::getCoordsOrig).mapToDouble(Point2D::getY).min().orElse(0D);
+        final double x = indis.stream().map(Indi::getCoords).mapToDouble(Point2D::getX).min().orElse(0D);
+        final double y = indis.stream().map(Indi::getCoords).mapToDouble(Point2D::getY).min().orElse(0D);
         indis.forEach(i -> i.shiftOrig(x, y));
     }
 
@@ -185,7 +184,7 @@ public final class FamilyChartBuilder {
     private static void layout(final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
         /* don't layout if _XY was found on anyone */
         for (final Indi indi : indis) {
-            if (indi.getCoordsOrig().magnitude() != 0) {
+            if (indi.getCoords().magnitude() != 0) {
                 return;
             }
         }

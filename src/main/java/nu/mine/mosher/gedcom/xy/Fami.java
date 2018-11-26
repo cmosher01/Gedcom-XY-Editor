@@ -268,26 +268,26 @@ public class Fami {
         if (husb == null || wife == null) {
             return 0D;
         }
-        return husb.getCoordsOrig().distance(wife.getCoordsOrig());
+        return husb.getCoords().distance(wife.getCoords());
     }
 
     public double getGenDistance() {
         if (husb == null || wife == null) {
             return 0D;
         }
-        final double avgChildX = this.rChild.stream().mapToDouble(c -> c.getCoordsOrig().getX()).average().orElse(0D);
-        final double avgChildY = this.rChild.stream().mapToDouble(c -> c.getCoordsOrig().getY()).average().orElse(0D);
+        final double avgChildX = this.rChild.stream().mapToDouble(c -> c.getCoords().getX()).average().orElse(0D);
+        final double avgChildY = this.rChild.stream().mapToDouble(c -> c.getCoords().getY()).average().orElse(0D);
         if (avgChildX < 1D && avgChildY < 1D) {
             return 0D;
         }
         final Point2D avgChild = new Point2D(avgChildX, avgChildY);
         if (husb == null) {
-            return wife.getCoordsOrig().distance(avgChild);
+            return wife.getCoords().distance(avgChild);
         }
         if (wife == null) {
-            return husb.getCoordsOrig().distance(avgChild);
+            return husb.getCoords().distance(avgChild);
         }
-        return Math.min(husb.getCoordsOrig().distance(avgChild), wife.getCoordsOrig().distance(avgChild));
+        return Math.min(husb.getCoords().distance(avgChild), wife.getCoords().distance(avgChild));
     }
 
     private Point2D marpt(Point2D p1, Point2D p2) {

@@ -33,6 +33,7 @@ import nu.mine.mosher.gedcom.xy.util.ZoomPane;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Objects;
 import java.util.Optional;
@@ -58,11 +59,10 @@ public final class GenXyEditor extends Application {
             try {
                 tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
                 final FamilyChart chart = FamilyChartBuilder.create(tree);
+                chart.setFromOrig();
 
                 final StringBuilder sb = new StringBuilder(100);
                 tree.getRoot().getFirstChildOrNull().appendStringDeep(sb, true);
-                System.err.println("loaded gedcom with header:");
-                System.err.println(sb.toString());
 
                 stage.setScene(new Scene(buildGui(stage, chart), 640, 480));
                 stage.show();
@@ -76,7 +76,6 @@ public final class GenXyEditor extends Application {
         final Pane canvas = new Pane();
         canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colorBg(), CornerRadii.EMPTY, Insets.EMPTY)));
 
-        chart.setFromOrig();
         chart.addGraphicsTo(canvas.getChildren());
 
         final ZoomPane workspace = new ZoomPane(canvas);
@@ -139,24 +138,34 @@ public final class GenXyEditor extends Application {
         });
 
         final BorderPane root = new BorderPane();
-        root.setTop(buildMenuBar(stage));
+        root.setTop(buildMenuBar(stage, chart));
         root.setCenter(workspace);
 
         return root;
     }
 
-    private static MenuBar buildMenuBar(final Stage stage) {
+    private static MenuBar buildMenuBar(final Stage stage, FamilyChart chart) {
         final MenuItem cmdSaveAs = new MenuItem("Save as...");
         cmdSaveAs.setOnAction((event) -> {
             final FileChooser fileChooser = new FileChooser();
-            fileChooser.showSaveDialog(stage);
+            final File file = fileChooser.showSaveDialog(stage);
+            try {
+                chart.saveAs(file);
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
         });
 
         final MenuItem cmdExport = new MenuItem("Export skeleton as...");
         cmdExport.setOnAction((event) -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setInitialFileName(".skel.ged");
-            fileChooser.showSaveDialog(stage);
+            final File file = fileChooser.showSaveDialog(stage);
+            try {
+                chart.saveSkeleton(file);
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
         });
 
         final MenuItem cmdQuit = new MenuItem("Quit");

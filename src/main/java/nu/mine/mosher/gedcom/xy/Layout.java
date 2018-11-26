@@ -541,7 +541,7 @@ public class Layout {
             }
         }
 
-        this.indis.forEach(i -> i.indi.setOrigCoords(i.frame.getX(), i.frame.getY()));
+        this.indis.forEach(i -> i.indi.setInitCoords(i.frame.getX(), i.frame.getY()));
     }
 
 
