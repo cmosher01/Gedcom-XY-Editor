@@ -174,7 +174,7 @@ public final class GenXyEditor extends Application {
     private MenuBar buildMenuBar(final Stage stage, final FamilyChart chart) {
         final MenuItem cmdSaveAs = new MenuItem("Save As...");
         cmdSaveAs.setMnemonicParsing(true);
-        cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.META_DOWN));
+        cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
         cmdSaveAs.setOnAction(t -> {
             final FileChooser fileChooser = new FileChooser();
             final File file = fileChooser.showSaveDialog(stage);
@@ -188,7 +188,7 @@ public final class GenXyEditor extends Application {
 
         final MenuItem cmdExport = new MenuItem("Export Skeleton As...");
         cmdExport.setMnemonicParsing(true);
-        cmdExport.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.META_DOWN));
+        cmdExport.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
         cmdExport.setOnAction(t -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setInitialFileName(".skel.ged");
@@ -203,7 +203,7 @@ public final class GenXyEditor extends Application {
 
         final MenuItem cmdQuit = new MenuItem("Quit");
         cmdQuit.setMnemonicParsing(true);
-        cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.META_DOWN));
+        cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.SHORTCUT_DOWN));
         cmdQuit.setOnAction(t -> exitIfSafe(chart));
 
         final Menu menuFile = new Menu("File");
