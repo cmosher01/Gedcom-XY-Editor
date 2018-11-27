@@ -26,6 +26,8 @@ import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
 import nu.mine.mosher.gedcom.date.DatePeriod;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -171,8 +173,16 @@ public class Indi {
     }
 
     public void drag(final Point2D delta) {
-        center.setLayoutX(center.getLayoutX() + delta.getX());
-        center.setLayoutY(center.getLayoutY() + delta.getY());
+        center.setLayoutX(snap(center.getLayoutX() + delta.getX()));
+        center.setLayoutY(snap(center.getLayoutY() + delta.getY()));
+    }
+
+    private double snap(final double c) {
+        final int grid = metrics.grid();
+        if (grid == 0) {
+            return c;
+        }
+        return Math.rint(Math.floor(c/grid)*grid);
     }
 
     private String buildLabel() {
@@ -272,7 +282,9 @@ public class Indi {
 
     private static String coord(final double c) {
         // TODO should we store integers or doubles? (if doubles, two decimal places?)
-        return Long.toString(Math.round(Math.rint(c)));
+        final String sDecimal = BigDecimal.valueOf(c).setScale(2, RoundingMode.HALF_DOWN).toPlainString();
+        final String sInteger = BigDecimal.valueOf(c).setScale(0, RoundingMode.HALF_DOWN).toPlainString();
+        return sInteger;
     }
 
     public TreeNode<GedcomLine> node() {

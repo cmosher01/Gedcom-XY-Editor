@@ -2,8 +2,6 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Parent;
@@ -14,6 +12,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -67,7 +66,7 @@ public final class GenXyEditor extends Application {
                 chart.setFromOrig();
 
                 stage.setOnCloseRequest(t -> {
-                    if (!exitIfSafe(chart)) {
+                    if (!exitIfSafe(stage, chart)) {
                         t.consume();
                     }
                 });
@@ -81,7 +80,7 @@ public final class GenXyEditor extends Application {
         });
     }
 
-    private boolean exitIfSafe(final FamilyChart chart) {
+    private boolean exitIfSafe(final Stage stage, final FamilyChart chart) {
         boolean safe = false;
         if (chart.dirty()) {
             final Alert alert = new Alert(Alert.AlertType.WARNING, "Your UNSAVED changes will be DISCARDED.", ButtonType.OK, ButtonType.CANCEL);
@@ -94,6 +93,8 @@ public final class GenXyEditor extends Application {
             safe = true;
         }
         if (safe) {
+            stage.setOnCloseRequest(null);
+            stage.close();
             Platform.exit();
         }
         return safe;
@@ -201,17 +202,44 @@ public final class GenXyEditor extends Application {
             }
         });
 
-        final MenuItem cmdQuit = new MenuItem("Quit");
-        cmdQuit.setMnemonicParsing(true);
-        cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.SHORTCUT_DOWN));
-        cmdQuit.setOnAction(t -> exitIfSafe(chart));
-
         final Menu menuFile = new Menu("File");
-        menuFile.getItems().addAll(cmdExport, new SeparatorMenuItem(), cmdSaveAs, new SeparatorMenuItem(), cmdQuit);
+        menuFile.getItems().addAll(cmdExport, new SeparatorMenuItem(), cmdSaveAs);
+
+        /* Mac platform provides its own Quit on the system menu */
+        if (!mac()) {
+            final MenuItem cmdQuit = new MenuItem("Quit");
+            cmdQuit.setMnemonicParsing(true);
+            cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.SHORTCUT_DOWN));
+            cmdQuit.setOnAction(t -> exitIfSafe(stage, chart));
+            menuFile.getItems().addAll(new SeparatorMenuItem(), cmdQuit);
+        }
+
+
+
+        final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
+        cmdSnap.setOnAction(t -> {
+            final TextInputDialog dialog = new TextInputDialog();
+            dialog.setContentText("Snap to grid current size is "+chart.metrics().grid()+". Change to:");
+            final Optional<String> result = dialog.showAndWait();
+            result.ifPresent(s -> chart.metrics().setGrid(s));
+        });
+
+        final Menu menuEdit = new Menu("Edit");
+        menuEdit.getItems().addAll(cmdSnap);
+
+
 
         final MenuBar mbar = new MenuBar();
         mbar.setUseSystemMenuBar(false);
-        mbar.getMenus().add(menuFile);
+        mbar.getMenus().addAll(menuFile, menuEdit);
         return mbar;
+    }
+
+    public boolean mac() {
+        return os().startsWith("mac") || os().startsWith("darwin");
+    }
+
+    public static String os() {
+        return System.getProperty("os.name","unk").toLowerCase();
     }
 }

@@ -16,6 +16,7 @@ public class Metrics {
     private final double widthMax;
     private final double heightNominal;
     private final Font font;
+    private int grid = 25;
 
     public Metrics(final double marrDistance, final double genDistance) {
         this.marrDistance = (marrDistance < 1.4D ? 150.0D : marrDistance);
@@ -102,5 +103,20 @@ public class Metrics {
             return max;
         }
         return n;
+    }
+
+    void setGrid(final String s) {
+        try {
+            final int g =Integer.parseInt(s);
+            if (0 <= g && g <= 1000) {
+                this.grid = g;
+            }
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int grid() {
+        return this.grid;
     }
 }
