@@ -29,14 +29,14 @@ import java.util.Optional;
 import static nu.mine.mosher.gedcom.xy.Indi.CORNERS;
 
 public class Fami {
-    public static final double MIN_DISTANCE = 1.51D;
+    private static final double MIN_DISTANCE = 1.51D;
 
 
     private Metrics metrics;
 
     private Indi husb;
     private Indi wife;
-    private List<Indi> rChild = new ArrayList<>();
+    private final List<Indi> rChild = new ArrayList<>();
 
     private Line parentBar1;
     private Line parentBar2;
@@ -53,7 +53,7 @@ public class Fami {
         this.metrics = metrics;
     }
 
-    public void setHusb(Indi indi) {
+    public void setHusb(final Indi indi) {
         husb = indi;
     }
 
@@ -61,7 +61,7 @@ public class Fami {
         return Optional.ofNullable(this.husb);
     }
 
-    public void setWife(Indi indi) {
+    public void setWife(final Indi indi) {
         wife = indi;
     }
 
@@ -69,7 +69,7 @@ public class Fami {
         return Optional.ofNullable(this.wife);
     }
 
-    public void addChild(Indi indi) {
+    public void addChild(final Indi indi) {
         rChild.add(indi);
     }
 
@@ -175,12 +175,7 @@ public class Fami {
                         final Point2D child = new Point2D((childBar.getStartX() + childBar.getEndX()) / 2.0D, childBar.getStartY());
                         final Point2D p1 = new Point2D(couple.pt1.getLayoutX(), couple.pt1.getLayoutY());
                         final Point2D p2 = new Point2D(couple.pt2.getLayoutX(), couple.pt2.getLayoutY());
-                        final Double d1 = child.distance(p1);
-                        final Double d2 = child.distance(p2);
-                        if (d1 < d2) {
-                            return marpt(p2, p1).getX();
-                        }
-                        return marpt(p1, p2).getX();
+                        return (child.distance(p1) < child.distance(p2) ? ptParentDescentBar(p1, p2) : ptParentDescentBar(p2, p1)).getX();
                     }
                 };
 
@@ -201,12 +196,7 @@ public class Fami {
                         final Point2D child = new Point2D((childBar.getStartX() + childBar.getEndX()) / 2.0D, childBar.getStartY());
                         final Point2D p1 = new Point2D(couple.pt1.getLayoutX(), couple.pt1.getLayoutY());
                         final Point2D p2 = new Point2D(couple.pt2.getLayoutX(), couple.pt2.getLayoutY());
-                        final Double d1 = child.distance(p1);
-                        final Double d2 = child.distance(p2);
-                        if (d1 < d2) {
-                            return marpt(p2, p1).getY();
-                        }
-                        return marpt(p1, p2).getY();
+                        return (child.distance(p1) < child.distance(p2) ? ptParentDescentBar(p1, p2) : ptParentDescentBar(p2, p1)).getY();
                     }
                 };
 
@@ -290,28 +280,24 @@ public class Fami {
         return Math.min(husb.getCoords().distance(avgChild), wife.getCoords().distance(avgChild));
     }
 
-    private Point2D marpt(Point2D p1, Point2D p2) {
-        final Point2D pstart = new Point2D(p2.getX(), p2.getY() + barHeight());
-        final Point2D pend = new Point2D(p1.getX(), p1.getY() + barHeight());
-        final double pd = Math.max(pstart.distance(pend), MIN_DISTANCE);
-        final double dt = Math.min(descentLineDistance(), pd/2.0D)/ pd;
-        return new Point2D((1 - dt) * pstart.getX() + dt * pend.getX(), (1 - dt) * pstart.getY() + dt * pend.getY());
+    private Point2D ptParentDescentBar(final Point2D ptNear, final Point2D ptFar) {
+        final Point2D ptStart = new Point2D(ptNear.getX(), ptNear.getY() + barHeight());
+        final Point2D ptEnd = new Point2D(ptFar.getX(), ptFar.getY() + barHeight());
+        final double pd = Math.max(ptStart.distance(ptEnd), MIN_DISTANCE);
+        final double dt = Math.min(this.metrics.getMarrDistance()/2.0D, pd/2.0D) / pd;
+        return new Point2D((1 - dt) * ptStart.getX() + dt * ptEnd.getX(), (1 - dt) * ptStart.getY() + dt * ptEnd.getY());
     }
 
     private double barHeight() {
-        return this.metrics.getFontSize() / 2.0D;
+        return this.metrics.getBarHeight();
     }
 
     private double childHeight() {
-        return this.metrics.getFontSize() * 4.0D;
+        return this.metrics.getChildHeight();
     }
 
     private double marrSpacing() {
         return this.metrics.getMarrDistance();
-    }
-
-    private double descentLineDistance() {
-        return this.metrics.getMarrDistance() / 2.0D;
     }
 
     private Line createLine() {
@@ -326,8 +312,8 @@ public class Fami {
     }
 
     private class Couple {
-        private Circle pt1;
-        private Circle pt2;
+        private final Circle pt1;
+        private final Circle pt2;
         private final boolean exists;
 
         public Circle getPt1() {
@@ -345,8 +331,8 @@ public class Fami {
         public Couple(final Indi husb, final Indi wife) {
             exists = !(husb == null && wife == null);
             if (husb == null && wife == null) {
-                pt1 = createPhantom();
-                pt2 = createPhantom();
+                // don't create two phantom parents
+                pt1 = pt2 = null;
             } else if (husb == null) {
                 pt2 = wife.getCircle();
                 pt1 = createPhantom();
@@ -368,17 +354,17 @@ public class Fami {
 
             final Text textshape = new Text();
             textshape.setFill(metrics.colorIndiText());
-            textshape.setFont(Fami.this.metrics.getFont());
+            textshape.setFont(metrics.getFont());
             textshape.setTextAlignment(TextAlignment.CENTER);
             textshape.setText("\u00A0?\u00A0");
             new Scene(new Group(textshape));
             textshape.applyCss();
-            final double inset = Fami.this.metrics.getFontSize() / 2.0D;
+            final double inset = metrics.getFontSize() / 2.0D;
             final double w = textshape.getLayoutBounds().getWidth() + inset * 2.0D;
             final double h = textshape.getLayoutBounds().getHeight() + inset * 2.0D;
 
             final StackPane plaque = new StackPane();
-            Fami.this.phantomPanes.add(plaque);
+            phantomPanes.add(plaque);
             plaque.setBackground(new Background(new BackgroundFill(metrics.colorIndiBg(), CORNERS, Insets.EMPTY)));
             plaque.setBorder(new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
             StackPane.setMargin(textshape, new Insets(inset));
@@ -398,13 +384,13 @@ public class Fami {
         addGraphic(addto, this.descentBar2);
         addGraphic(addto, this.descentBar3);
         addGraphic(addto, this.childBar);
-        if (!rChild.isEmpty()) {
+        if (!this.rChild.isEmpty()) {
             Arrays.asList(this.rChildBar).forEach(c -> addGraphic(addto, c));
         }
         addto.addAll(this.phantomPanes);
     }
 
-    private void addGraphic(List<Node> addto, Line p) {
+    private static void addGraphic(List<Node> addto, Line p) {
         if (Objects.nonNull(p)) {
             addto.add(p);
         }

@@ -23,7 +23,7 @@ import javafx.scene.paint.Color;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-public class Solarized {
+public final class Solarized {
     public static final Color BASE03 = Color.web("#002b36");
     public static final Color BASE02 = Color.web("#073642");
     public static final Color BASE01 = Color.web("#586e75");
@@ -45,4 +45,8 @@ public class Solarized {
     public static final Color BLUE = Color.web("#268BD2");
     public static final Color CYAN = Color.web("#2AA198");
     public static final Color GREEN = Color.web("#859900");
+
+    private Solarized() {
+        throw new IllegalStateException();
+    }
 }

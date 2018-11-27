@@ -31,7 +31,6 @@ import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 public class Indi {
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
@@ -281,10 +280,9 @@ public class Indi {
     }
 
     private static String coord(final double c) {
-        // TODO should we store integers or doubles? (if doubles, two decimal places?)
         final String sDecimal = BigDecimal.valueOf(c).setScale(2, RoundingMode.HALF_DOWN).toPlainString();
         final String sInteger = BigDecimal.valueOf(c).setScale(0, RoundingMode.HALF_DOWN).toPlainString();
-        return sInteger;
+        return sDecimal;
     }
 
     public TreeNode<GedcomLine> node() {

@@ -126,8 +126,7 @@ public class FamilyChart {
     private static void extractSkeleton(final TreeNode<GedcomLine> indi, final PrintWriter out) {
         out.println(indi);
         for (final TreeNode<GedcomLine> c : indi) {
-            final String tag = c.getObject().getTagString();
-            if (SKEL.contains(tag)) {
+            if (SKEL.contains(c.getObject().getTagString())) {
                 out.println(c);
                 for (final TreeNode<GedcomLine> c2 : c) {
                     if (c2.getObject().getTag().equals(GedcomTag.DATE)) {
