@@ -6,9 +6,10 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -22,7 +23,6 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
@@ -39,6 +39,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class GenXyEditor extends Application {
+    static {
+        Platform.setImplicitExit(false);
+    }
+
     private Optional<Rectangle> selector = Optional.empty();
     private Point2D ptSelStart;
 
@@ -53,6 +57,7 @@ public final class GenXyEditor extends Application {
                     new FileChooser.ExtensionFilter("all files", "*.*"));
             final File fileToOpen = fileChooser.showOpenDialog(null);
             if (Objects.isNull(fileToOpen)) {
+                Platform.exit();
                 return;
             }
             final GedcomTree tree;
@@ -61,15 +66,37 @@ public final class GenXyEditor extends Application {
                 final FamilyChart chart = FamilyChartBuilder.create(tree);
                 chart.setFromOrig();
 
-                final StringBuilder sb = new StringBuilder(100);
-                tree.getRoot().getFirstChildOrNull().appendStringDeep(sb, true);
+                stage.setOnCloseRequest(t -> {
+                    if (!exitIfSafe(chart)) {
+                        t.consume();
+                    }
+                });
 
                 stage.setScene(new Scene(buildGui(stage, chart), 640, 480));
                 stage.show();
             } catch (final Exception e) {
+                Platform.exit();
                 throw new IllegalStateException(e);
             }
         });
+    }
+
+    private boolean exitIfSafe(final FamilyChart chart) {
+        boolean safe = false;
+        if (chart.dirty()) {
+            final Alert alert = new Alert(Alert.AlertType.WARNING, "Your UNSAVED changes will be DISCARDED.", ButtonType.OK, ButtonType.CANCEL);
+            alert.setTitle("Changes will be discarded");
+            final Optional<ButtonType> response = alert.showAndWait();
+            if (response.isPresent() && response.get() == ButtonType.OK) {
+                safe = true;
+            }
+        } else {
+            safe = true;
+        }
+        if (safe) {
+            Platform.exit();
+        }
+        return safe;
     }
 
     private Parent buildGui(final Stage stage, final FamilyChart chart) {
@@ -144,38 +171,40 @@ public final class GenXyEditor extends Application {
         return root;
     }
 
-    private static MenuBar buildMenuBar(final Stage stage, FamilyChart chart) {
-        final MenuItem cmdSaveAs = new MenuItem("Save as...");
-        cmdSaveAs.setOnAction((event) -> {
+    private MenuBar buildMenuBar(final Stage stage, final FamilyChart chart) {
+        final MenuItem cmdSaveAs = new MenuItem("Save As...");
+        cmdSaveAs.setMnemonicParsing(true);
+        cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.META_DOWN));
+        cmdSaveAs.setOnAction(t -> {
             final FileChooser fileChooser = new FileChooser();
             final File file = fileChooser.showSaveDialog(stage);
             try {
                 chart.saveAs(file);
             } catch (final IOException e) {
+                // TODO: this is not nice
                 e.printStackTrace();
             }
         });
 
-        final MenuItem cmdExport = new MenuItem("Export skeleton as...");
-        cmdExport.setOnAction((event) -> {
+        final MenuItem cmdExport = new MenuItem("Export Skeleton As...");
+        cmdExport.setMnemonicParsing(true);
+        cmdExport.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.META_DOWN));
+        cmdExport.setOnAction(t -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setInitialFileName(".skel.ged");
             final File file = fileChooser.showSaveDialog(stage);
             try {
                 chart.saveSkeleton(file);
             } catch (final IOException e) {
+                // TODO: this is not nice
                 e.printStackTrace();
             }
         });
 
         final MenuItem cmdQuit = new MenuItem("Quit");
         cmdQuit.setMnemonicParsing(true);
-        cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN));
-        cmdQuit.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event) {
-                Platform.exit();
-            }
-        });
+        cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.META_DOWN));
+        cmdQuit.setOnAction(t -> exitIfSafe(chart));
 
         final Menu menuFile = new Menu("File");
         menuFile.getItems().addAll(cmdExport, new SeparatorMenuItem(), cmdSaveAs, new SeparatorMenuItem(), cmdQuit);

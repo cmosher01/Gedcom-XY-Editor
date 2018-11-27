@@ -11,7 +11,6 @@ import nu.mine.mosher.gedcom.GedcomTree;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -71,14 +70,13 @@ public class FamilyChart {
 
     public void saveSkeleton(final File file) throws IOException {
         final PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)));
-        tree.timestamp();
 
         out.println("0 HEAD");
         out.println("1 CHAR UTF-8");
         out.println("1 GEDC");
         out.println("2 VERS 5.5.1");
         out.println("2 FORM LINEAGE-LINKED");
-        out.println("1 SOUR XY-EDITOR");
+        out.println("1 SOUR _XY EDITOR");
 
         this.indis.stream().filter(Indi::dirty).forEach(i -> {
             i.saveXyToTree();
@@ -87,8 +85,14 @@ public class FamilyChart {
 
         out.println("0 TRLR");
 
-        out.flush();
+        if (out.checkError()) {
+            System.err.println("ERROR exporting skeleton file.");
+        }
         out.close();
+    }
+
+    public boolean dirty() {
+        return this.indis.stream().anyMatch(Indi::dirty);
     }
 
     static class Selection {
@@ -117,16 +121,13 @@ public class FamilyChart {
 
 
 
-
-    private static final Set<String> SKEL = Set.of("NAME", "SEX", "REFN", "RIN", "_XY");
+    private static final Set<String> SKEL = Set.of("NAME", "SEX", "REFN", "RIN", "_XY", "BIRT", "DEAT");
 
     private static void extractSkeleton(final TreeNode<GedcomLine> indi, final PrintWriter out) {
         out.println(indi);
         for (final TreeNode<GedcomLine> c : indi) {
             final String tag = c.getObject().getTagString();
             if (SKEL.contains(tag)) {
-                out.println(c);
-            } else if (tag.equals("BIRT") || tag.equals("DEAT")) {
                 out.println(c);
                 for (final TreeNode<GedcomLine> c2 : c) {
                     if (c2.getObject().getTag().equals(GedcomTag.DATE)) {

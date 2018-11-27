@@ -5,7 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import nu.mine.mosher.gedcom.util.Solarized;
+import nu.mine.mosher.gedcom.xy.util.Solarized;
 
 public class Metrics {
     private static final String FONT_FAMILY_NAME = java.awt.Font.SANS_SERIF;

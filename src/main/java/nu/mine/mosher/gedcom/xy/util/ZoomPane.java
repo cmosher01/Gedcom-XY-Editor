@@ -7,26 +7,41 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 
 /**
  * From Stack Overflow.
  * Copyright © 2017, by Dániel Hári, haridaniel0@gmail.com, Budapest, Hungary.
+ * Changes copyright © 2018, by Christopher A. Mosher, cmosher01@gmailcom, Shelton, Connecticut, USA.
  */
-public class ZoomPane extends ScrollPane {
+public final class ZoomPane extends ScrollPane {
     private static final double ZOOM_INTENSITY = 0.005D;
+
     private final Node target;
     private final Node zoomNode;
+
     private double scaleValue = 1.0D;
     private boolean scrolled = false;
+
+
 
     public ZoomPane(final Node target) {
         this.target = target;
         this.zoomNode = new Group(target);
-        final Node content = centered(this.zoomNode);
-        setEvents(content);
+
+        this.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
+            if (t.getTarget() == this.target) {
+                this.scrolled = true;
+            }
+        });
+
+        final VBox content = new VBox(this.zoomNode);
+        content.setAlignment(Pos.CENTER);
+        content.setOnScroll(t -> {
+            t.consume();
+            onScroll(t.getDeltaY(), new Point2D(t.getX(), t.getY()));
+        });
         setContent(content);
 
         setPannable(true);
@@ -38,29 +53,15 @@ public class ZoomPane extends ScrollPane {
         updateScale();
     }
 
+
+
     public boolean consumeScroll() {
         final boolean s = this.scrolled;
         this.scrolled = false;
         return s;
     }
 
-    private void setEvents(final Node node) {
-        this.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
-            if (t.getTarget() == this.target) {
-                this.scrolled = true;
-            }
-        });
-        node.setOnScroll(t -> {
-            t.consume();
-            onScroll(t.getDeltaY(), new Point2D(t.getX(), t.getY()));
-        });
-    }
 
-    private Node centered(final Node node) {
-        final VBox centered = new VBox(node);
-        centered.setAlignment(Pos.CENTER);
-        return centered;
-    }
 
     private void updateScale() {
         this.target.setScaleX(this.scaleValue);
