@@ -49,7 +49,6 @@ public class Indi {
     private final StackPane plaque = new StackPane();
 
     private boolean wasSelected = false;
-    private boolean wasDragged = false;
     private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
     private FamilyChart.Selection selection;
 
@@ -137,36 +136,34 @@ public class Indi {
         this.plaque.layoutYProperty().bind(this.center.layoutYProperty().subtract(h / 2.0D));
 
         this.plaque.setOnMouseEntered(t -> {
-            t.consume();
             plaque.setCursor(Cursor.HAND);
+            t.consume();
         });
         this.plaque.setOnMouseExited(t -> {
-            t.consume();
             plaque.setCursor(Cursor.DEFAULT);
+            t.consume();
         });
 
         this.plaque.setOnMousePressed(t -> {
-            t.consume();
             plaque.setCursor(Cursor.MOVE);
             if (selected.get()) {
                 wasSelected = true;
             }
             selection.select(this, true);
             selection.beginDrag(new Point2D(t.getX(), t.getY()));
+            t.consume();
         });
         this.plaque.setOnMouseDragged(t -> {
-            t.consume();
-            wasDragged = true;
             selection.drag(new Point2D(t.getX(), t.getY()));
+            t.consume();
         });
         this.plaque.setOnMouseReleased(t -> {
-            t.consume();
             plaque.setCursor(Cursor.HAND);
-            if (wasSelected && !wasDragged) {
+            if (wasSelected && t.isStillSincePress()) {
                 selection.select(this, false);
             }
             wasSelected = false;
-            wasDragged = false;
+            t.consume();
         });
         this.plaque.setOnMouseClicked(Event::consume);
     }

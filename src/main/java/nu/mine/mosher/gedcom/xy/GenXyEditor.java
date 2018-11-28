@@ -108,8 +108,9 @@ public final class GenXyEditor extends Application {
 
         final ZoomPane workspace = new ZoomPane(canvas);
         workspace.setOnMouseClicked(t -> {
-            if (!workspace.consumeScroll()) {
+            if (t.isStillSincePress()) {
                 chart.clearSelection();
+                t.consume();
             }
         });
 
@@ -153,7 +154,6 @@ public final class GenXyEditor extends Application {
                 chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());
 
                 t.consume();
-                workspace.consumeScroll();
             }
         });
 
