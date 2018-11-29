@@ -68,7 +68,7 @@ public class FamilyChart {
         Gedcom.writeFile(tree, new BufferedOutputStream(new FileOutputStream(file)));
     }
 
-    public void saveSkeleton(final File file) throws IOException {
+    public void saveSkeleton(final boolean exportAll, final File file) throws IOException {
         final PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)));
 
         out.println("0 HEAD");
@@ -78,7 +78,7 @@ public class FamilyChart {
         out.println("2 FORM LINEAGE-LINKED");
         out.println("1 SOUR _XY EDITOR");
 
-        this.indis.stream().filter(Indi::dirty).forEach(i -> {
+        this.indis.stream().filter(i -> exportAll || i.dirty()).forEach(i -> {
             i.saveXyToTree();
             extractSkeleton(i.node(), out);
         });
@@ -93,6 +93,13 @@ public class FamilyChart {
 
     public boolean dirty() {
         return this.indis.stream().anyMatch(Indi::dirty);
+    }
+
+    public void userNormalize() {
+        final double x = this.indis.stream().map(Indi::getInitialCoords).mapToDouble(Point2D::getX).min().orElse(0D);
+        final double y = this.indis.stream().map(Indi::getInitialCoords).mapToDouble(Point2D::getY).min().orElse(0D);
+        System.err.print("Normalize (dx,dy): ("+(-x)+","+(-y)+")");
+        this.indis.forEach(i -> i.userNormalize(x, y));
     }
 
     static class Selection {

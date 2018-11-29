@@ -179,6 +179,9 @@ public final class GenXyEditor extends Application {
         cmdSaveAs.setOnAction(t -> {
             final FileChooser fileChooser = new FileChooser();
             final File file = fileChooser.showSaveDialog(stage);
+            if (Objects.isNull(file)) {
+                return;
+            }
             try {
                 chart.saveAs(file);
             } catch (final IOException e) {
@@ -187,23 +190,22 @@ public final class GenXyEditor extends Application {
             }
         });
 
-        final MenuItem cmdExport = new MenuItem("Export Skeleton As...");
-        cmdExport.setMnemonicParsing(true);
-        cmdExport.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
-        cmdExport.setOnAction(t -> {
-            final FileChooser fileChooser = new FileChooser();
-            fileChooser.setInitialFileName(".skel.ged");
-            final File file = fileChooser.showSaveDialog(stage);
-            try {
-                chart.saveSkeleton(file);
-            } catch (final IOException e) {
-                // TODO: this is not nice
-                e.printStackTrace();
-            }
+        final MenuItem cmdExportDirty = new MenuItem("Export Changed As Skeletons...");
+        cmdExportDirty.setMnemonicParsing(true);
+        cmdExportDirty.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
+        cmdExportDirty.setOnAction(t -> {
+            exportSkel(stage, chart, false);
+        });
+
+        final MenuItem cmdExportAll = new MenuItem("Export ALL As Skeletons...");
+        cmdExportAll.setMnemonicParsing(true);
+        cmdExportAll.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
+        cmdExportAll.setOnAction(t -> {
+            exportSkel(stage, chart, true);
         });
 
         final Menu menuFile = new Menu("File");
-        menuFile.getItems().addAll(cmdExport, new SeparatorMenuItem(), cmdSaveAs);
+        menuFile.getItems().addAll(cmdExportDirty, cmdExportAll, new SeparatorMenuItem(), cmdSaveAs);
 
         /* Mac platform provides its own Quit on the system menu */
         if (!mac()) {
@@ -216,6 +218,17 @@ public final class GenXyEditor extends Application {
 
 
 
+        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
+        cmdNorm.setOnAction(t -> {
+            final Alert alert = new Alert(Alert.AlertType.INFORMATION, "This will normalize the coordinates of all people.", ButtonType.OK, ButtonType.CANCEL);
+            alert.setTitle("Normalize ALL Coordinates");
+            alert.setHeaderText(null);
+            final Optional<ButtonType> response = alert.showAndWait();
+            if (response.isPresent() && response.get() == ButtonType.OK) {
+                chart.userNormalize();
+            }
+        });
+
         final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
         cmdSnap.setOnAction(t -> {
             final TextInputDialog dialog = new TextInputDialog();
@@ -225,7 +238,7 @@ public final class GenXyEditor extends Application {
         });
 
         final Menu menuEdit = new Menu("Edit");
-        menuEdit.getItems().addAll(cmdSnap);
+        menuEdit.getItems().addAll(cmdNorm, cmdSnap);
 
 
 
@@ -235,11 +248,26 @@ public final class GenXyEditor extends Application {
         return mbar;
     }
 
+    private void exportSkel(final Stage stage, final FamilyChart chart, final boolean exportAll) {
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName(".skel.ged");
+        final File file = fileChooser.showSaveDialog(stage);
+        if (Objects.isNull(file)) {
+            return;
+        }
+        try {
+            chart.saveSkeleton(exportAll, file);
+        } catch (final IOException e) {
+            // TODO: this is not nice
+            e.printStackTrace();
+        }
+    }
+
     public boolean mac() {
         return os().startsWith("mac") || os().startsWith("darwin");
     }
 
     public static String os() {
-        return System.getProperty("os.name","unk").toLowerCase();
+        return System.getProperty("os.name","unknown").toLowerCase();
     }
 }

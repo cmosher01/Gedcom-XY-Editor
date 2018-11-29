@@ -173,6 +173,11 @@ public class Indi {
         center.setLayoutY(snap(center.getLayoutY() + delta.getY()));
     }
 
+    public void userNormalize(final double dx, final double dy) {
+        center.setLayoutX(center.getLayoutX() - dx);
+        center.setLayoutY(center.getLayoutY() - dy);
+    }
+
     private double snap(final double c) {
         final int grid = metrics.grid();
         if (grid == 0) {
@@ -278,11 +283,14 @@ public class Indi {
 
     private static String coord(final double c) {
         final String sDecimal = BigDecimal.valueOf(c).setScale(2, RoundingMode.HALF_DOWN).toPlainString();
-        final String sInteger = BigDecimal.valueOf(c).setScale(0, RoundingMode.HALF_DOWN).toPlainString();
         return sDecimal;
     }
 
     public TreeNode<GedcomLine> node() {
         return this.node;
+    }
+
+    public Point2D getInitialCoords() {
+        return this.coordsInit;
     }
 }
