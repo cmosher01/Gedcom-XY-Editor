@@ -9,7 +9,7 @@ import java.util.*;
 import static java.util.Optional.empty;
 import static javafx.scene.paint.Color.*;
 
-public class Coords {
+public final class Coords {
     private static final Point2D wxyMISSING = new Point2D(37, 73);
     private static final double SMALL = 0.51D;
 
@@ -17,7 +17,7 @@ public class Coords {
     private Optional<Point2D> wxyLayout = empty();
     private Point2D wxyStart;
     private Point2D xyStart;
-    private final Circle xyLayoutUser = new Circle(0, TRANSPARENT);
+    private final Circle xyLayoutUser = new Circle(0, TRANSPARENT); // TODO make this a Point2D property
     private boolean forceDirty ;
 
     /**
@@ -101,7 +101,7 @@ public class Coords {
         this.xyLayoutUser.relocate(here.getX(), here.getY());
     }
 
-    private Point2D user() {
+    private Point2D xyUser() {
         return new Point2D(x().get(), y().get());
     }
 
@@ -111,7 +111,7 @@ public class Coords {
      * @return (x,y) delta user movement
      */
     public Point2D userMoved() {
-        return user().subtract(this.xyStart);
+        return xyUser().subtract(this.xyStart);
     }
 
     /**
@@ -128,6 +128,7 @@ public class Coords {
      * Indicates a user-initiated normalization of coordinates.
      * Idempotent.
      */
+    // TODO need to worry about possibly changed coordsTopLeftAfterLayout first
     public void normalize() {
         this.wxyStart = this.xyStart;
     }
@@ -162,7 +163,7 @@ public class Coords {
             this.wxyOrig = Optional.of(get());
             this.wxyLayout = this.wxyOrig;
             this.wxyStart = this.wxyLayout.get();
-            this.xyStart = user();
+            this.xyStart = xyUser();
             forceDirty(false);
         }
     }

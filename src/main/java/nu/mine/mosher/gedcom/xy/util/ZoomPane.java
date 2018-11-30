@@ -53,24 +53,24 @@ public final class ZoomPane extends ScrollPane {
         this.target.setScaleY(this.scaleValue);
     }
 
-    private void onScroll(final double zoomFactor, final Point2D mousePoint) {
+    private void onScroll(final double zoom, final Point2D mouse) {
         // calculate pixel offsets from [0, 1] range
-        final double valX = getHvalue() * (this.zoomNode.getLayoutBounds().getWidth() - getViewportBounds().getWidth());
-        final double valY = getVvalue() * (this.zoomNode.getLayoutBounds().getHeight() - getViewportBounds().getHeight());
+        final double h = getHvalue() * (this.zoomNode.getLayoutBounds().getWidth() - getViewportBounds().getWidth());
+        final double v = getVvalue() * (this.zoomNode.getLayoutBounds().getHeight() - getViewportBounds().getHeight());
 
-        this.scaleValue *= zoomFactor;
+        this.scaleValue *= zoom;
         updateScale();
         layout(); // refresh ScrollPane scroll positions & target bounds
 
         // convert target coordinates to zoomTarget coordinates
-        final Point2D posInZoomTarget = this.target.parentToLocal(this.zoomNode.parentToLocal(mousePoint));
+        final Point2D mouseLocal = this.target.parentToLocal(this.zoomNode.parentToLocal(mouse));
 
         // calculate adjustment of scroll position (pixels)
-        final Point2D adjustment = this.target.getLocalToParentTransform().deltaTransform(posInZoomTarget.multiply(zoomFactor - 1));
+        final Point2D adjustment = this.target.getLocalToParentTransform().deltaTransform(mouseLocal.multiply(zoom - 1));
 
         // convert back to [0, 1] range
         // (too large/small values are automatically corrected by ScrollPane)
-        this.setHvalue((valX + adjustment.getX()) / (this.zoomNode.getBoundsInLocal().getWidth() - getViewportBounds().getWidth()));
-        this.setVvalue((valY + adjustment.getY()) / (this.zoomNode.getBoundsInLocal().getHeight() - getViewportBounds().getHeight()));
+        setHvalue((h + adjustment.getX()) / (this.zoomNode.getBoundsInLocal().getWidth() - getViewportBounds().getWidth()));
+        setVvalue((v + adjustment.getY()) / (this.zoomNode.getBoundsInLocal().getHeight() - getViewportBounds().getHeight()));
     }
 }
