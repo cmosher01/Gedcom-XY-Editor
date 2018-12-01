@@ -4,26 +4,16 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.*;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import nu.mine.mosher.gedcom.Gedcom;
@@ -188,9 +178,16 @@ public final class GenXyEditor extends Application {
             }
         });
 
+        final Text statusName = new Text();
+        statusName.textProperty().bind(chart.selectedName());
+
+        final HBox statusbar = new HBox();
+        statusbar.getChildren().add(statusName);
+
         final BorderPane root = new BorderPane();
         root.setTop(buildMenuBar(stage, chart));
         root.setCenter(workspace);
+        root.setBottom(statusbar);
 
         return root;
     }

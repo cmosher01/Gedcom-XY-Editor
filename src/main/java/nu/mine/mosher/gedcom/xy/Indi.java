@@ -128,6 +128,7 @@ public class Indi {
         };
         this.plaque.backgroundProperty().bind(bgBinding);
 
+        // TODO color border based on dirty
         this.plaque.setBorder(new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
         StackPane.setMargin(textshape, new Insets(inset));
         this.plaque.getChildren().addAll(textshape);
@@ -149,7 +150,7 @@ public class Indi {
             if (selected.get()) {
                 wasSelected = true;
             }
-            selection.select(this, true);
+            selection.select(this, true, true);
             selection.beginDrag(new Point2D(t.getX(), t.getY()));
             t.consume();
         });
@@ -160,7 +161,7 @@ public class Indi {
         this.plaque.setOnMouseReleased(t -> {
             plaque.setCursor(Cursor.HAND);
             if (wasSelected && t.isStillSincePress()) {
-                selection.select(this, false);
+                selection.select(this, false, true);
             }
             wasSelected = false;
             t.consume();
@@ -322,5 +323,9 @@ public class Indi {
 
     public void logDiscard() {
         LOG.warn("discarding,\"{}\",{},{}", this.name, x().get(), y().get());
+    }
+
+    public boolean selected() {
+        return this.selected.get();
     }
 }

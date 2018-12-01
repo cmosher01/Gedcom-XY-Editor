@@ -1,5 +1,7 @@
 package nu.mine.mosher.gedcom.xy;
 
+import javafx.beans.property.*;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import nu.mine.mosher.collection.TreeNode;
@@ -18,11 +20,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class FamilyChart {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);
@@ -32,6 +30,7 @@ public class FamilyChart {
     private final List<Fami> famis;
     private final Metrics metrics;
     private final Selection selection = new Selection();
+    private StringProperty selectedNameProperty = new SimpleStringProperty();
 
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
         this.tree = tree;
@@ -54,12 +53,30 @@ public class FamilyChart {
 
     public void clearSelection() {
         this.selection.clear();
+        updateSelectStatus();
     }
 
     public void setSelectionFrom(double x, double y, double w, double h) {
         this.indis.forEach(i -> {
-            this.selection.select(i, i.intersects(x,y,w,h));
+            this.selection.select(i, i.intersects(x, y, w, h), false);
         });
+        updateSelectStatus();
+    }
+
+    private void updateSelectStatus() {
+        final long cSel = this.indis.stream().filter(Indi::selected).count();
+        if (cSel <= 0) {
+            this.selectedNameProperty.setValue("[nothing selected]");
+        } else if (1 < cSel ){
+            this.selectedNameProperty.setValue(String.format("[%d selected]", cSel));
+        } else {
+            final Optional<Indi> i = this.indis.stream().filter(Indi::selected).findAny();
+            if (i.isPresent()) {
+                this.selectedNameProperty.setValue(String.format("[%s selected] (%.2f,%.2f)", i.get().name(), i.get().x().get(), i.get().y().get()));
+            } else {
+                this.selectedNameProperty.setValue("[nothing selected]");
+            }
+        }
     }
 
     public Metrics metrics() {
@@ -110,7 +127,11 @@ public class FamilyChart {
         return Collections.unmodifiableList(new ArrayList<>(this.indis));
     }
 
-    static class Selection {
+    public StringProperty selectedName() {
+        return this.selectedNameProperty;
+    }
+
+    class Selection {
         private final Set<Indi> indis = new HashSet<>();
         private Point2D orig;
 
@@ -118,19 +139,24 @@ public class FamilyChart {
             this.indis.forEach(i -> i.select(false));
             this.indis.clear();
         }
-        public void select(final Indi indi, final boolean select) {
+        public void select(final Indi indi, final boolean select, final boolean updateStatus) {
             indi.select(select);
             if (select) {
                 this.indis.add(indi);
             } else {
                 this.indis.remove(indi);
             }
+            if (updateStatus) {
+                updateSelectStatus();
+            }
         }
         public void beginDrag(final Point2D orig) {
             this.orig = orig;
+            updateSelectStatus();
         }
         public void drag(final Point2D to) {
             this.indis.forEach(i -> i.drag(to.subtract(this.orig)));
+            updateSelectStatus();
         }
     }
 
