@@ -1,16 +1,21 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.property.DoubleProperty;
-import javafx.geometry.*;
+import javafx.geometry.Point2D;
 import javafx.scene.shape.Circle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Optional.empty;
-import static javafx.scene.paint.Color.*;
+import static javafx.scene.paint.Color.TRANSPARENT;
 
 public final class Coords {
-    private static final Point2D wxyMISSING = new Point2D(37, 73);
+    private static final Logger LOG = LoggerFactory.getLogger(Coords.class);
+
+    private static final Point2D xyMISSING = new Point2D(37, 73);
     private static final double SMALL = 0.51D;
 
     private Optional<Point2D> wxyOrig = empty();
@@ -18,7 +23,28 @@ public final class Coords {
     private Point2D wxyStart;
     private Point2D xyStart;
     private final Circle xyLayoutUser = new Circle(0, TRANSPARENT); // TODO make this a Point2D property
-    private boolean forceDirty ;
+    private boolean forceDirty;
+
+    private void dumpToLog(final String label) {
+        LOG.debug("{}: {},{},{},{},{},{},{}", label,
+            toDump("wxyOrig", this.wxyOrig),
+            toDump("wxyLayout", this.wxyLayout),
+            toDump("wxyStart", this.wxyStart),
+            toDump("xyStart", this.xyStart),
+            toDump("xyLayoutUser", new Point2D(this.xyLayoutUser.getLayoutX(), this.xyLayoutUser.getLayoutY())),
+            String.format("mag=%.0f",userMoved().magnitude()),
+            (!dirty() ? "-" : this.forceDirty ? "F" : "D"));
+    }
+
+    private String toDump(final String name, final Optional<Point2D> p) {
+        if (p.isPresent()) {
+            return toDump(name, p.get());
+        }
+        return String.format("%s=()", name);
+    }
+    private String toDump(final String name, final Point2D p) {
+        return String.format("%s=(%.0f,%.0f)", name, p.getX(), p.getY());
+    }
 
     /**
      * Initializes this set of coordinates with the original {@code _XY} value as
@@ -60,7 +86,7 @@ public final class Coords {
         if (Objects.nonNull(this.xyStart)) {
             throw new IllegalStateException("Cannot call fillMissing more than once on Coords object.");
         }
-        this.wxyStart = this.wxyLayout.orElseGet(() -> coordsTopLeftAfterLayout.add(wxyMISSING));
+        this.wxyStart = this.wxyLayout.orElseGet(() -> coordsTopLeftAfterLayout.add(xyMISSING));
         this.xyStart = this.wxyStart.subtract(coordsTopLeftAfterLayout);
     }
 
@@ -88,20 +114,22 @@ public final class Coords {
         if (Objects.isNull(this.xyStart)) {
             throw new IllegalStateException("Must call fillMissing before calling start on Coords object.");
         }
-        draggedTo(this.xyStart);
+        dragTo(this.xyStart);
+        dumpToLog("start");
     }
+
 
     /**
      * Moves this individual to the given point.
      * Does not handle snap-to-grid.
      * @param here absolute position to move to, cannot be {@code null}.
      */
-    public void draggedTo(final Point2D here) {
+    public void dragTo(final Point2D here) {
         Objects.requireNonNull(here);
         this.xyLayoutUser.relocate(here.getX(), here.getY());
     }
 
-    private Point2D xyUser() {
+    public Point2D xyUser() {
         return new Point2D(x().get(), y().get());
     }
 
@@ -126,11 +154,11 @@ public final class Coords {
 
     /**
      * Indicates a user-initiated normalization of coordinates.
-     * Idempotent.
+     * @param coordsTopLeft min(x) and min(y) of current positions of all individuals, cannot be {@code null}.
      */
-    // TODO need to worry about possibly changed coordsTopLeftAfterLayout first
-    public void normalize() {
-        this.wxyStart = this.xyStart;
+    public void normalize(final Point2D coordsTopLeft) {
+        dragTo(xyUser().subtract(Objects.requireNonNull(coordsTopLeft)));
+        dumpToLog("normalize");
     }
 
     /**
@@ -149,7 +177,7 @@ public final class Coords {
     public boolean dirty() {
         return
             (SMALL < userMoved().magnitude()) ||
-            (this.wxyOrig.isEmpty() && this.wxyLayout.isPresent()) ||
+            (!this.wxyOrig.isPresent() && this.wxyLayout.isPresent()) ||
             (this.forceDirty);
     }
 
@@ -159,12 +187,18 @@ public final class Coords {
      * Also clears the "force dirty" setting.
      */
     public void save() {
+        dumpToLog("save before");
         if (dirty()) {
             this.wxyOrig = Optional.of(get());
             this.wxyLayout = this.wxyOrig;
             this.wxyStart = this.wxyLayout.get();
             this.xyStart = xyUser();
             forceDirty(false);
+            dumpToLog("save after");
         }
+    }
+
+    public Optional<Point2D> original() {
+        return this.wxyOrig;
     }
 }

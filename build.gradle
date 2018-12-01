@@ -20,6 +20,9 @@ repositories {
 
 dependencies {
     implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
     implementation group: 'org.openjfx', name: 'javafx-graphics', version: '11.0.1', classifier: "$platform"
     implementation group: 'org.openjfx', name: 'javafx-controls', version: '11.0.1', classifier: "$platform"
     implementation group: 'org.openjfx', name: 'javafx-base', version: '11.0.1', classifier: "$platform"

@@ -1,6 +1,7 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.DoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
@@ -84,18 +85,18 @@ public class Fami {
 
         final Couple couple = new Couple(husb, wife);
 
-        if (couple.exists()) {
+        if (couple.exists) {
             parentBar1 = createLine();
-            parentBar1.startXProperty().bind(couple.getPt1().layoutXProperty());
-            parentBar1.startYProperty().bind(couple.getPt1().layoutYProperty().subtract(barHeight()));
-            parentBar1.endXProperty().bind(couple.getPt2().layoutXProperty());
-            parentBar1.endYProperty().bind(couple.getPt2().layoutYProperty().subtract(barHeight()));
+            parentBar1.startXProperty().bind(couple.pt1x);
+            parentBar1.startYProperty().bind(couple.pt1y.subtract(barHeight()));
+            parentBar1.endXProperty().bind(couple.pt2x);
+            parentBar1.endYProperty().bind(couple.pt2y.subtract(barHeight()));
 
             parentBar2 = createLine();
-            parentBar2.startXProperty().bind(couple.getPt1().layoutXProperty());
-            parentBar2.startYProperty().bind(couple.getPt1().layoutYProperty().add(barHeight()));
-            parentBar2.endXProperty().bind(couple.getPt2().layoutXProperty());
-            parentBar2.endYProperty().bind(couple.getPt2().layoutYProperty().add(barHeight()));
+            parentBar2.startXProperty().bind(couple.pt1x);
+            parentBar2.startYProperty().bind(couple.pt1y.add(barHeight()));
+            parentBar2.endXProperty().bind(couple.pt2x);
+            parentBar2.endYProperty().bind(couple.pt2y.add(barHeight()));
         }
 
         if (!rChild.isEmpty()) {
@@ -103,37 +104,37 @@ public class Fami {
             childBar.startXProperty().bind(new DoubleBinding() {
                 {
                     for (final Indi child : rChild) {
-                        super.bind(child.getCircle().layoutXProperty());
+                        super.bind(child.x());
                     }
                 }
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.getCircle().getLayoutX()).min().getAsDouble();
+                    return rChild.stream().mapToDouble(c -> c.x().get()).min().getAsDouble();
                 }
             });
             childBar.endXProperty().bind(new DoubleBinding() {
                 {
                     for (final Indi child : rChild) {
-                        super.bind(child.getCircle().layoutXProperty());
+                        super.bind(child.x());
                     }
                 }
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.getCircle().getLayoutX()).max().getAsDouble();
+                    return rChild.stream().mapToDouble(c -> c.x().get()).max().getAsDouble();
                 }
             });
             final DoubleBinding top = new DoubleBinding() {
                 {
                     for (final Indi child : rChild) {
-                        super.bind(child.getCircle().layoutYProperty());
+                        super.bind(child.y());
                     }
                 }
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.getCircle().getLayoutY()).min().getAsDouble() - childHeight();
+                    return rChild.stream().mapToDouble(c -> c.y().get()).min().getAsDouble() - childHeight();
                 }
             };
             childBar.startYProperty().bind(top);
@@ -141,13 +142,13 @@ public class Fami {
 
             rChildBar = new Line[rChild.size()];
             for (int i = 0; i < rChildBar.length; i++) {
-                final Circle c = rChild.get(i).getCircle();
+                final Indi c = rChild.get(i);
                 rChildBar[i] = createLine();
 
-                rChildBar[i].startXProperty().bind(c.layoutXProperty());
+                rChildBar[i].startXProperty().bind(c.x());
                 rChildBar[i].startYProperty().bind(childBar.startYProperty());
-                rChildBar[i].endXProperty().bind(c.layoutXProperty());
-                rChildBar[i].endYProperty().bind(c.layoutYProperty());
+                rChildBar[i].endXProperty().bind(c.x());
+                rChildBar[i].endYProperty().bind(c.y());
             }
 
 
@@ -157,45 +158,31 @@ public class Fami {
 
 
 
-            if (couple.exists()) {
+            if (couple.exists) {
                 final DoubleBinding descentLineEndParentX = new DoubleBinding() {
                     {
-                        super.bind(
-                                couple.pt1.layoutXProperty(),
-                                couple.pt1.layoutYProperty(),
-                                couple.pt2.layoutXProperty(),
-                                couple.pt2.layoutYProperty(),
-                                childBar.startXProperty(),
-                                childBar.endXProperty(),
-                                childBar.startYProperty());
+                        super.bind(couple.pt1x, couple.pt1y, couple.pt2x, couple.pt2y, childBar.startXProperty(), childBar.endXProperty(), childBar.startYProperty());
                     }
 
                     @Override
                     protected double computeValue() {
                         final Point2D child = new Point2D((childBar.getStartX() + childBar.getEndX()) / 2.0D, childBar.getStartY());
-                        final Point2D p1 = new Point2D(couple.pt1.getLayoutX(), couple.pt1.getLayoutY());
-                        final Point2D p2 = new Point2D(couple.pt2.getLayoutX(), couple.pt2.getLayoutY());
+                        final Point2D p1 = new Point2D(couple.pt1x.get(), couple.pt1y.get());
+                        final Point2D p2 = new Point2D(couple.pt2x.get(), couple.pt2y.get());
                         return (child.distance(p1) < child.distance(p2) ? ptParentDescentBar(p1, p2) : ptParentDescentBar(p2, p1)).getX();
                     }
                 };
 
                 final DoubleBinding descentLineEndParentY = new DoubleBinding() {
                     {
-                        super.bind(
-                                couple.pt1.layoutXProperty(),
-                                couple.pt1.layoutYProperty(),
-                                couple.pt2.layoutXProperty(),
-                                couple.pt2.layoutYProperty(),
-                                childBar.startXProperty(),
-                                childBar.endXProperty(),
-                                childBar.startYProperty());
+                        super.bind(couple.pt1x, couple.pt1y, couple.pt2x, couple.pt2y, childBar.startXProperty(), childBar.endXProperty(), childBar.startYProperty());
                     }
 
                     @Override
                     protected double computeValue() {
                         final Point2D child = new Point2D((childBar.getStartX() + childBar.getEndX()) / 2.0D, childBar.getStartY());
-                        final Point2D p1 = new Point2D(couple.pt1.getLayoutX(), couple.pt1.getLayoutY());
-                        final Point2D p2 = new Point2D(couple.pt2.getLayoutX(), couple.pt2.getLayoutY());
+                        final Point2D p1 = new Point2D(couple.pt1x.get(), couple.pt1y.get());
+                        final Point2D p2 = new Point2D(couple.pt2x.get(), couple.pt2y.get());
                         return (child.distance(p1) < child.distance(p2) ? ptParentDescentBar(p1, p2) : ptParentDescentBar(p2, p1)).getY();
                     }
                 };
@@ -241,6 +228,13 @@ public class Fami {
         }
     }
 
+
+
+
+
+
+
+
     private static double clamp(final double min, final double n, final double max) {
         if (max < min) {
             return n;
@@ -258,26 +252,32 @@ public class Fami {
         if (husb == null || wife == null) {
             return 0D;
         }
-        return husb.getCoords().distance(wife.getCoords());
+        if (!husb.laidOut().isPresent() || !wife.laidOut().isPresent()) {
+            return 0D;
+        }
+        return husb.laidOut().get().distance(wife.laidOut().get());
     }
 
     public double getGenDistance() {
         if (husb == null || wife == null) {
             return 0D;
         }
-        final double avgChildX = this.rChild.stream().mapToDouble(c -> c.getCoords().getX()).average().orElse(0D);
-        final double avgChildY = this.rChild.stream().mapToDouble(c -> c.getCoords().getY()).average().orElse(0D);
+        final double avgChildX = this.rChild.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getX).average().orElse(0D);
+        final double avgChildY = this.rChild.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getY).average().orElse(0D);
         if (avgChildX < 1D && avgChildY < 1D) {
             return 0D;
         }
         final Point2D avgChild = new Point2D(avgChildX, avgChildY);
-        if (husb == null) {
-            return wife.getCoords().distance(avgChild);
+        if (husb != null && husb.laidOut().isPresent() && wife != null && wife.laidOut().isPresent()) {
+            return Math.min(husb.laidOut().get().distance(avgChild), wife.laidOut().get().distance(avgChild));
         }
-        if (wife == null) {
-            return husb.getCoords().distance(avgChild);
+        if (husb != null && husb.laidOut().isPresent()) {
+            return husb.laidOut().get().distance(avgChild);
         }
-        return Math.min(husb.getCoords().distance(avgChild), wife.getCoords().distance(avgChild));
+        if (wife != null && wife.laidOut().isPresent()) {
+            return wife.laidOut().get().distance(avgChild);
+        }
+        return 0D;
     }
 
     private Point2D ptParentDescentBar(final Point2D ptNear, final Point2D ptFar) {
@@ -312,40 +312,39 @@ public class Fami {
     }
 
     private class Couple {
-        private final Circle pt1;
-        private final Circle pt2;
-        private final boolean exists;
+        public final DoubleProperty pt1x;
+        public final DoubleProperty pt1y;
+        public final DoubleProperty pt2x;
+        public final DoubleProperty pt2y;
+        public final boolean exists;
 
-        public Circle getPt1() {
-            return pt1;
-        }
+        public Couple(final Indi indi1, final Indi indi2) {
+            exists = !(indi1 == null && indi2 == null);
 
-        public Circle getPt2() {
-            return pt2;
-        }
-
-        public boolean exists() {
-            return this.exists;
-        }
-
-        public Couple(final Indi husb, final Indi wife) {
-            exists = !(husb == null && wife == null);
-            if (husb == null && wife == null) {
+            if (!exists) {
                 // don't create two phantom parents
-                pt1 = pt2 = null;
-            } else if (husb == null) {
-                pt2 = wife.getCircle();
-                pt1 = createPhantom();
-                pt1.layoutYProperty().bind(pt2.layoutYProperty());
-                pt1.layoutXProperty().bind(pt2.layoutXProperty().subtract(marrSpacing()));
-            } else if (wife == null) {
-                pt1 = husb.getCircle();
-                pt2 = createPhantom();
-                pt2.layoutYProperty().bind(pt1.layoutYProperty());
-                pt2.layoutXProperty().bind(pt1.layoutXProperty().add(marrSpacing()));
+                pt1x = pt1y = pt2x = pt2y = null;
+            } else if (indi1 == null) {
+                pt2x = indi2.x();
+                pt2y = indi2.y();
+                final Circle phantom = createPhantom();
+                pt1x = phantom.layoutXProperty();
+                pt1x.bind(pt2x.subtract(marrSpacing()));
+                pt1y = phantom.layoutYProperty();
+                pt1y.bind(pt2y);
+            } else if (indi2 == null) {
+                pt1x = indi1.x();
+                pt1y = indi1.y();
+                final Circle phantom = createPhantom();
+                pt2x = phantom.layoutXProperty();
+                pt2x.bind(pt1x.add(marrSpacing()));
+                pt2y = phantom.layoutYProperty();
+                pt2y.bind(pt1y);
             } else {
-                pt1 = husb.getCircle();
-                pt2 = wife.getCircle();
+                pt1x = indi1.x();
+                pt1y = indi1.y();
+                pt2x = indi2.x();
+                pt2y = indi2.y();
             }
         }
 

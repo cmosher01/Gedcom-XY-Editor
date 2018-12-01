@@ -7,10 +7,11 @@ import nu.mine.mosher.gedcom.GedcomTag;
 import nu.mine.mosher.gedcom.GedcomTree;
 import nu.mine.mosher.gedcom.date.DatePeriod;
 import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class FamilyChartBuilder {
+    private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilder.class);
+
     private static final double MAX_NATURAL_DISTANCE = 1000.0D;
 
     private FamilyChartBuilder() {
@@ -27,19 +30,27 @@ public final class FamilyChartBuilder {
 
     public static FamilyChart create(final GedcomTree tree) {
         final Map<String, Indi> mapIdToIndi = new HashMap<>();
+
         final List<Indi> indis = buildIndis(tree, mapIdToIndi);
         final List<Fami> famis = buildFamis(tree, Collections.unmodifiableMap(mapIdToIndi));
+
+        if (indis.stream().noneMatch(Indi::hadOriginalXY)) {
+            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
+            new Layout(indis, famis).cleanAll();
+        }
+
+        normalize(indis);
+
         final Metrics metrics = metrics(indis, famis);
         famis.forEach(f -> f.setMetrics(metrics));
         indis.forEach(i -> i.setMetrics(metrics));
-        layout(indis, famis, metrics);
-        normalize(indis);
+
         return new FamilyChart(tree, indis, famis, metrics);
     }
 
     private static Metrics metrics(List<Indi> indis, List<Fami> famis) {
-        final double marlen = famis.stream().mapToDouble(Fami::getMarrDistance).filter(d -> d < MAX_NATURAL_DISTANCE).average().orElse(0D);
-        final double genlen = famis.stream().mapToDouble(Fami::getGenDistance).filter(d -> d < MAX_NATURAL_DISTANCE).average().orElse(0D);
+        final double marlen = famis.stream().mapToDouble(Fami::getMarrDistance).filter(d -> 0.51D < d && d < MAX_NATURAL_DISTANCE).average().orElse(0D);
+        final double genlen = famis.stream().mapToDouble(Fami::getGenDistance).filter(d -> 0.51D < d && d < MAX_NATURAL_DISTANCE).average().orElse(0D);
         return new Metrics(marlen, genlen);
     }
 
@@ -52,14 +63,15 @@ public final class FamilyChartBuilder {
                 indis.add(indi);
             }
         });
-        System.err.println(String.format("Calculated %d individuals.", indis.size()));
+        LOG.info("Calculated {} individuals.", indis.size());
         return indis;
     }
 
     private static void normalize(final List<Indi> indis) {
-        final double x = indis.stream().map(Indi::getCoords).mapToDouble(Point2D::getX).min().orElse(0D);
-        final double y = indis.stream().map(Indi::getCoords).mapToDouble(Point2D::getY).min().orElse(0D);
-        indis.forEach(i -> i.shiftOrig(x, y));
+        final double x = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getX).min().orElse(0D);
+        final double y = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getY).min().orElse(0D);
+        final Point2D coordsTopLeftAfterLayout = new Point2D(x, y);
+        indis.forEach(i -> i.fillMissing(coordsTopLeftAfterLayout));
     }
 
     private static List<Fami> buildFamis(final GedcomTree tree, final Map<String, Indi> mapIdToIndi) {
@@ -70,26 +82,32 @@ public final class FamilyChartBuilder {
                 famis.add(fami);
             }
         });
-        System.err.println(String.format("Calculated %d families.", famis.size()));
+        LOG.info("Calculated {} families.", famis.size());
         return famis;
     }
 
     private static Indi buildIndi(final TreeNode<GedcomLine> nodeIndi) {
-        final String xyval = getChildValue(nodeIndi, "_XY");
-        final Optional<Point2D> coords = toCoord(xyval);
-        final GedcomLine lineIndi = nodeIndi.getObject();
+        final String value_XY = getChildValue(nodeIndi, "_XY");
+        final Optional<Point2D> wxyOrig = toCoord(value_XY);
+        // wxyOrig empty indicates that _XY either was not present, or was present but had an invalid format
+        // In either of these two cases, when we save the new GEDCOM file, we want to ADD a new _XY record
+
         final String name = toName(getChildValue(nodeIndi, "NAME"));
         final DatePeriod birth = toDate(getChildEventDate(nodeIndi, "BIRT"));
         final DatePeriod death = toDate(getChildEventDate(nodeIndi, "DEAT"));
         final String refn = getChildValue(nodeIndi, "REFN");
         final int sex = toSex(getChildValue(nodeIndi, "SEX"));
-        final String id = lineIndi.getID();
+        final String id = nodeIndi.getObject().getID();
 
-        if (xyval.isEmpty()) {
-            System.err.println("WARNING: missing _XY for: " + name);
+        if (!wxyOrig.isPresent()) {
+            if (value_XY.isEmpty()) {
+                LOG.warn("Missing _XY value, name={}", name);
+            } else {
+                LOG.warn("Invalid _XY value={},name={}", value_XY, name);
+            }
         }
 
-        return new Indi(nodeIndi, coords.orElse(Point2D.ZERO), id, name, birth, death, refn, sex);
+        return new Indi(nodeIndi, wxyOrig, id, name, birth, death, refn, sex);
     }
 
     private static int toSex(final String sex) {
@@ -105,27 +123,43 @@ public final class FamilyChartBuilder {
         return 0;
     }
 
+    /**
+     * parse given value of _XY line.
+     * If unrecognized format, treat as unknown tag (leave it alone), return empty
+     * @param xy
+     * @return
+     */
     private static Optional<Point2D> toCoord(final String xy) {
         if (Objects.isNull(xy) || xy.isEmpty()) {
             return Optional.empty();
         }
-        final double[] r = Arrays.stream(xy.split("\\s+")).mapToDouble(FamilyChartBuilder::parseCoord).toArray();
-        if (r.length != 2) {
-            System.err.println("Could not parse _XY: " + xy);
+
+        final String[] fields = xy.split("\\s+");
+        if (fields.length != 2) {
             return Optional.empty();
         }
-        return Optional.of(new Point2D(r[0], r[1]));
+
+        final Optional<Double> x = parseCoord(fields[0]);
+        if (!x.isPresent()) {
+            return Optional.empty();
+        }
+
+        final Optional<Double> y = parseCoord(fields[1]);
+        if (!y.isPresent()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new Point2D(x.get(), y.get()));
     }
 
-    private static double parseCoord(final String s) {
+    private static Optional<Double> parseCoord(final String s) {
         if (Objects.isNull(s) || s.isEmpty()) {
-            return 0;
+            return Optional.empty();
         }
         try {
-            return Double.parseDouble(s);
+            return Optional.of(Double.parseDouble(s));
         } catch (final NumberFormatException ignore) {
-            System.err.println("Could not parse value from _XY tag: " + s);
-            return 0;
+            return Optional.empty();
         }
     }
 
@@ -138,7 +172,7 @@ public final class FamilyChartBuilder {
             return new GedcomDateValueParser(new StringReader(date)).parse();
         } catch (final Exception e) {
             if (!date.isEmpty()) {
-                System.err.println("Error while parsing DATE: \"" + date + "\"");
+                LOG.warn("Error while parsing DATE={}", date, e);
             }
             return DatePeriod.UNKNOWN;
         }
@@ -156,7 +190,7 @@ public final class FamilyChartBuilder {
     private static String getChildValue(final TreeNode<GedcomLine> node, final String tag) {
         for (final TreeNode<GedcomLine> c : node) {
             if (c.getObject().getTagString().equals(tag)) {
-                return c.getObject().getValue();
+                return c.getObject().getValue().trim();
             }
         }
         return "";
@@ -179,16 +213,5 @@ public final class FamilyChartBuilder {
             }
         }
         return fami;
-    }
-
-    private static void layout(final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
-        /* don't layout if _XY was found on anyone */
-        for (final Indi indi : indis) {
-            if (indi.getCoords().magnitude() != 0) {
-                return;
-            }
-        }
-        System.err.println("No _XY coordinates found; laying out dropline chart automatically...");
-        new Layout(indis, famis, metrics).cleanAll();
     }
 }

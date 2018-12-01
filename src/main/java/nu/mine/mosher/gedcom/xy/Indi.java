@@ -2,6 +2,7 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -19,33 +20,37 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
 import nu.mine.mosher.gedcom.date.DatePeriod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 public class Indi {
+    private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
+
+    public static final int XY_SCALE = 2;
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
+
     private final DatePeriod death;
     private final String name;
 
     private Metrics metrics;
     private final TreeNode<GedcomLine> node;
     private final String id;
-    private Point2D coords;
-    private Point2D coordsInit;
+    private final Coords coords;
     private final int sex;
     private final DatePeriod birth;
 
-    private final Circle center = new Circle(0, Color.TRANSPARENT);
     private final StackPane plaque = new StackPane();
 
     private boolean wasSelected = false;
@@ -69,20 +74,15 @@ public class Indi {
         addto.add(this.plaque);
     }
 
-    public void shiftOrig(final double dx, final double dy) {
-        this.coords = new Point2D(this.coords.getX() - dx, this.coords.getY() - dy);
-    }
-
     public void select(final boolean select) {
         this.selected.setValue(select);
     }
 
 
-    public Indi(final TreeNode<GedcomLine> node, final Point2D coords, String id, String name, DatePeriod birth, DatePeriod death, String refn, final int sex) {
+    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String name, DatePeriod birth, DatePeriod death, String refn, final int sex) {
         this.node = node;
         this.id = id;
-        this.coords = coords;
-        this.coordsInit = coords;
+        this.coords = new Coords(wxyOriginal);
         this.sex = sex;
         this.birth = birth;
         this.death = death;
@@ -132,8 +132,8 @@ public class Indi {
         StackPane.setMargin(textshape, new Insets(inset));
         this.plaque.getChildren().addAll(textshape);
 
-        this.plaque.layoutXProperty().bind(this.center.layoutXProperty().subtract(w / 2.0D));
-        this.plaque.layoutYProperty().bind(this.center.layoutYProperty().subtract(h / 2.0D));
+        this.plaque.layoutXProperty().bind(x().subtract(w / 2.0D));
+        this.plaque.layoutYProperty().bind(y().subtract(h / 2.0D));
 
         this.plaque.setOnMouseEntered(t -> {
             plaque.setCursor(Cursor.HAND);
@@ -169,13 +169,12 @@ public class Indi {
     }
 
     public void drag(final Point2D delta) {
-        center.setLayoutX(snap(center.getLayoutX() + delta.getX()));
-        center.setLayoutY(snap(center.getLayoutY() + delta.getY()));
+        LOG.trace("drag={}", delta);
+        this.coords.dragTo(snap(this.coords.xyUser().add(delta)));
     }
 
-    public void userNormalize(final double dx, final double dy) {
-        center.setLayoutX(center.getLayoutX() - dx);
-        center.setLayoutY(center.getLayoutY() - dy);
+    private Point2D snap(final Point2D p) {
+        return new Point2D(snap(p.getX()), snap(p.getY()));
     }
 
     private double snap(final double c) {
@@ -222,32 +221,12 @@ public class Indi {
         return this.id;
     }
 
-    public Point2D getCoords() {
-        return this.coords;
-    }
-
-    public void setFromCoords() {
-        this.center.relocate(this.coords.getX(), this.coords.getY());
-    }
-
-    public Circle getCircle() {
-        return this.center;
-    }
-
-    public void setInitCoords(double x, double y) {
-        this.coordsInit = new Point2D(x,y);
-    }
-
     public  void setSelection(FamilyChart.Selection selection) {
         this.selection = selection;
     }
 
     public boolean intersects(double x, double y, double w, double h) {
         return this.plaque.getBoundsInParent().intersects(x,y,w,h);
-    }
-
-    public boolean dirty() {
-        return !(near(this.center.getLayoutX(), this.coords.getX()) && near(this.center.getLayoutY(), this.coords.getY()));
     }
 
     private boolean near(double a, double b) {
@@ -258,39 +237,90 @@ public class Indi {
         return this.name;
     }
 
-    public void saveXyToTree() {
-        final String xy = newXY();
-        System.err.println("changing "+this.name+": "+xy);
-        boolean set = false;
-        for (final TreeNode<GedcomLine> c : this.node) {
-            if (c.getObject().getTagString().equals("_XY")) {
-                c.setObject(c.getObject().replaceValue(xy));
-                set = true;
-            }
-        }
-        if (!set) {
-            this.node.addChild(new TreeNode<>(this.node.getObject().createChild("_XY", xy)));
-        }
-
-        this.coords = new Point2D(this.center.getLayoutX(), this.center.getLayoutY());
-    }
-
-    private String newXY() {
-        double x = this.coordsInit.getX()+(this.center.getLayoutX()-this.coords.getX());
-        double y = this.coordsInit.getY()+(this.center.getLayoutY()-this.coords.getY());
-        return coord(x)+" "+coord(y);
-    }
-
-    private static String coord(final double c) {
-        final String sDecimal = BigDecimal.valueOf(c).setScale(2, RoundingMode.HALF_DOWN).toPlainString();
-        return sDecimal;
-    }
-
     public TreeNode<GedcomLine> node() {
         return this.node;
     }
 
-    public Point2D getInitialCoords() {
-        return this.coordsInit;
+    public void layOut(final Point2D at) {
+        this.coords.layOut(at);
+    }
+
+    public boolean hadOriginalXY() {
+        return this.coords.original().isPresent();
+    }
+
+    public void fillMissing(final Point2D coordsTopLeftAfterLayout) {
+        this.coords.fillMissing(coordsTopLeftAfterLayout);
+    }
+
+    public Optional<Point2D> laidOut() {
+        return this.coords.laidOut();
+    }
+
+    public void startCoordTracking() {
+        this.coords.start();
+    }
+
+    public boolean dirty() {
+        return this.coords.dirty();
+    }
+
+    public void saveXyToTree() {
+        final String value_XY = toValue_XY(this.coords.get());
+        final Optional<TreeNode<GedcomLine>> existingXyNode = findChild(this.node, "_XY");
+        final TreeNode<GedcomLine> newNode = new TreeNode<>(this.node.getObject().createChild("_XY", value_XY));
+        if (existingXyNode.isPresent()) {
+            final TreeNode<GedcomLine> oldNode = existingXyNode.get();
+            if (this.coords.original().isPresent()) {
+                oldNode.setObject(oldNode.getObject().replaceValue(value_XY));
+            } else {
+                // This is the case where there was an original _XY record in the GEDCOM
+                // file, but it had an invalid format.
+                // Leave the existing _XY intact, and add a new _XY record before it
+                // (in order to mask the old one without destroying it).
+                this.node.addChildBefore(newNode, oldNode);
+            }
+        } else {
+            this.node.addChild(newNode);
+        }
+        this.coords.save();
+    }
+
+    private static String toValue_XY(final Point2D xy) {
+        return coord(xy.getX())+" "+coord(xy.getY());
+    }
+
+    private static String coord(final double coord) {
+        return BigDecimal.valueOf(coord).setScale(XY_SCALE, RoundingMode.HALF_DOWN).toPlainString();
+    }
+
+    private static Optional<TreeNode<GedcomLine>> findChild(final TreeNode<GedcomLine> parent, final String tag) {
+        for (final TreeNode<GedcomLine> child : parent) {
+            if (child.getObject().getTagString().equals(tag)) {
+                return Optional.of(child);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Point2D coords() {
+        return this.coords.get();
+    }
+
+    public void userNormalize(Point2D coordsTopLeft) {
+        this.coords.forceDirty(true);
+        this.coords.normalize(coordsTopLeft);
+    }
+
+    public DoubleProperty x() {
+        return this.coords.x();
+    }
+
+    public DoubleProperty y() {
+        return this.coords.y();
+    }
+
+    public void logDiscard() {
+        LOG.warn("discarding,\"{}\",{},{}", this.name, x().get(), y().get());
     }
 }

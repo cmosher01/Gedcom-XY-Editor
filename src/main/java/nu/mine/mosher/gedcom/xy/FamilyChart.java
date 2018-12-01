@@ -7,6 +7,8 @@ import nu.mine.mosher.gedcom.Gedcom;
 import nu.mine.mosher.gedcom.GedcomLine;
 import nu.mine.mosher.gedcom.GedcomTag;
 import nu.mine.mosher.gedcom.GedcomTree;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -23,6 +25,8 @@ import java.util.List;
 import java.util.Set;
 
 public class FamilyChart {
+    private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);
+
     private final GedcomTree tree;
     private final List<Indi> indis;
     private final List<Fami> famis;
@@ -45,7 +49,7 @@ public class FamilyChart {
         this.indis.forEach(i -> i.setSelection(this.selection));
         this.indis.forEach(Indi::calc);
         this.famis.forEach(Fami::calc);
-        this.indis.forEach(Indi::setFromCoords);
+        this.indis.forEach(Indi::startCoordTracking);
     }
 
     public void clearSelection() {
@@ -86,7 +90,7 @@ public class FamilyChart {
         out.println("0 TRLR");
 
         if (out.checkError()) {
-            System.err.println("ERROR exporting skeleton file.");
+            LOG.error("ERROR exporting skeleton file, file=", file);
         }
         out.close();
     }
@@ -96,10 +100,14 @@ public class FamilyChart {
     }
 
     public void userNormalize() {
-        final double x = this.indis.stream().map(Indi::getInitialCoords).mapToDouble(Point2D::getX).min().orElse(0D);
-        final double y = this.indis.stream().map(Indi::getInitialCoords).mapToDouble(Point2D::getY).min().orElse(0D);
-        System.err.print("Normalize (dx,dy): ("+(-x)+","+(-y)+")");
-        this.indis.forEach(i -> i.userNormalize(x, y));
+        final double x = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getX).min().orElse(0D);
+        final double y = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getY).min().orElse(0D);
+        final Point2D coordsTopLeft = new Point2D(x, y);
+        this.indis.forEach(i -> i.userNormalize(coordsTopLeft));
+    }
+
+    public List<Indi> indis() {
+        return Collections.unmodifiableList(new ArrayList<>(this.indis));
     }
 
     static class Selection {

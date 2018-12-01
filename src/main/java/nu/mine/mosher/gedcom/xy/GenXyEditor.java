@@ -29,22 +29,42 @@ import javafx.stage.Stage;
 import nu.mine.mosher.gedcom.Gedcom;
 import nu.mine.mosher.gedcom.GedcomTree;
 import nu.mine.mosher.gedcom.xy.util.ZoomPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY;
+
 public final class GenXyEditor extends Application {
+    private static Logger LOG;
     static {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
         Platform.setImplicitExit(false);
     }
 
     private Optional<Rectangle> selector = Optional.empty();
     private Point2D ptSelStart;
 
+    public static void main(final String... args) {
+        if (Arrays.stream(args).anyMatch(c -> c.equals("-q"))) {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "off");
+        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-v"))) {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "debug");
+        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-vv"))) {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "trace");
+        }
+        LOG = LoggerFactory.getLogger(GenXyEditor.class);
+        Application.launch();
+    }
     @Override
     public void start(final Stage stage) {
         stage.setTitle("GEDCOM _XY Editor");
@@ -56,6 +76,7 @@ public final class GenXyEditor extends Application {
                     new FileChooser.ExtensionFilter("all files", "*.*"));
             final File fileToOpen = fileChooser.showOpenDialog(null);
             if (Objects.isNull(fileToOpen)) {
+                LOG.warn("User cancelled opening file. Program will exit.");
                 Platform.exit();
                 return;
             }
@@ -71,7 +92,7 @@ public final class GenXyEditor extends Application {
                     }
                 });
 
-                stage.setScene(new Scene(buildGui(stage, chart), 640, 480));
+                stage.setScene(new Scene(buildGui(stage, chart), 1920, 800));
                 stage.show();
             } catch (final Exception e) {
                 Platform.exit();
@@ -87,6 +108,8 @@ public final class GenXyEditor extends Application {
             alert.setTitle("Changes will be discarded");
             final Optional<ButtonType> response = alert.showAndWait();
             if (response.isPresent() && response.get() == ButtonType.OK) {
+                LOG.warn("User confirmed discarding changes:");
+                chart.indis().stream().filter(Indi::dirty).forEach(Indi::logDiscard);
                 safe = true;
             }
         } else {
@@ -186,7 +209,7 @@ public final class GenXyEditor extends Application {
                 chart.saveAs(file);
             } catch (final IOException e) {
                 // TODO: this is not nice
-                e.printStackTrace();
+                LOG.error("An error occurred while trying to save file, file={}", file, e);
             }
         });
 
@@ -259,7 +282,7 @@ public final class GenXyEditor extends Application {
             chart.saveSkeleton(exportAll, file);
         } catch (final IOException e) {
             // TODO: this is not nice
-            e.printStackTrace();
+            LOG.error("An error occurred while trying to save file, file={}", file, e);
         }
     }
 

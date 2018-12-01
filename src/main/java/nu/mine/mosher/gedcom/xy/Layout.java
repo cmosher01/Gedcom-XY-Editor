@@ -1,6 +1,8 @@
 package nu.mine.mosher.gedcom.xy;
 
 import nu.mine.mosher.time.Time;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -20,11 +22,15 @@ import java.util.stream.IntStream;
 
 
 public class Layout {
+    private static final Logger LOG = LoggerFactory.getLogger(Layout.class);
+
+    private static final double MAX_WIDTH = 100D;
+
     private final double dxChild;
     private final double dxFamily;
 
-    public Layout(final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
-        this.dxChild = metrics.getWidthMax();
+    public Layout(final List<Indi> indis, final List<Fami> famis) {
+        this.dxChild = MAX_WIDTH;
         this.dxFamily = this.dxChild * 4;
 
         this.indis = IntStream.range(0, indis.size())
@@ -128,7 +134,7 @@ public class Layout {
             this.indi = indi;
             this.idx = idx;
             this.sex = indi.getSex();
-            this.frame = new Rectangle2D.Double(indi.getCircle().getCenterX(), indi.getCircle().getCenterY(), 0D, 0D);
+            this.frame = new Rectangle2D.Double(1,1,0,0);
         }
 
         void setLevel(final int lev) {
@@ -320,6 +326,11 @@ public class Layout {
 
         private Time getSimpleBirth() {
             return this.indi.getBirth().getStartDate().getApproxDay();
+        }
+
+        public void setFromFrame() {
+            final javafx.geometry.Point2D at = new javafx.geometry.Point2D(this.frame.getX(), this.frame.getY());
+            this.indi.layOut(at);
         }
     }
 
@@ -541,7 +552,8 @@ public class Layout {
             }
         }
 
-        this.indis.forEach(i -> i.indi.setInitCoords(i.frame.getX(), i.frame.getY()));
+        this.indis.forEach(CIndividual::setFromFrame);
+//        this.indis.forEach(i -> i.indi.setInitCoords(i.frame.getX(), i.frame.getY()));
     }
 
 

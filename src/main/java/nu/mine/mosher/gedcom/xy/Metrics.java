@@ -22,6 +22,7 @@ public final class Metrics {
         this.marrDistance = (marrDistance < 1.4D ? 150.0D : marrDistance);
         this.genDistance = (genDistance < 1.4D ? 200.0D : genDistance);
 
+        // TODO can we improve the heuristic metric calculations?
         this.fontSize = clamp(6, Math.round(Math.rint((this.marrDistance / 15.0D + this.genDistance / 20.0D) / 2.0D)), 24);
 
         this.font = Font.font(FONT_FAMILY_NAME, this.fontSize);
