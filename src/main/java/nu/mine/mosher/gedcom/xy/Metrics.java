@@ -6,8 +6,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import nu.mine.mosher.gedcom.xy.util.Solarized;
+import org.slf4j.*;
 
 public final class Metrics {
+    private static final Logger LOG = LoggerFactory.getLogger(Metrics.class);
+
     private static final String FONT_FAMILY_NAME = java.awt.Font.SANS_SERIF;
 
     private final double fontSize;
@@ -33,6 +36,8 @@ public final class Metrics {
         text.applyCss();
         this.widthMax = text.getLayoutBounds().getWidth();
         this.heightNominal = text.getLayoutBounds().getHeight();
+
+        LOG.info("metrics: partership_dx={},descent_dy={},font_size={},max_indi_width={},nominal_height={}", this.marrDistance, this.genDistance, this.fontSize, this.widthMax, this.heightNominal);
     }
 
     public double getFontSize() {
