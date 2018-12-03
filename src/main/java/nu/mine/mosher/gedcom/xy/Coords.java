@@ -1,6 +1,8 @@
 package nu.mine.mosher.gedcom.xy;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Circle;
 import org.slf4j.Logger;
@@ -24,6 +26,7 @@ public final class Coords {
     private Point2D xyStart;
     private final Circle xyLayoutUser = new Circle(0, TRANSPARENT); // TODO make this a Point2D property
     private boolean forceDirty;
+    private BooleanProperty propDirty = new SimpleBooleanProperty();
 
     private void dumpToLog(final String label) {
         LOG.debug("{}: {},{},{},{},{},{},{}", label,
@@ -43,7 +46,7 @@ public final class Coords {
         return String.format("%s=()", name);
     }
     private String toDump(final String name, final Point2D p) {
-        return String.format("%s=(%.0f,%.0f)", name, p.getX(), p.getY());
+        return String.format("%s=(%.2f,%.2f)", name, p.getX(), p.getY());
     }
 
     /**
@@ -88,6 +91,11 @@ public final class Coords {
         }
         this.wxyStart = this.wxyLayout.orElseGet(() -> coordsTopLeftAfterLayout.add(xyMISSING));
         this.xyStart = this.wxyStart.subtract(coordsTopLeftAfterLayout);
+        update();
+    }
+
+    public Optional<Point2D> getOriginal() {
+        return this.wxyOrig;
     }
 
     /**
@@ -127,6 +135,15 @@ public final class Coords {
     public void dragTo(final Point2D here) {
         Objects.requireNonNull(here);
         this.xyLayoutUser.relocate(here.getX(), here.getY());
+        update();
+    }
+
+    private void update() {
+        this.propDirty.set(dirty());
+    }
+
+    public BooleanProperty propertyDirty() {
+        return this.propDirty;
     }
 
     public Point2D xyUser() {
@@ -167,6 +184,7 @@ public final class Coords {
      */
     public void forceDirty(final boolean force) {
         this.forceDirty = force;
+        update();
     }
 
     /**

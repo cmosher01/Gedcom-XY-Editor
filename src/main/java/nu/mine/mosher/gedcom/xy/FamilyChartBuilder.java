@@ -22,8 +22,6 @@ import java.util.Optional;
 public final class FamilyChartBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilder.class);
 
-    private static final double MAX_NATURAL_DISTANCE = 1000.0D;
-
     private FamilyChartBuilder() {
         throw new IllegalStateException("not intended to be instantiated");
     }
@@ -41,17 +39,11 @@ public final class FamilyChartBuilder {
 
         normalize(indis);
 
-        final Metrics metrics = metrics(indis, famis);
+        final Metrics metrics = Metrics.buildMetricsFor(indis, famis);
         famis.forEach(f -> f.setMetrics(metrics));
         indis.forEach(i -> i.setMetrics(metrics));
 
         return new FamilyChart(tree, indis, famis, metrics);
-    }
-
-    private static Metrics metrics(List<Indi> indis, List<Fami> famis) {
-        final double marlen = famis.stream().mapToDouble(Fami::getMarrDistance).filter(d -> 0.51D < d && d < MAX_NATURAL_DISTANCE).average().orElse(0D);
-        final double genlen = famis.stream().mapToDouble(Fami::getGenDistance).filter(d -> 0.51D < d && d < MAX_NATURAL_DISTANCE).average().orElse(0D);
-        return new Metrics(marlen, genlen);
     }
 
     private static List<Indi> buildIndis(final GedcomTree tree, final Map<String, Indi> mapIdToIndi) {

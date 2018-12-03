@@ -45,12 +45,16 @@ public final class GenXyEditor extends Application {
     private Point2D ptSelStart;
 
     public static void main(final String... args) {
-        if (Arrays.stream(args).anyMatch(c -> c.equals("-q"))) {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "off");
-        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-v"))) {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "debug");
-        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-vv"))) {
+        if (Arrays.stream(args).anyMatch(c -> c.equals("-vvv"))) {
             System.setProperty(DEFAULT_LOG_LEVEL_KEY, "trace");
+        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-vv"))) {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "debug");
+        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-v"))) {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "info");
+        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-q"))) {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "off");
+        } else {
+            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "warn");
         }
         LOG = LoggerFactory.getLogger(GenXyEditor.class);
         Application.launch();
@@ -94,7 +98,7 @@ public final class GenXyEditor extends Application {
     private boolean exitIfSafe(final Stage stage, final FamilyChart chart) {
         boolean safe = false;
         if (chart.dirty()) {
-            final Alert alert = new Alert(Alert.AlertType.WARNING, "Your UNSAVED changes will be DISCARDED.", ButtonType.OK, ButtonType.CANCEL);
+            final Alert alert = new Alert(Alert.AlertType.WARNING, "Your unsaved changes will be DISCARDED.", ButtonType.OK, ButtonType.CANCEL);
             alert.setTitle("Changes will be discarded");
             final Optional<ButtonType> response = alert.showAndWait();
             if (response.isPresent() && response.get() == ButtonType.OK) {
@@ -263,7 +267,7 @@ public final class GenXyEditor extends Application {
 
 
         final MenuBar mbar = new MenuBar();
-        mbar.setUseSystemMenuBar(false);
+        mbar.useSystemMenuBarProperty().set(true);
         mbar.getMenus().addAll(menuFile, menuEdit);
         return mbar;
     }

@@ -284,7 +284,7 @@ public class Fami {
         final Point2D ptStart = new Point2D(ptNear.getX(), ptNear.getY() + barHeight());
         final Point2D ptEnd = new Point2D(ptFar.getX(), ptFar.getY() + barHeight());
         final double pd = Math.max(ptStart.distance(ptEnd), MIN_DISTANCE);
-        final double dt = Math.min(this.metrics.getMarrDistance()/2.0D, pd/2.0D) / pd;
+        final double dt = pd < this.metrics.getWidthMax()*6 ? 0.5D : this.metrics.getWidthMax()/pd;
         return new Point2D((1 - dt) * ptStart.getX() + dt * ptEnd.getX(), (1 - dt) * ptStart.getY() + dt * ptEnd.getY());
     }
 

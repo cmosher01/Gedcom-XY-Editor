@@ -1,5 +1,6 @@
 package nu.mine.mosher.gedcom.xy;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -116,20 +117,12 @@ public class Indi {
 
         final Background bgNormal = new Background(new BackgroundFill(metrics.colorIndiBg(), CORNERS, Insets.EMPTY));
         final Background bgSelected = new Background(new BackgroundFill(metrics.colorIndiSelBg(), CORNERS, Insets.EMPTY));
-        final ObjectBinding<Background> bgBinding = new ObjectBinding<Background>() {
-            {
-                super.bind(selected);
-            }
+        this.plaque.backgroundProperty().bind(Bindings.when(selected).then(bgSelected).otherwise(bgNormal));
 
-            @Override
-            protected Background computeValue() {
-                return selected.get() ? bgSelected : bgNormal;
-            }
-        };
-        this.plaque.backgroundProperty().bind(bgBinding);
+        final Border borderNormal = new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
+        final Border borderDirty = new Border(new BorderStroke(metrics.colorIndiDirtyBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
+        this.plaque.borderProperty().bind(Bindings.when(this.coords.propertyDirty()).then(borderDirty).otherwise(borderNormal));
 
-        // TODO color border based on dirty
-        this.plaque.setBorder(new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT)));
         StackPane.setMargin(textshape, new Insets(inset));
         this.plaque.getChildren().addAll(textshape);
 
@@ -170,7 +163,6 @@ public class Indi {
     }
 
     public void drag(final Point2D delta) {
-        LOG.trace("drag={}", delta);
         this.coords.dragTo(snap(this.coords.xyUser().add(delta)));
     }
 
@@ -183,7 +175,8 @@ public class Indi {
         if (grid == 0) {
             return c;
         }
-        return Math.rint(Math.floor(c/grid)*grid);
+        final double snapped = Math.rint(Math.floor(c / grid) * grid);
+        return snapped;
     }
 
     private String buildLabel() {
@@ -308,6 +301,10 @@ public class Indi {
         return this.coords.get();
     }
 
+    public Optional<Point2D> coordsOriginal() {
+        return this.coords.getOriginal();
+    }
+
     public void userNormalize(Point2D coordsTopLeft) {
         this.coords.forceDirty(true);
         this.coords.normalize(coordsTopLeft);
@@ -322,7 +319,8 @@ public class Indi {
     }
 
     public void logDiscard() {
-        LOG.warn("discarding,\"{}\",{},{}", this.name, x().get(), y().get());
+        final Point2D coords = coords();
+        LOG.warn(String.format("discarding,\"%s\",\"_XY %.2f %.2f\"", this.name, coords.getX(), coords.getY()));
     }
 
     public boolean selected() {

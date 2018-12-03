@@ -1,12 +1,12 @@
 package nu.mine.mosher.gedcom.xy;
 
+import javafx.geometry.Point2D;
 import nu.mine.mosher.time.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -24,27 +24,24 @@ import java.util.stream.IntStream;
 public class Layout {
     private static final Logger LOG = LoggerFactory.getLogger(Layout.class);
 
-    private static final double MAX_WIDTH = 100D;
-
-    private final double dxChild;
-    private final double dxFamily;
+    public static final double MAX_LEVEL = 5000.0D;
+    private static final double GEN_HEIGHT = 108D;
+    private static final double MAX_WIDTH = 54D;
+    public static final double DX_FAMILY = MAX_WIDTH * 5;
 
     public Layout(final List<Indi> indis, final List<Fami> famis) {
-        this.dxChild = MAX_WIDTH;
-        this.dxFamily = this.dxChild * 4;
-
         this.indis = IntStream.range(0, indis.size())
-                .mapToObj(i -> new CIndividual(indis.get(i), i))
+                .mapToObj(i -> new Individual(indis.get(i), i))
                 .collect(Collectors.toList());
 
-        final Map<Indi, CIndividual> mapIndis = new HashMap<>();
+        final Map<Indi, Individual> mapIndis = new HashMap<>();
         this.indis.forEach(i -> mapIndis.put(i.indi, i));
 
         this.famis = IntStream.range(0, famis.size())
-                .mapToObj(i -> new CFamily(famis.get(i), i))
+                .mapToObj(i -> new Family(famis.get(i), i))
                 .collect(Collectors.toList());
 
-        final Map<Fami, CFamily> mapFamis = new HashMap<>();
+        final Map<Fami, Family> mapFamis = new HashMap<>();
         this.famis.forEach(i -> mapFamis.put(i.fami, i));
 
         this.famis.forEach(f -> {
@@ -57,16 +54,16 @@ public class Layout {
             addSpouse(mapIndis, f, wife, husb);
 
             fami.getChildren().forEach(c -> {
-                final CIndividual cChild = mapIndis.get(c);
+                final Individual cChild = mapIndis.get(c);
                 cChild.idxChildToFamily = f.idx;
                 f.children.add(cChild.idx);
                 if (husb.isPresent()) {
-                    final CIndividual cHusb = mapIndis.get(husb.get());
+                    final Individual cHusb = mapIndis.get(husb.get());
                     cHusb.ridxChild.add(mapIndis.get(c).idx);
                     cChild.idxFather = cHusb.idx;
                 }
                 if (wife.isPresent()) {
-                    final CIndividual cWife = mapIndis.get(wife.get());
+                    final Individual cWife = mapIndis.get(wife.get());
                     cWife.ridxChild.add(mapIndis.get(c).idx);
                     cChild.idxMother = cWife.idx;
                 }
@@ -74,27 +71,27 @@ public class Layout {
         });
     }
 
-    private static void addSpouse(Map<Indi, CIndividual> mapIndis, CFamily fami, Optional<Indi> indi, Optional<Indi> spouse) {
+    private static void addSpouse(Map<Indi, Individual> mapIndis, Family fami, Optional<Indi> indi, Optional<Indi> spouse) {
         if (indi.isPresent()) {
-            final CIndividual cindi = mapIndis.get(indi.get());
+            final Individual cindi = mapIndis.get(indi.get());
             cindi.ridxSpouseToFamily.add(fami.idx);
             spouse.ifPresent(i -> cindi.ridxSpouse.add(mapIndis.get(i).idx));
         }
     }
 
 
-    private final List<CIndividual> indis;
-    private final List<CFamily> famis;
+    private final List<Individual> indis;
+    private final List<Family> famis;
 
 
-    class CFamily {
+    class Family {
         private final int idx;
         private final Fami fami;
 
         /* indexes into indis list */
         private final List<Integer> children = new ArrayList<>();
 
-        public CFamily(final Fami fami, final int idx) {
+        public Family(final Fami fami, final int idx) {
             this.fami = fami;
             this.idx = idx;
         }
@@ -107,11 +104,11 @@ public class Layout {
     }
 
 
-    class CIndividual {
-        private Layout m_pDoc = Layout.this;
+    class Individual {
+        private Layout layout = Layout.this;
 
         private int sex; // 0=unknown, 1=male, 2=female
-        private Rectangle2D frame;
+        private Point2D location = Point2D.ZERO;
 
         private final Indi indi;
         /* indexes into indis list */
@@ -127,14 +124,13 @@ public class Layout {
         private boolean mark;
         private int level;
         private int maxMale;
-        private CIndividual house;
+        private Individual house;
 
 
-        public CIndividual(final Indi indi, final int idx) {
+        public Individual(final Indi indi, final int idx) {
             this.indi = indi;
             this.idx = idx;
             this.sex = indi.getSex();
-            this.frame = new Rectangle2D.Double(1,1,0,0);
         }
 
         void setLevel(final int lev) {
@@ -150,38 +146,42 @@ public class Layout {
             this.level = lev;
 
             // position along y axis
-            MoveTo(new Point2D.Double(0.0D, (5000.0D - this.level) * 100.0D - this.frame.getHeight() / 2.0D));
+            moveYto((MAX_LEVEL - this.level) * GEN_HEIGHT);
 
             //father
             if (idxFather >= 0) {
-                m_pDoc.indis.get(idxFather).setLevel(lev + 1);
+                layout.indis.get(idxFather).setLevel(lev + 1);
             }
             //mother (only if no father)
             else if (idxMother >= 0) {
-                m_pDoc.indis.get(idxMother).setLevel(lev + 1);
+                layout.indis.get(idxMother).setLevel(lev + 1);
             }
 
             //siblings
             if (idxChildToFamily >= 0) {
-                final CFamily fami = m_pDoc.famis.get(idxChildToFamily);
+                final Family fami = layout.famis.get(idxChildToFamily);
                 for (int i = 0; i < fami.children.size(); ++i) {
-                    m_pDoc.indis.get(fami.children.get(i)).setLevel(lev);
+                    layout.indis.get(fami.children.get(i)).setLevel(lev);
                 }
             }
 
             //children
             for (final Integer i : ridxChild) {
-                m_pDoc.indis.get(i).setLevel(lev - 1);
+                layout.indis.get(i).setLevel(lev - 1);
             }
 
             //spouses
             for (final Integer i : ridxSpouse) {
-                m_pDoc.indis.get(i).setLevel(lev);
+                layout.indis.get(i).setLevel(lev);
             }
         }
 
-        void MoveTo(final Point2D pt) {
-            this.frame.setRect(pt.getX(), pt.getY(), this.frame.getWidth(), this.frame.getHeight());
+        void moveXto(final double x) {
+            this.location = new Point2D(x, this.location.getY());
+        }
+
+        void moveYto(final double y) {
+            this.location = new Point2D(this.location.getX(), y);
         }
 
         void setMaxMaleIf(final int n) {
@@ -190,67 +190,35 @@ public class Layout {
             }
         }
 
-        void setRootWithSpouses(final CIndividual proot) {
+        void setRootWithSpouses(final Individual proot) {
             if (mark) {
                 return;
             }
 
-            final List<CIndividual> all_sps = new ArrayList<>();
-            // build list of all spouses in this spouse group
-            {
-                final LinkedList<CIndividual> todo = new LinkedList<>();
-                todo.addLast(this);
-                while (!todo.isEmpty()) {
-                    final CIndividual pthis = todo.removeFirst();
-                    all_sps.add(pthis);
-                    for (int sp = 0; sp < pthis.ridxSpouse.size(); ++sp) {
-                        final CIndividual pspou = m_pDoc.indis.get(pthis.ridxSpouse.get(sp));
-                        if (/*pspou->level == level &&*/!pspou.mark && !all_sps.contains(pspou)) {
-                            todo.addLast(pspou);
-                        }
-                    }
-                }
-            }
-
-            for (final CIndividual pindi2 : all_sps) {
-                if (pindi2 == this || pindi2.idxFather < 0) {
-                    pindi2.house = proot;
-                    pindi2.mark = true;
+            final List<Individual> spouses = new ArrayList<>();
+            buildSpouseGroupInto(spouses);
+            for (final Individual spouse : spouses) {
+                if (spouse == this || spouse.idxFather < 0) {
+                    spouse.house = proot;
+                    spouse.mark = true;
                 }
             }
         }
 
-        void setSeqWithSpouses(final List<Double> lev_bounds, final boolean left, final List<CIndividual> cleannext) {
-            final LinkedList<CIndividual> all_sps = new LinkedList<>();
-            // build list of all spouses in this spouse group
-            {
-                final LinkedList<CIndividual> todo = new LinkedList<>();
-                if (!mark) {
-                    todo.addLast(this);
-                }
-                while (!todo.isEmpty()) {
-                    final CIndividual pthis = todo.removeFirst();
-                    all_sps.add(pthis);
-                    for (int sp = 0; sp < pthis.ridxSpouse.size(); ++sp) {
-                        final CIndividual pspou = m_pDoc.indis.get(pthis.ridxSpouse.get(sp));
-                        if (/*pspou->level == level &&*/!pspou.mark && !all_sps.contains(pspou)) {
-                            todo.addLast(pspou);
-                        }
-                    }
-                }
-            }
-
-            final Iterator<CIndividual> i = all_sps.descendingIterator();
+        void setSeqWithSpouses(final List<Double> lev_bounds, final boolean left, final List<Individual> cleannext) {
+            final LinkedList<Individual> spouses = new LinkedList<>();
+            buildSpouseGroupInto(spouses);
+            final Iterator<Individual> i = spouses.descendingIterator();
             while (i.hasNext()) {
-                final CIndividual indi = i.next();
+                final Individual indi = i.next();
                 if (indi.idxFather >= 0) {
-                    final CIndividual parent = m_pDoc.indis.get(indi.idxFather);
+                    final Individual parent = layout.indis.get(indi.idxFather);
                     if (parent.house != null && parent.house != house) {
                         cleannext.add(parent.house);
                     }
                 }
                 if (indi.idxMother >= 0) {
-                    final CIndividual parent = m_pDoc.indis.get(indi.idxMother);
+                    final Individual parent = layout.indis.get(indi.idxMother);
                     if (parent.house != null && parent.house != house) {
                         cleannext.add(parent.house);
                     }
@@ -261,15 +229,15 @@ public class Layout {
                 return;
             }
 
-            LinkedList<CIndividual> left_sps = new LinkedList<>();
+            LinkedList<Individual> left_sps = new LinkedList<>();
             // build list of spouses to be displayed off to the LEFT of the indi
             {
                 left_sps.add(this);
-                CIndividual pindi = this;
+                Individual pindi = this;
                 while (pindi != null) {
                     boolean found = false;
                     for (int sp = 0; !found && sp < pindi.ridxSpouse.size(); ++sp) {
-                        final CIndividual pspou = m_pDoc.indis.get(pindi.ridxSpouse.get(sp));
+                        final Individual pspou = layout.indis.get(pindi.ridxSpouse.get(sp));
                         if (!pspou.mark && pspou.idxFather < 0 && pspou != this && !left_sps.contains(pspou)) {
                             found = true;
                             pindi = pspou;
@@ -282,14 +250,14 @@ public class Layout {
                 }
             }
 
-            LinkedList<CIndividual> right_sps = new LinkedList<>();
+            LinkedList<Individual> right_sps = new LinkedList<>();
             // build list of spouses to be displayed off to the RIGHT of the indi
             {
-                CIndividual pindi = this;
+                Individual pindi = this;
                 while (pindi != null) {
                     boolean found = false;
                     for (int sp = 0; !found && sp < pindi.ridxSpouse.size(); ++sp) {
-                        final CIndividual pspou = m_pDoc.indis.get(pindi.ridxSpouse.get(sp));
+                        final Individual pspou = layout.indis.get(pindi.ridxSpouse.get(sp));
                         if (!pspou.mark && pspou.idxFather < 0 && pspou != this && !left_sps.contains(pspou) && !right_sps.contains(pspou)) {
                             found = true;
                             pindi = pspou;
@@ -302,14 +270,14 @@ public class Layout {
                 }
             }
             //add (to the right) all remaining spouses
-            for (final CIndividual pspou : all_sps) {
+            for (final Individual pspou : spouses) {
                 if (!pspou.mark && pspou.idxFather < 0 && !left_sps.contains(pspou) && !right_sps.contains(pspou)) {
                     right_sps.add(pspou);
                 }
             }
 
             if (!left) {
-                final LinkedList<CIndividual> t = left_sps;
+                final LinkedList<Individual> t = left_sps;
                 left_sps = right_sps;
                 right_sps = t;
             }
@@ -318,19 +286,35 @@ public class Layout {
             right_sps.iterator().forEachRemaining(s -> displaySpouses(lev_bounds, s));
         }
 
-        private void displaySpouses(final List<Double> lev_bounds, final CIndividual pindi) {
-            pindi.MoveTo(new Point2D.Double(lev_bounds.get(pindi.level), pindi.frame.getY()));
-            pindi.mark = true;
-            lev_bounds.set(pindi.level, pindi.frame.getMaxX() + dxChild);
+        private void buildSpouseGroupInto(final Collection<Individual> spouses) {
+            final LinkedList<Individual> todo = new LinkedList<>();
+            if (!mark) {
+                todo.addLast(this);
+            }
+            while (!todo.isEmpty()) {
+                final Individual spouse = todo.removeFirst();
+                spouses.add(spouse);
+                for (int s = 0; s < spouse.ridxSpouse.size(); ++s) {
+                    final Individual spouse2 = layout.indis.get(spouse.ridxSpouse.get(s));
+                    if (!spouse2.mark && !spouses.contains(spouse2)) {
+                        todo.addLast(spouse2);
+                    }
+                }
+            }
+        }
+
+        private void displaySpouses(final List<Double> xForLevel, final Individual spouse) {
+            spouse.moveXto(xForLevel.get(spouse.level));
+            spouse.mark = true;
+            xForLevel.set(spouse.level, spouse.location.getX() + 2D * MAX_WIDTH);
         }
 
         private Time getSimpleBirth() {
             return this.indi.getBirth().getStartDate().getApproxDay();
         }
 
-        public void setFromFrame() {
-            final javafx.geometry.Point2D at = new javafx.geometry.Point2D(this.frame.getX(), this.frame.getY());
-            this.indi.layOut(at);
+        public void layOut() {
+            this.indi.layOut(this.location);
         }
     }
 
@@ -350,7 +334,7 @@ public class Layout {
             boolean someleft = true;
             while (someleft) {
                 someleft = false;
-                for (final CIndividual indi : this.indis) {
+                for (final Individual indi : this.indis) {
                     if (!indi.mark) {
                         someleft = true;
                         indi.setLevel(batch++ * 20);
@@ -366,7 +350,7 @@ public class Layout {
             final int levMin = this.indis.stream().mapToInt(i -> i.level).min().getAsInt();
 
             cLev = levMax - levMin + 1;
-            for (final CIndividual indi : this.indis) {
+            for (final Individual indi : this.indis) {
                 indi.level -= levMin;
             }
         }
@@ -376,11 +360,11 @@ public class Layout {
         {
             clearAllIndividuals();
             // Finding branches
-            for (final CIndividual indi : this.indis) {
+            for (final Individual indi : this.indis) {
                 int c = (indi.sex == 1) ? 1 : 0;
 
                 final Set<Integer> setIndi = new HashSet<>();// guard against loops
-                CIndividual father = indi;
+                Individual father = indi;
                 int f;
                 while ((f = father.idxFather) >= 0 && !setIndi.contains(f)) {
                     setIndi.add(f);
@@ -395,7 +379,7 @@ public class Layout {
         }
 
 
-        final Deque<CIndividual> qToClean =
+        final Deque<Individual> qToClean =
                 this.indis.stream()
                         .filter(i -> i.maxMale != 0)
                         .sorted(primaryHouse())
@@ -406,17 +390,17 @@ public class Layout {
 
         clearAllIndividuals();
 
-        for (final CIndividual indi : qToClean) {
-            final Deque<CIndividual> todo = new LinkedList<>();
+        for (final Individual indi : qToClean) {
+            final Deque<Individual> todo = new LinkedList<>();
 
             indi.setRootWithSpouses(indi);
             todo.addLast(indi);
             while (!todo.isEmpty()) {
-                final CIndividual pgmi = todo.removeFirst();
+                final Individual pgmi = todo.removeFirst();
                 for (int j = 0; j < pgmi.ridxSpouseToFamily.size(); ++j) {
-                    final CFamily fami = this.famis.get(pgmi.ridxSpouseToFamily.get(j));
+                    final Family fami = this.famis.get(pgmi.ridxSpouseToFamily.get(j));
                     for (int k = 0; k < fami.children.size(); ++k) {
-                        final CIndividual pchil = this.indis.get(fami.children.get(k));
+                        final Individual pchil = this.indis.get(fami.children.get(k));
                         if (!pchil.mark) {
                             pchil.setRootWithSpouses(indi);
                             if (pchil.sex == 1) {
@@ -430,20 +414,20 @@ public class Layout {
 
 
         // build new list with only house heads
-        final Deque<CIndividual> rptoclean2 = new LinkedList<>();
-        final Set<CIndividual> settoclean2 = new HashSet<>();
+        final Deque<Individual> rptoclean2 = new LinkedList<>();
+        final Set<Individual> settoclean2 = new HashSet<>();
         {
             // Finding progenitors
             //make a list of all house heads
             final Set<Integer> setheads = new HashSet<>();
-            for (final CIndividual pindi : this.indis) {
+            for (final Individual pindi : this.indis) {
                 if (pindi.house != null) {
                     setheads.add(pindi.house.idx);
                 }
             }
 
             // put house heads on rptoclean2 list in order of processing
-            for (final CIndividual psec : qToClean) {
+            for (final Individual psec : qToClean) {
                 if (setheads.contains(psec.idx)) {
                     rptoclean2.add(psec);
                     settoclean2.add(psec);
@@ -452,40 +436,41 @@ public class Layout {
         }
 
 
-        final List<Double> lev_bounds = new ArrayList<>();
+        final List<Double> xForLevel = new ArrayList<>();
         for (int i = 0; i < cLev; ++i) {
-            lev_bounds.add(0.0D);
+            xForLevel.add(0.0D);
         }
 
         clearAllIndividuals();
         // Moving branches.
         while (!rptoclean2.isEmpty()) {
-            final CIndividual psec = rptoclean2.remove();
+            final Individual psec = rptoclean2.remove();
             settoclean2.remove(psec);
 
-            final List<CIndividual> nexthouse = new ArrayList<>();
+            final List<Individual> nexthouse = new ArrayList<>();
 
-            final Set<CIndividual> guard = new HashSet<>();
-            final List<CIndividual> todo = new ArrayList<>();
+            final Set<Individual> guard = new HashSet<>();
+            final List<Individual> todo = new ArrayList<>();
             todo.add(psec);
             guard.add(psec);
             while (!todo.isEmpty()) {
-                final CIndividual pgmi = todo.remove(0);
-                final List<CIndividual> cleannext = new ArrayList<>();
-                pgmi.setSeqWithSpouses(lev_bounds, false, cleannext);
+                final Individual pgmi = todo.remove(0);
+                final List<Individual> cleannext = new ArrayList<>();
+                pgmi.setSeqWithSpouses(xForLevel, false, cleannext);
                 nexthouse.addAll(cleannext);
 
                 for (int j = 0; j < pgmi.ridxSpouseToFamily.size(); ++j) {
-                    final CFamily fami = this.famis.get(pgmi.ridxSpouseToFamily.get(j));
+                    final Family fami = this.famis.get(pgmi.ridxSpouseToFamily.get(j));
                     final List<Integer> riChild = new ArrayList<>();
                     fami.GetSortedChildren(riChild);
                     int nch = riChild.size();
                     if (nch > 0) {
-                        //put the (first two) children with spouses on the outside edges
+//                        put the (first two) children with spouses on the outside edges
+                        // TODO instead of searching children: 1, 2, ..., n-1, n; search: 1, n, 2, n-1, ...
                         int sp1 = -1;
                         int sp2 = -1;
                         for (int ch = 0; ch < nch; ++ch) {
-                            final CIndividual chil = this.indis.get(riChild.get(ch));
+                            final Individual chil = this.indis.get(riChild.get(ch));
                             if (!chil.ridxSpouse.isEmpty()) {
                                 if (sp1 < 0) {
                                     sp1 = ch;
@@ -511,11 +496,10 @@ public class Layout {
 
                         boolean left = (nch > 1);
                         for (int k = 0; k < nch; ++k) {
-                            final CIndividual pchil = this.indis.get(riChild2.get(k));
-                            final List<CIndividual> cleannext2 = new ArrayList<>();
-                            pchil.setSeqWithSpouses(lev_bounds, left, cleannext2);
+                            final Individual pchil = this.indis.get(riChild2.get(k));
+                            final List<Individual> cleannext2 = new ArrayList<>();
+                            pchil.setSeqWithSpouses(xForLevel, left, cleannext2);
                             nexthouse.addAll(cleannext2);
-                            lev_bounds.set(pchil.level, lev_bounds.get(pchil.level) + dxChild);
                             left = false;
                             if (pchil.sex == 1 && !guard.contains(pchil)) {
                                 todo.add(pchil);
@@ -526,25 +510,25 @@ public class Layout {
                 }
             }
 
-            double maxx = Double.NEGATIVE_INFINITY;
+            double xMax = Double.NEGATIVE_INFINITY;
             boolean any = false;
             for (int j = 0; j < cLev; ++j) {
-                if (maxx < lev_bounds.get(j)) {
-                    maxx = lev_bounds.get(j);
+                if (xMax < xForLevel.get(j)) {
+                    xMax = xForLevel.get(j);
                 }
                 //kludge to see if any people in this house
-                if (j > 0 && !lev_bounds.get(j).equals(lev_bounds.get(j - 1))) {
+                if (j > 0 && !xForLevel.get(j).equals(xForLevel.get(j - 1))) {
                     any = true;
                 }
             }
             if (any) {
-                maxx += dxFamily;
+                xMax += DX_FAMILY;
                 for (int j = 0; j < cLev; ++j) {
-                    lev_bounds.set(j, maxx);
+                    xForLevel.set(j, xMax);
                 }
             }
 
-            for (final CIndividual pindi : nexthouse) {
+            for (final Individual pindi : nexthouse) {
                 if (settoclean2.contains(pindi)) {
                     rptoclean2.remove(pindi);
                     rptoclean2.add(pindi);
@@ -552,14 +536,13 @@ public class Layout {
             }
         }
 
-        this.indis.forEach(CIndividual::setFromFrame);
-//        this.indis.forEach(i -> i.indi.setInitCoords(i.frame.getX(), i.frame.getY()));
+        this.indis.forEach(Individual::layOut);
     }
 
 
-    private static Comparator<CIndividual> primaryHouse() {
+    private static Comparator<Individual> primaryHouse() {
         return Comparator
-                .comparingInt((CIndividual i) -> i.maxMale)
+                .comparingInt((Individual i) -> i.maxMale)
                 .thenComparingInt(i -> i.level)
                 .thenComparingInt(i -> i.sex)
                 .reversed();

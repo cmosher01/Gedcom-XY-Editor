@@ -72,7 +72,19 @@ public class FamilyChart {
         } else {
             final Optional<Indi> i = this.indis.stream().filter(Indi::selected).findAny();
             if (i.isPresent()) {
-                this.selectedNameProperty.setValue(String.format("[%s selected] (%.2f,%.2f)", i.get().name(), i.get().x().get(), i.get().y().get()));
+                final Point2D coords = i.get().coords();
+                final Optional<Point2D> coordsOriginal = i.get().coordsOriginal();
+                final String from;
+                if (i.get().dirty()) {
+                    if (coordsOriginal.isPresent()) {
+                        from = String.format("(%.2f,%.2f) \u2192 ", coordsOriginal.get().getX(), coordsOriginal.get().getY());
+                    } else {
+                        from = "() \u2192 ";
+                    }
+                } else {
+                    from = "";
+                }
+                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f)", i.get().name(), from, coords.getX(), coords.getY()));
             } else {
                 this.selectedNameProperty.setValue("[nothing selected]");
             }
@@ -121,6 +133,7 @@ public class FamilyChart {
         final double y = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getY).min().orElse(0D);
         final Point2D coordsTopLeft = new Point2D(x, y);
         this.indis.forEach(i -> i.userNormalize(coordsTopLeft));
+        updateSelectStatus();
     }
 
     public List<Indi> indis() {
