@@ -2,18 +2,32 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.scene.*;
-import javafx.scene.control.*;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.*;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import nu.mine.mosher.gedcom.Gedcom;
@@ -27,7 +41,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -35,30 +50,74 @@ import static org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY;
 
 public final class GenXyEditor extends Application {
     private static Logger LOG;
-    static {
+
+    @Override
+    public void init() {
+        setLogLevel("warn");
+        getParameters().getUnnamed().forEach(GenXyEditor::processArg);
+        initLogging();
+        testLogging();
+    }
+
+    private static void initLogging() {
+        LOG = LoggerFactory.getLogger(GenXyEditor.class);
+
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
-        Platform.setImplicitExit(false);
     }
 
-    private Optional<Rectangle> selector = Optional.empty();
-    private Point2D ptSelStart;
+    private static void testLogging() {
+        logTestStatus("BEGIN");
+        LOG.error("Test: log level error");
+        LOG.warn("Test: log level warn");
+        LOG.info("Test: log level info");
+        LOG.debug("Test: log level debug");
+        LOG.trace("Test: log level trace");
+        java.util.logging.Logger.getGlobal().severe("Testing java.util.logging handling.");
+        logTestStatus("COMPLETE");
+    }
 
-    public static void main(final String... args) {
-        if (Arrays.stream(args).anyMatch(c -> c.equals("-vvv"))) {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "trace");
-        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-vv"))) {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "debug");
-        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-v"))) {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "info");
-        } else if (Arrays.stream(args).anyMatch(c -> c.equals("-q"))) {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "off");
-        } else {
-            System.setProperty(DEFAULT_LOG_LEVEL_KEY, "warn");
+    private static void logTestStatus(String status) {
+        if (System.getProperty(DEFAULT_LOG_LEVEL_KEY, "").equals("off")) {
+            return;
         }
-        LOG = LoggerFactory.getLogger(GenXyEditor.class);
-        Application.launch();
+        System.err.println(now()+" Logger test: "+status);
     }
+
+    private static String now() {
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
+    }
+
+    /*
+     *  Mapping of command line option to slf4j logging level:
+     *  -q off
+     *  [default] error
+     *  [default] warn
+     *  -v info
+     *  -vv debug
+     *  -vvv trace
+     */
+    private static void processArg(final String arg) {
+        switch (arg) {
+            case "-vvv":
+                setLogLevel("trace");
+                break;
+            case "-vv":
+                setLogLevel("debug");
+                break;
+            case "-v":
+                setLogLevel("info");
+                break;
+            case "-q":
+                setLogLevel("off");
+                break;
+        }
+    }
+
+    private static void setLogLevel(final String levelName) {
+        System.setProperty(DEFAULT_LOG_LEVEL_KEY, levelName);
+    }
+
     @Override
     public void start(final Stage stage) {
         stage.setTitle("GEDCOM _XY Editor");
@@ -85,6 +144,7 @@ public final class GenXyEditor extends Application {
                         t.consume();
                     }
                 });
+                Platform.setImplicitExit(false);
 
                 stage.setScene(new Scene(buildGui(stage, chart), 1920, 800));
                 stage.show();
@@ -131,9 +191,12 @@ public final class GenXyEditor extends Application {
             }
         });
 
+        final ObjectProperty<Point2D> selectStart = new SimpleObjectProperty<>();
+        final ObjectProperty<Rectangle> selector = new SimpleObjectProperty<>();
+
         canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, t -> {
             if (t.isShiftDown()) {
-                this.ptSelStart = new Point2D(t.getX(), t.getY());
+                selectStart.set(new Point2D(t.getX(), t.getY()));
                 final Rectangle sel = new Rectangle(t.getX(), t.getY(), 0D, 0D);
                 sel.setFill(Color.TRANSPARENT);
                 sel.setStrokeWidth(1.0D);
@@ -141,16 +204,16 @@ public final class GenXyEditor extends Application {
                 sel.getStrokeDashArray().addAll(3.0D);
                 canvas.getChildren().add(sel);
                 chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());
-                selector = Optional.of(sel);
+                selector.set(sel);
                 t.consume();
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
-            if (selector.isPresent()) {
+            if (selector.isNotNull().get()) {
                 final Rectangle sel = selector.get();
 
-                final double x = this.ptSelStart.getX();
+                final double x = selectStart.get().getX();
                 final double w = t.getX() - x;
                 if (w < 0D) {
                     sel.setX(t.getX());
@@ -159,7 +222,7 @@ public final class GenXyEditor extends Application {
                     sel.setWidth(w);
                 }
 
-                final double y = this.ptSelStart.getY();
+                final double y = selectStart.get().getY();
                 final double h = t.getY() - y;
                 if (h < 0D) {
                     sel.setY(t.getY());
@@ -175,10 +238,10 @@ public final class GenXyEditor extends Application {
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, t -> {
-            if (this.selector.isPresent()) {
-                canvas.getChildren().remove(this.selector.get());
+            if (selector.isNotNull().get()) {
+                canvas.getChildren().remove(selector.get());
                 t.consume();
-                this.selector = Optional.empty();
+                selector.set(null);
             }
         });
 
@@ -241,7 +304,6 @@ public final class GenXyEditor extends Application {
         }
 
 
-
         final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
         cmdNorm.setOnAction(t -> {
             final Alert alert = new Alert(Alert.AlertType.INFORMATION, "This will normalize the coordinates of all people.", ButtonType.OK, ButtonType.CANCEL);
@@ -256,14 +318,13 @@ public final class GenXyEditor extends Application {
         final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
         cmdSnap.setOnAction(t -> {
             final TextInputDialog dialog = new TextInputDialog();
-            dialog.setContentText("Snap to grid current size is "+chart.metrics().grid()+". Change to:");
+            dialog.setContentText("Snap to grid current size is " + chart.metrics().grid() + ". Change to:");
             final Optional<String> result = dialog.showAndWait();
             result.ifPresent(s -> chart.metrics().setGrid(s));
         });
 
         final Menu menuEdit = new Menu("Edit");
         menuEdit.getItems().addAll(cmdNorm, cmdSnap);
-
 
 
         final MenuBar mbar = new MenuBar();
@@ -292,6 +353,6 @@ public final class GenXyEditor extends Application {
     }
 
     public static String os() {
-        return System.getProperty("os.name","unknown").toLowerCase();
+        return System.getProperty("os.name", "unknown").toLowerCase();
     }
 }
