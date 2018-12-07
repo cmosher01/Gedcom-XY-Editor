@@ -84,7 +84,7 @@ public class FamilyChart {
                 } else {
                     from = "";
                 }
-                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f)", i.get().name(), from, coords.getX(), coords.getY()));
+                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f) [%.2fx%.2f]", i.get().name(), from, coords.getX(), coords.getY(), i.get().width(), i.get().height()));
             } else {
                 this.selectedNameProperty.setValue("[nothing selected]");
             }

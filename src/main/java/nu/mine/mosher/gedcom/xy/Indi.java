@@ -326,4 +326,12 @@ public class Indi {
     public boolean selected() {
         return this.selected.get();
     }
+
+    public double width() {
+        return this.plaque.getWidth();
+    }
+
+    public double height() {
+        return this.plaque.getHeight();
+    }
 }
