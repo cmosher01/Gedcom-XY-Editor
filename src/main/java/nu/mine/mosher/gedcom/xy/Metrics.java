@@ -50,6 +50,7 @@ public final class Metrics {
         final Map<Double, TreeSet<Double>> mapYtoXs = indis
             .stream()
             .map(Indi::laidOut)
+            .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(groupingBy(p -> Math.floor(p.getY() / YDIV), mapping(Point2D::getX, toCollection(TreeSet::new))));
 
