@@ -13,9 +13,7 @@ mainClassName = 'nu.mine.mosher.gedcom.xy.GenXyEditor'
 
 repositories {
     mavenCentral()
-    maven {
-        url 'https://mosher.mine.nu/nexus/repository/maven-public/'
-    }
+    jcenter()
 }
 
 dependencies {
