@@ -1,9 +1,7 @@
 plugins {
-  id 'org.openjfx.javafxplugin' version '0.0.7'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.7'
 }
-
-apply plugin: 'java'
-apply plugin: 'application'
 
 repositories {
     mavenCentral()
@@ -33,5 +31,5 @@ distZip {
 }
 
 group 'nu.mine.mosher.gedcom'
-mainClassName = 'nu.mine.mosher.gedcom.xy.GenXyEditor'
+mainClassName = "$moduleName/nu.mine.mosher.gedcom.xy.GenXyEditor"
 version '1.0.0'

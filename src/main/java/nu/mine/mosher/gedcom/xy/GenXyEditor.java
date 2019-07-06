@@ -46,9 +46,9 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY;
-
 public final class GenXyEditor extends Application {
+    private static final String DEFAULT_LOG_LEVEL_KEY = "org.slf4j.simpleLogger.defaultLogLevel"; // from org.slf4j.simple.SimpleLogger
+
     private static Logger LOG;
 
     @Override
