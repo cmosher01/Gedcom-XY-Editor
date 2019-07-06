@@ -1,6 +1,6 @@
 ---
 build_script:
-  - gradle assemble
+  - gradlew assemble
 artifacts:
   - name: zipfile
     path: 'build/distributions/*.zip'
