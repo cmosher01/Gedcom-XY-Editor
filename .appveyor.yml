@@ -1,0 +1,13 @@
+---
+artifacts:
+  - name: zipfile
+    path: 'build/distributions/*.zip'
+deploy:
+  description: Latest stable release
+  provider: GitHub
+  auth_token:
+    secure: TjyyWBvqvk2/j05cBmpMpWsBslEdpJV2JOWy/5Uwr7IP1zKVMx/x97deqVskxx6L
+  artifact: exefile
+  on:
+    branch: master
+    APPVEYOR_REPO_TAG: true
