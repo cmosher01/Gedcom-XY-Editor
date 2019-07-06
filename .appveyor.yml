@@ -1,5 +1,6 @@
 ---
 build_script:
+  - dir
   - gradlew assemble
 artifacts:
   - name: zipfile
