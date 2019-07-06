@@ -22,7 +22,7 @@ javafx {
     modules = [ 'javafx.controls' ]
 }
 
-ext.plat = org.gradle.internal.os.OperatingSystem.current().name.toLowerCase()
+ext.plat = org.gradle.internal.os.OperatingSystem.current().name.toLowerCase().tokenize().first()
 
 distTar {
     classifier plat
