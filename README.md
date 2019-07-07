@@ -1,6 +1,6 @@
 # Gedcom-XY-Editor
 
-Copyright © 2018, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
+Copyright © 2000–2019, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
 
 [![License](https://img.shields.io/github/license/cmosher01/Gedcom-XY-Editor.svg)](https://www.gnu.org/licenses/gpl.html)
 [![Latest Release](https://img.shields.io/github/release-pre/cmosher01/Gedcom-XY-Editor.svg)](https://github.com/cmosher01/Gedcom-XY-Editor/releases/latest)
@@ -14,8 +14,15 @@ individuals in a GEDCOM file, graphically on a traditional drop-line chart.
 The program has a genealogically oriented *layout algorithm*, to automatically
 arrange the individuals by family relationships.
 
-The program optionally allows for a “skeleton” export, with minimal identifying
+The program allows for an optional “skeleton” export, with minimal identifying
 information for individuals, intended for *merging* into an existing GEDCOM
 file.
 
+## Installation
+
 Requires [Java](https://www.java.com).
+
+Download the [latest release](https://github.com/cmosher01/Gedcom-XY-Editor/releases/latest)
+for your platform, and unzip it.
+
+Run `bin/gedcom-xy-editor` .
