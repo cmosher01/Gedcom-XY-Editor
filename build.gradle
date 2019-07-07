@@ -23,13 +23,13 @@ javafx {
 ext.plat = org.gradle.internal.os.OperatingSystem.current().name.toLowerCase().tokenize().first()
 
 distTar {
-    classifier plat
+    archiveClassifier = plat
 }
 
 distZip {
-    classifier plat
+    archiveClassifier = plat
 }
 
 group 'nu.mine.mosher.gedcom'
 mainClassName = "$moduleName/nu.mine.mosher.gedcom.xy.GenXyEditor"
-version '1.0.0'
+version '1.0.1'
