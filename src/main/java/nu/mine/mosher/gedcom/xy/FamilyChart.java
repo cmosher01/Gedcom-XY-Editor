@@ -119,7 +119,7 @@ public class FamilyChart {
         out.println("0 TRLR");
 
         if (out.checkError()) {
-            LOG.error("ERROR exporting skeleton file, file=", file);
+            LOG.error("ERROR exporting skeleton file, file={}", file);
         }
         out.close();
     }
@@ -144,7 +144,7 @@ public class FamilyChart {
         return this.selectedNameProperty;
     }
 
-    class Selection {
+    public class Selection {
         private final Set<Indi> indis = new HashSet<>();
         private Point2D orig;
 

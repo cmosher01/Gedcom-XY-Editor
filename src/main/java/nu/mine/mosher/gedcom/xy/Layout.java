@@ -59,9 +59,6 @@ public class Layout {
                 .mapToObj(i -> new Family(famis.get(i), i))
                 .collect(Collectors.toList());
 
-        final Map<Fami, Family> mapFamis = new HashMap<>();
-        this.famis.forEach(i -> mapFamis.put(i.fami, i));
-
         this.famis.forEach(f -> {
             final Fami fami = f.fami;
 
