@@ -133,9 +133,8 @@ public final class GenXyEditor extends Application {
                 Platform.exit();
                 return;
             }
-            final GedcomTree tree;
             try {
-                tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
+                final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
                 final FamilyChart chart = FamilyChartBuilder.create(tree);
                 chart.setFromOrig();
 
