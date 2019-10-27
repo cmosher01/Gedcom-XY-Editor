@@ -1,12 +1,14 @@
 language: java
-jdk: openjdk8
 
 matrix:
   include:
     - os: linux
-      dist: xenial
+      addons:
+        apt:
+          packages:
+            - openjfx
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode9.3
 
 deploy:
   provider: releases
