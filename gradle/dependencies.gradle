@@ -1,0 +1,11 @@
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+    runtimeOnly group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
+}

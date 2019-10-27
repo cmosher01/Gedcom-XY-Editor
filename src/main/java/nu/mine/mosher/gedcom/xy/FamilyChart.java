@@ -1,24 +1,13 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.property.*;
-import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import nu.mine.mosher.collection.TreeNode;
-import nu.mine.mosher.gedcom.Gedcom;
-import nu.mine.mosher.gedcom.GedcomLine;
-import nu.mine.mosher.gedcom.GedcomTag;
-import nu.mine.mosher.gedcom.GedcomTree;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nu.mine.mosher.gedcom.*;
+import org.slf4j.*;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -67,7 +56,7 @@ public class FamilyChart {
         final long cSel = this.indis.stream().filter(Indi::selected).count();
         if (cSel <= 0) {
             this.selectedNameProperty.setValue("[nothing selected]");
-        } else if (1 < cSel ){
+        } else if (1 < cSel) {
             this.selectedNameProperty.setValue(String.format("[%d selected]", cSel));
         } else {
             final Optional<Indi> i = this.indis.stream().filter(Indi::selected).findAny();
@@ -152,6 +141,7 @@ public class FamilyChart {
             this.indis.forEach(i -> i.select(false));
             this.indis.clear();
         }
+
         public void select(final Indi indi, final boolean select, final boolean updateStatus) {
             indi.select(select);
             if (select) {
@@ -163,10 +153,12 @@ public class FamilyChart {
                 updateSelectStatus();
             }
         }
+
         public void beginDrag(final Point2D orig) {
             this.orig = orig;
             updateSelectStatus();
         }
+
         public void drag(final Point2D to) {
             this.indis.forEach(i -> i.drag(to.subtract(this.orig)));
             updateSelectStatus();
@@ -174,8 +166,19 @@ public class FamilyChart {
     }
 
 
+    private static final Set<String> SKEL;
 
-    private static final Set<String> SKEL = Set.of("NAME", "SEX", "REFN", "RIN", "_XY", "BIRT", "DEAT");
+    static {
+        final Set<String> s = new HashSet<>();
+        s.add("NAME");
+        s.add("SEX");
+        s.add("REFN");
+        s.add("RIN");
+        s.add("_XY");
+        s.add("BIRT");
+        s.add("DEAT");
+        SKEL = Collections.unmodifiableSet(s);
+    }
 
     private static void extractSkeleton(final TreeNode<GedcomLine> indi, final PrintWriter out) {
         out.println(indi);

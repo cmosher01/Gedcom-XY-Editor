@@ -1,35 +1,7 @@
-plugins {
-    id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.7'
+def inc(module) {
+    apply from: "${rootProject.projectDir}/gradle/${module}.gradle"
 }
 
-repositories {
-    mavenCentral()
-    jcenter()
-}
-
-dependencies {
-    implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
-}
-
-javafx {
-    version = "11.0.2"
-    modules = [ 'javafx.controls' ]
-}
-
-ext.plat = org.gradle.internal.os.OperatingSystem.current().name.toLowerCase().tokenize().first()
-
-distTar {
-    archiveClassifier = plat
-}
-
-distZip {
-    archiveClassifier = plat
-}
-
-group 'nu.mine.mosher.gedcom'
-mainClassName = "$moduleName/nu.mine.mosher.gedcom.xy.GenXyEditor"
-version '1.0.1'
+inc('version')
+inc('project')
+inc('dependencies')

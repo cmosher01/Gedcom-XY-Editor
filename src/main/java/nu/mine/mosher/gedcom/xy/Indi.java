@@ -92,7 +92,7 @@ public class Indi {
 
     public void calc() {
         final Text textshape = new Text();
-        final ObjectBinding<Color> fillBinding = new ObjectBinding<>() {
+        final ObjectBinding<Color> fillBinding = new ObjectBinding<Color>() {
             {
                 super.bind(selected);
             }
