@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Genealogical automatic intelligent drop-line chart layout alrorithm.
+ * Genealogical automatic intelligent drop-line chart layout algorithm.
  */
 public class Layout {
     private static final Logger LOG = LoggerFactory.getLogger(Layout.class);

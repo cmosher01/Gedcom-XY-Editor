@@ -14,6 +14,7 @@ import java.util.Optional;
 import static java.util.Optional.empty;
 import static javafx.scene.paint.Color.TRANSPARENT;
 
+@SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "WeakerAccess"})
 public final class Coords {
     private static final Logger LOG = LoggerFactory.getLogger(Coords.class);
 
