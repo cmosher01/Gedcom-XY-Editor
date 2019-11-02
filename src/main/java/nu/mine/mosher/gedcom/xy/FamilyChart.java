@@ -14,6 +14,7 @@ import java.util.*;
 public class FamilyChart {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);
 
+    private final Optional<File> fileOriginal;
     private final GedcomTree tree;
     private final List<Indi> indis;
     private final List<Fami> famis;
@@ -22,6 +23,11 @@ public class FamilyChart {
     private StringProperty selectedNameProperty = new SimpleStringProperty();
 
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
+        this(tree, indis, famis, metrics, null);
+    }
+
+    public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics, final File fileOriginal) {
+        this.fileOriginal = Optional.ofNullable(fileOriginal);
         this.tree = tree;
         this.indis = Collections.unmodifiableList(new ArrayList<>(indis));
         this.famis = Collections.unmodifiableList(new ArrayList<>(famis));
@@ -133,6 +139,10 @@ public class FamilyChart {
         return this.selectedNameProperty;
     }
 
+    public Optional<File> originalFile() {
+        return fileOriginal;
+    }
+
     public class Selection {
         private final Set<Indi> indis = new HashSet<>();
         private Point2D orig;
@@ -164,6 +174,7 @@ public class FamilyChart {
             updateSelectStatus();
         }
     }
+
 
 
     private static final Set<String> SKEL;

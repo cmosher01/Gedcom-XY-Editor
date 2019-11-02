@@ -83,7 +83,7 @@ public class Indi {
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String name, DatePeriod birth, DatePeriod death, String refn, final int sex) {
         this.node = node;
         this.id = id;
-        this.coords = new Coords(wxyOriginal);
+        this.coords = new Coords(wxyOriginal, name);
         this.sex = sex;
         this.birth = birth;
         this.death = death;

@@ -20,6 +20,7 @@ public final class Coords {
     private static final Point2D xyMISSING = new Point2D(37, 73);
     private static final double SMALL = 0.51D;
 
+    private final String of;
     private Optional<Point2D> wxyOrig = empty();
     private Optional<Point2D> wxyLayout = empty();
     private Point2D wxyStart;
@@ -29,14 +30,15 @@ public final class Coords {
     private BooleanProperty propDirty = new SimpleBooleanProperty();
 
     private void dumpToLog(final String label) {
-        LOG.debug("{}: {},{},{},{},{},{},{}", label,
+        LOG.debug("{}: {},{},{},{},{},{},{},{}", label,
             toDump("wxyOrig", this.wxyOrig),
             toDump("wxyLayout", this.wxyLayout),
             toDump("wxyStart", this.wxyStart),
             toDump("xyStart", this.xyStart),
             toDump("xyLayoutUser", new Point2D(this.xyLayoutUser.getLayoutX(), this.xyLayoutUser.getLayoutY())),
             String.format("mag=%.0f",userMoved().magnitude()),
-            (!dirty() ? "-" : this.forceDirty ? "F" : "D"));
+            (!dirty() ? "-" : this.forceDirty ? "F" : "D"),
+            this.of);
     }
 
     private String toDump(final String name, final Optional<Point2D> p) {
@@ -54,10 +56,12 @@ public final class Coords {
      * read in (and parsed into {@code double} values) from the GEDCOM file.
      * If there is no {@code _XY} record for the individual, then pass in {@link Optional#empty()}.
      * @param original {@code _XY} coordinates from GEDCOM file, cannot be {@code null}
+     * @param name
      */
-    public Coords(final Optional<Point2D> original) {
+    public Coords(final Optional<Point2D> original, final String name) {
         this.wxyOrig = Objects.requireNonNull(original);
         this.wxyLayout = this.wxyOrig;
+        this.of = name;
     }
 
     /**
@@ -188,8 +192,8 @@ public final class Coords {
     }
 
     /**
-     * Checks whether the user have indicated this individual should be moved
-     * (or was autoamtizally laid out), and has not yet been {@link Coords#save()}'d.
+     * Checks whether the user has indicated this individual should be moved
+     * (or was automatically laid out), and has not yet been {@link Coords#save()}'d.
      * @return
      */
     public boolean dirty() {

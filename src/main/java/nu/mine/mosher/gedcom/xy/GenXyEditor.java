@@ -13,85 +13,43 @@ import javafx.scene.text.Text;
 import javafx.stage.*;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.ZoomPane;
+import nu.mine.mosher.util.AppDirs;
 import org.slf4j.*;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
+import java.nio.file.*;
 import java.util.*;
+import java.util.prefs.Preferences;
 
 public final class GenXyEditor extends Application {
-    private static final String DEFAULT_LOG_LEVEL_KEY = "org.slf4j.simpleLogger.defaultLogLevel"; // from org.slf4j.simple.SimpleLogger
-
-    private static Logger LOG;
-
-    @Override
-    public void init() {
-        setLogLevel("warn");
-        getParameters().getUnnamed().forEach(GenXyEditor::processArg);
-        initLogging();
-        testLogging();
-    }
-
-    private static void initLogging() {
-        LOG = LoggerFactory.getLogger(GenXyEditor.class);
-
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
-        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
-    }
-
-    private static void testLogging() {
-        logTestStatus("BEGIN");
-        LOG.error("Test: log level error");
-        LOG.warn("Test: log level warn");
-        LOG.info("Test: log level info");
-        LOG.debug("Test: log level debug");
-        LOG.trace("Test: log level trace");
-        java.util.logging.Logger.getGlobal().severe("Testing java.util.logging handling.");
-        logTestStatus("COMPLETE");
-    }
-
-    private static void logTestStatus(String status) {
-        if (System.getProperty(DEFAULT_LOG_LEVEL_KEY, "").equals("off")) {
-            return;
-        }
-        System.err.println(now()+" Logger test: "+status);
-    }
-
-    private static String now() {
-        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date());
-    }
-
-    /*
-     *  Mapping of command line option to slf4j logging level:
-     *  -q off
-     *  [default] error
-     *  [default] warn
-     *  -v info
-     *  -vv debug
-     *  -vvv trace
-     */
-    private static void processArg(final String arg) {
-        switch (arg) {
-            case "-vvv":
-                setLogLevel("trace");
-                break;
-            case "-vv":
-                setLogLevel("debug");
-                break;
-            case "-v":
-                setLogLevel("info");
-                break;
-            case "-q":
-                setLogLevel("off");
-                break;
+    public static void main(final String... args) {
+        try {
+            initLogging();
+            launch(args);
+        } catch (final Throwable e) {
+            logProgramTermination(e);
         }
     }
 
-    private static void setLogLevel(final String levelName) {
-        System.setProperty(DEFAULT_LOG_LEVEL_KEY, levelName);
+    public static Preferences prefs() {
+        return Preferences.userNodeForPackage(GenXyEditor.class);
+    }
+
+    private static File inDir() {
+        return new File(prefs().get("inDir", "./"));
+    }
+
+    private static void inDir(final File dir) {
+        prefs().put("inDir", dir.getAbsolutePath());
+    }
+
+    private static File outDir() {
+        return new File(prefs().get("outDir", "./"));
+    }
+
+    private static void outDir(final File dir) {
+        prefs().put("outDir", dir.getAbsolutePath());
     }
 
     @Override
@@ -100,18 +58,20 @@ public final class GenXyEditor extends Application {
 
         Platform.runLater(() -> {
             final FileChooser fileChooser = new FileChooser();
+            fileChooser.setInitialDirectory(inDir());
             fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("GEDCOM files", "*.ged"),
-                    new FileChooser.ExtensionFilter("all files", "*.*"));
+                new FileChooser.ExtensionFilter("GEDCOM files", "*.ged"),
+                new FileChooser.ExtensionFilter("all files", "*.*"));
             final File fileToOpen = fileChooser.showOpenDialog(null);
             if (Objects.isNull(fileToOpen)) {
                 LOG.warn("User cancelled opening file. Program will exit.");
                 Platform.exit();
                 return;
             }
+            inDir(fileToOpen.getParentFile());
             try {
                 final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
-                final FamilyChart chart = FamilyChartBuilder.create(tree);
+                final FamilyChart chart = FamilyChartBuilder.create(tree, fileToOpen);
                 chart.setFromOrig();
 
                 stage.setOnCloseRequest(t -> {
@@ -130,7 +90,39 @@ public final class GenXyEditor extends Application {
         });
     }
 
-    private boolean exitIfSafe(final Stage stage, final FamilyChart chart) {
+
+
+    private static Logger LOG;
+
+    private static void initLogging() throws FileNotFoundException {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
+
+        final AppDirs DIRS = AppDirs.of(GenXyEditor.class);
+        final PrintStream log = new PrintStream(new FileOutputStream(DIRS.logFile(), true), true);
+        System.setErr(log);
+        System.setOut(log);
+
+        LOG = LoggerFactory.getLogger(GenXyEditor.class);
+        LOG.info("Program starting.");
+    }
+
+    private static void logProgramTermination(final Throwable e) {
+        if (Objects.nonNull(LOG)) {
+            LOG.error("Program terminating due to error:", e);
+        } else {
+            try {
+                final Path pathTemp = Files.createTempFile("GEDCOM-XY-EDITOR-", ".tmp");
+                System.setErr(new PrintStream(new FileOutputStream(pathTemp.toFile()), true));
+                e.printStackTrace();
+            } catch (final Throwable reallyBad) {
+                reallyBad.printStackTrace();
+            }
+        }
+    }
+
+    private static boolean exitIfSafe(final Stage stage, final FamilyChart chart) {
         boolean safe = false;
         if (chart.dirty()) {
             final Alert alert = new Alert(Alert.AlertType.WARNING, "Your unsaved changes will be DISCARDED.", ButtonType.OK, ButtonType.CANCEL);
@@ -145,6 +137,7 @@ public final class GenXyEditor extends Application {
             safe = true;
         }
         if (safe) {
+            LOG.info("Stopping program due to user request.");
             stage.setOnCloseRequest(null);
             stage.close();
             Platform.exit();
@@ -152,7 +145,7 @@ public final class GenXyEditor extends Application {
         return safe;
     }
 
-    private Parent buildGui(final Stage stage, final FamilyChart chart) {
+    private static Parent buildGui(final Stage stage, final FamilyChart chart) {
         final Pane canvas = new Pane();
         canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colorBg(), CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -234,16 +227,21 @@ public final class GenXyEditor extends Application {
         return root;
     }
 
-    private MenuBar buildMenuBar(final Stage stage, final FamilyChart chart) {
+    private static MenuBar buildMenuBar(final Stage stage, final FamilyChart chart) {
         final MenuItem cmdSaveAs = new MenuItem("Save As...");
         cmdSaveAs.setMnemonicParsing(true);
         cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
         cmdSaveAs.setOnAction(t -> {
             final FileChooser fileChooser = new FileChooser();
+            fileChooser.setInitialDirectory(outDir());
+            if (chart.originalFile().isPresent()) {
+                fileChooser.setInitialFileName(chart.originalFile().get().getName());
+            }
             final File file = fileChooser.showSaveDialog(stage);
             if (Objects.isNull(file)) {
                 return;
             }
+            outDir(file.getParentFile());
             try {
                 chart.saveAs(file);
             } catch (final IOException e) {
@@ -308,13 +306,19 @@ public final class GenXyEditor extends Application {
         return mbar;
     }
 
-    private void exportSkel(final Stage stage, final FamilyChart chart, final boolean exportAll) {
+    private static void exportSkel(final Stage stage, final FamilyChart chart, final boolean exportAll) {
         final FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialFileName(".skel.ged");
+        fileChooser.setInitialDirectory(outDir());
+        if (chart.originalFile().isPresent()) {
+            fileChooser.setInitialFileName(skelNameOf(chart.originalFile().get().getName()));
+        } else {
+            fileChooser.setInitialFileName(".skel.ged");
+        }
         final File file = fileChooser.showSaveDialog(stage);
         if (Objects.isNull(file)) {
             return;
         }
+        outDir(file.getParentFile());
         try {
             chart.saveSkeleton(exportAll, file);
         } catch (final IOException e) {
@@ -323,11 +327,15 @@ public final class GenXyEditor extends Application {
         }
     }
 
-    public boolean mac() {
+    private static String skelNameOf(String name) {
+        return name.replaceFirst(".ged$", ".skel.ged");
+    }
+
+    private static boolean mac() {
         return os().startsWith("mac") || os().startsWith("darwin");
     }
 
-    public static String os() {
+    private static String os() {
         return System.getProperty("os.name", "unknown").toLowerCase();
     }
 }

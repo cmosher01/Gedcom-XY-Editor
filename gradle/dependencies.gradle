@@ -4,8 +4,23 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
-    runtimeOnly group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
+    compile group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
+
+    compile group: 'net.harawata', name: 'appdirs', version: 'latest.integration'
+
+    /*
+    Bridge any other logging frameworks (used by any dependencies) to slf4j.
+    https://www.slf4j.org/legacy.html "SLF4J bound to logback-classic with
+    redirection of commons-logging, log4j and java.util.logging to SLF4J"
+     */
+    /* Jakarta Commons Logging. Also need to exclude 'commons-logging'. */
+    runtime group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.integration'
+    /* Apache Log4J. */
+    runtime group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.integration'
+    /* java.util.logging (JUL). Also need to use SLF4JBridgeHandler. */
+    compile group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
+
+    compile group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+
+    runtime group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
 }

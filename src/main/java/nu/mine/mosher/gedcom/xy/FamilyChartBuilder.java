@@ -10,7 +10,7 @@ import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.StringReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +27,10 @@ public final class FamilyChartBuilder {
     }
 
     public static FamilyChart create(final GedcomTree tree) {
+        return create(tree, null);
+    }
+
+    public static FamilyChart create(final GedcomTree tree, final File original) {
         final Map<String, Indi> mapIdToIndi = new HashMap<>();
 
         final List<Indi> indis = buildIndis(tree, mapIdToIndi);
@@ -43,7 +47,7 @@ public final class FamilyChartBuilder {
         famis.forEach(f -> f.setMetrics(metrics));
         indis.forEach(i -> i.setMetrics(metrics));
 
-        return new FamilyChart(tree, indis, famis, metrics);
+        return new FamilyChart(tree, indis, famis, metrics, original);
     }
 
     private static List<Indi> buildIndis(final GedcomTree tree, final Map<String, Indi> mapIdToIndi) {
