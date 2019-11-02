@@ -37,7 +37,6 @@ public final class Metrics {
     private final double widthMax;
     private final double heightNominal;
     private final Font font;
-    private int grid = 25;
 
     public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis) {
         final double dxPartner = famis.stream().mapToDouble(Fami::getMarrDistance).filter(Metrics::nominalDistance).average().orElse(0D);
@@ -181,7 +180,7 @@ public final class Metrics {
         try {
             final int g =Integer.parseInt(s);
             if (0 <= g && g <= 1000) {
-                this.grid = g;
+                GenXyEditor.prefs().putInt("snapToGrid", g);
             }
         } catch (final Exception e) {
             e.printStackTrace();
@@ -189,6 +188,6 @@ public final class Metrics {
     }
 
     public int grid() {
-        return this.grid;
+        return GenXyEditor.prefs().getInt("snapToGrid", 25);
     }
 }

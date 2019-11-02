@@ -37,7 +37,14 @@ public final class GenXyEditor extends Application {
     }
 
     private static File inDir() {
-        return new File(prefs().get("inDir", "./"));
+        final String def;
+        final String other = prefs().get("outDir", "");
+        if (!other.isEmpty()) {
+            def = other;
+        } else {
+            def = "./";
+        }
+        return new File(prefs().get("inDir", def));
     }
 
     private static void inDir(final File dir) {
@@ -45,6 +52,13 @@ public final class GenXyEditor extends Application {
     }
 
     private static File outDir() {
+        final String def;
+        final String other = prefs().get("inDir", "");
+        if (!other.isEmpty()) {
+            def = other;
+        } else {
+            def = "./";
+        }
         return new File(prefs().get("outDir", "./"));
     }
 
