@@ -11,6 +11,7 @@ buildscript {
 apply plugin: de.dynamicfiles.projects.gradle.plugins.javafx.JavaFXGradlePlugin
 
 jfx {
+    bundler = 'ALL'
     mainClass = application.mainClassName
     vendor = 'github.com/cmosher01'
 }
