@@ -6,7 +6,7 @@ repositories {
 dependencies {
     compile group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.integration'
 
-    compile group: 'net.harawata', name: 'appdirs', version: 'latest.integration'
+    compile group: 'nu.mine.mosher.io', name: 'log-files', version: 'latest.integration'
 
     /*
     Bridge any other logging frameworks (used by any dependencies) to slf4j.

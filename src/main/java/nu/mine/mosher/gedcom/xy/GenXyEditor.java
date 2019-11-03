@@ -13,7 +13,7 @@ import javafx.scene.text.Text;
 import javafx.stage.*;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.ZoomPane;
-import nu.mine.mosher.util.AppDirs;
+import nu.mine.mosher.io.LogFiles;
 import org.slf4j.*;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -108,15 +108,12 @@ public final class GenXyEditor extends Application {
 
     private static Logger LOG;
 
-    private static void initLogging() throws FileNotFoundException {
+    private static void initLogging() {
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
         java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
 
-        final AppDirs DIRS = AppDirs.of(GenXyEditor.class);
-        final PrintStream log = new PrintStream(new FileOutputStream(DIRS.logFile(), true), true);
-        System.setErr(log);
-        System.setOut(log);
+        System.setProperty("org.slf4j.simpleLogger.logFile", LogFiles.getLogFileOf(GenXyEditor.class).getPath());
 
         LOG = LoggerFactory.getLogger(GenXyEditor.class);
         LOG.info("Program starting.");
@@ -127,10 +124,10 @@ public final class GenXyEditor extends Application {
             LOG.error("Program terminating due to error:", e);
         } else {
             try {
-                final Path pathTemp = Files.createTempFile("GEDCOM-XY-EDITOR-", ".tmp");
-                System.setErr(new PrintStream(new FileOutputStream(pathTemp.toFile()), true));
-                e.printStackTrace();
+                final Path pathTemp = Files.createTempFile(GenXyEditor.class.getName()+"-", ".log");
+                e.printStackTrace(new PrintStream(new FileOutputStream(pathTemp.toFile()), true));
             } catch (final Throwable reallyBad) {
+                e.printStackTrace();
                 reallyBad.printStackTrace();
             }
         }
