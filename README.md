@@ -17,12 +17,3 @@ arrange the individuals by family relationships.
 The program allows for an optional “skeleton” export, with minimal identifying
 information for individuals, intended for *merging* into an existing GEDCOM
 file.
-
-## Installation
-
-Requires [Java](https://www.java.com).
-
-Download the [latest release](https://github.com/cmosher01/Gedcom-XY-Editor/releases/latest)
-for your platform, and unzip it.
-
-Run `bin/gedcom-xy-editor` .
