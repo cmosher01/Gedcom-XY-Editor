@@ -13,19 +13,22 @@ import javafx.scene.text.Text;
 import javafx.stage.*;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.ZoomPane;
-import nu.mine.mosher.io.LogFiles;
 import org.slf4j.*;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.*;
 import java.nio.file.*;
+import java.sql.*;
 import java.util.*;
 import java.util.prefs.Preferences;
+import java.util.regex.*;
 
 public final class GenXyEditor extends Application {
     public static void main(final String... args) {
+        System.out.println("main");
+        System.out.flush();
         try {
             initLogging();
+            initJdbc();
             launch(args);
         } catch (final Throwable e) {
             logProgramTermination(e);
@@ -84,8 +87,15 @@ public final class GenXyEditor extends Application {
             }
             inDir(fileToOpen.getParentFile());
             try {
-                final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
-                final FamilyChart chart = FamilyChartBuilder.create(tree, fileToOpen);
+                final FamilyChart chart;
+
+                final String filetype = filetypeOf(fileToOpen);
+                if (filetype.equalsIgnoreCase("GED")) {
+                    final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
+                    chart = FamilyChartBuilderGed.create(tree, fileToOpen);
+                } else {
+                    chart = FamilyChartBuilderFtm.create(fileToOpen);
+                }
                 chart.setFromOrig();
 
                 stage.setOnCloseRequest(t -> {
@@ -104,19 +114,51 @@ public final class GenXyEditor extends Application {
         });
     }
 
+    private static final Pattern patFiletype = Pattern.compile("^.*\\.(.*)$");
+
+    private String filetypeOf(final File file) {
+        final Matcher matcher = patFiletype.matcher(file.getName());
+        if (!matcher.matches()) {
+            return "";
+        }
+        final String ft = matcher.group(1);
+        return Objects.isNull(ft) ? "" : ft;
+    }
 
 
+    private static final String CLASS_DRIVER_JDBC = "org.sqlite.JDBC";
     private static Logger LOG;
 
     private static void initLogging() {
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
-        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
-
-        System.setProperty("org.slf4j.simpleLogger.logFile", LogFiles.getLogFileOf(GenXyEditor.class).getPath());
+//        SLF4JBridgeHandler.removeHandlersForRootLogger();
+//        SLF4JBridgeHandler.install();
+//        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
 
         LOG = LoggerFactory.getLogger(GenXyEditor.class);
+        System.out.println("main logger class "+LOG.getClass().getCanonicalName());
+
+        LOG.trace("testing TRACE level log");
+        LOG.debug("testing DEBUG level log");
+        LOG.info("testing INFO level log");
+        LOG.error("testing ERROR level log");
+        LOG.warn("testing WARN level log");
+
         LOG.info("Program starting.");
+    }
+
+    private static void initJdbc() throws ClassNotFoundException, SQLException {
+        LOG.debug("loading JDBC driver: {}...", CLASS_DRIVER_JDBC);
+        LOG.info("successfully loaded JDBC driver class: {}", Class.forName(CLASS_DRIVER_JDBC).getCanonicalName());
+
+        final Driver driverJdbc = DriverManager.getDriver("jdbc:sqlite:");
+        LOG.info("JDBC driver version: major={},minor={}", driverJdbc.getMajorVersion(), driverJdbc.getMinorVersion());
+
+        final Optional<java.util.logging.Logger> jdbcLogger = Optional.ofNullable(driverJdbc.getParentLogger());
+        if (jdbcLogger.isPresent()) {
+            jdbcLogger.get().info("Logging via JDBC driver logger: " + jdbcLogger.toString());
+        } else {
+            LOG.info("JDBC driver logger not found.");
+        }
     }
 
     private static void logProgramTermination(final Throwable e) {
@@ -239,44 +281,55 @@ public final class GenXyEditor extends Application {
     }
 
     private static MenuBar buildMenuBar(final Stage stage, final FamilyChart chart) {
-        final MenuItem cmdSaveAs = new MenuItem("Save As...");
-        cmdSaveAs.setMnemonicParsing(true);
-        cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
-        cmdSaveAs.setOnAction(t -> {
-            final FileChooser fileChooser = new FileChooser();
-            fileChooser.setInitialDirectory(outDir());
-            if (chart.originalFile().isPresent()) {
-                fileChooser.setInitialFileName(chart.originalFile().get().getName());
-            }
-            final File file = fileChooser.showSaveDialog(stage);
-            if (Objects.isNull(file)) {
-                return;
-            }
-            outDir(file.getParentFile());
-            try {
-                chart.saveAs(file);
-            } catch (final IOException e) {
-                // TODO: this is not nice
-                LOG.error("An error occurred while trying to save file, file={}", file, e);
-            }
-        });
-
-        final MenuItem cmdExportDirty = new MenuItem("Export Changed As Skeletons...");
-        cmdExportDirty.setMnemonicParsing(true);
-        cmdExportDirty.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
-        cmdExportDirty.setOnAction(t -> {
-            exportSkel(stage, chart, false);
-        });
-
-        final MenuItem cmdExportAll = new MenuItem("Export ALL As Skeletons...");
-        cmdExportAll.setMnemonicParsing(true);
-        cmdExportAll.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
-        cmdExportAll.setOnAction(t -> {
-            exportSkel(stage, chart, true);
-        });
-
         final Menu menuFile = new Menu("File");
-        menuFile.getItems().addAll(cmdExportDirty, cmdExportAll, new SeparatorMenuItem(), cmdSaveAs);
+
+        if (chart.isGedcomFile()) {
+            final MenuItem cmdSaveAs = new MenuItem("Save As...");
+            cmdSaveAs.setMnemonicParsing(true);
+            cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
+            cmdSaveAs.setOnAction(t -> {
+                final FileChooser fileChooser = new FileChooser();
+                fileChooser.setInitialDirectory(outDir());
+                if (chart.originalFile().isPresent()) {
+                    fileChooser.setInitialFileName(chart.originalFile().get().getName());
+                }
+                final File file = fileChooser.showSaveDialog(stage);
+                if (Objects.isNull(file)) {
+                    return;
+                }
+                outDir(file.getParentFile());
+                try {
+                    chart.saveAs(file);
+                } catch (final IOException e) {
+                    // TODO: this is not nice
+                    LOG.error("An error occurred while trying to save file, file={}", file, e);
+                }
+            });
+
+            final MenuItem cmdExportDirty = new MenuItem("Export Changed As Skeletons...");
+            cmdExportDirty.setMnemonicParsing(true);
+            cmdExportDirty.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
+            cmdExportDirty.setOnAction(t -> {
+                exportSkel(stage, chart, false);
+            });
+
+            final MenuItem cmdExportAll = new MenuItem("Export ALL As Skeletons...");
+            cmdExportAll.setMnemonicParsing(true);
+            cmdExportAll.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
+            cmdExportAll.setOnAction(t -> {
+                exportSkel(stage, chart, true);
+            });
+
+            menuFile.getItems().addAll(cmdExportDirty, cmdExportAll, new SeparatorMenuItem(), cmdSaveAs);
+        } else {
+            final MenuItem cmdSave = new MenuItem("Save");
+            cmdSave.setMnemonicParsing(true);
+            cmdSave.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
+            cmdSave.setOnAction(t -> {
+                chart.save();
+            });
+            menuFile.getItems().addAll(cmdSave);
+        }
 
         /* Mac platform provides its own Quit on the system menu */
         if (!mac()) {

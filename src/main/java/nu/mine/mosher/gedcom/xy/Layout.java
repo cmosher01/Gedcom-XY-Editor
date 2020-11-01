@@ -1,5 +1,5 @@
 /*
-    Copyright © 2000–2018, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
+    Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,9 +17,7 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.Point2D;
-import nu.mine.mosher.time.Time;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,6 +93,12 @@ public class Layout {
     }
 
 
+
+
+
+
+
+
     private final List<Individual> indis;
     private final List<Family> famis;
 
@@ -114,7 +118,7 @@ public class Layout {
         void GetSortedChildren(final List<Integer> riChild) {
             riChild.clear();
             riChild.addAll(children);
-            riChild.sort(Comparator.comparing(i -> Layout.this.indis.get(i).getSimpleBirth()));
+            riChild.sort(Comparator.comparing(i -> Layout.this.indis.get(i).getBirthForSort()));
         }
     }
 
@@ -324,14 +328,23 @@ public class Layout {
             xForLevel.set(spouse.level, spouse.location.getX() + 2D * MAX_WIDTH);
         }
 
-        private Time getSimpleBirth() {
-            return this.indi.getBirth().getStartDate().getApproxDay();
+        private long getBirthForSort() {
+            return this.indi.getBirthForSort();
         }
 
         public void layOut() {
             this.indi.layOut(this.location);
         }
     }
+
+
+
+
+
+
+
+
+
 
 
     public void cleanAll() {
@@ -342,7 +355,7 @@ public class Layout {
         }
 
 
-        // set generation levels (also sets position on y-axis)
+        LOG.debug("set generation levels (also sets position on y-axis)");
         {
             clearAllIndividuals();
             int batch = 0;
@@ -358,7 +371,7 @@ public class Layout {
             }
         }
 
-        // normalize indis' level nums
+        LOG.debug("normalize indis' level nums");
         final int cLev; //count of levels
         {
             final int levMax = this.indis.stream().mapToInt(i -> i.level).max().getAsInt();
@@ -371,7 +384,7 @@ public class Layout {
         }
 
 
-        // calc max male-branch-descendant-generations size for all indis
+        LOG.debug("calc max male-branch-descendant-generations size for all indis");
         {
             clearAllIndividuals();
             // Finding branches
@@ -401,7 +414,7 @@ public class Layout {
                         .collect(Collectors.toCollection(LinkedList::new));
 
 
-        // Labeling branches
+        LOG.debug("Labeling branches");
 
         clearAllIndividuals();
 
@@ -428,7 +441,7 @@ public class Layout {
         }
 
 
-        // build new list with only house heads
+        LOG.debug("build new list with only house heads");
         final Deque<Individual> rptoclean2 = new LinkedList<>();
         final Set<Individual> settoclean2 = new HashSet<>();
         {
@@ -457,10 +470,11 @@ public class Layout {
         }
 
         clearAllIndividuals();
-        // Moving branches.
+        LOG.debug("Moving branches");
         while (!rptoclean2.isEmpty()) {
             final Individual psec = rptoclean2.remove();
             settoclean2.remove(psec);
+            LOG.debug("branch head: {}", psec.indi.name());
 
             final List<Individual> nexthouse = new ArrayList<>();
 
@@ -480,17 +494,18 @@ public class Layout {
                     fami.GetSortedChildren(riChild);
                     int nch = riChild.size();
                     if (nch > 0) {
-//                        put the (first two) children with spouses on the outside edges
-                        // TODO instead of searching children: 1, 2, ..., n-1, n; search: 1, n, 2, n-1, ...
+                        // put the (first two) children with spouses on the outside edges
+                        // search for children in "flip-flopping" order, viz.: 1, n, 2, n-1, ...
                         int sp1 = -1;
                         int sp2 = -1;
                         for (int ch = 0; ch < nch; ++ch) {
-                            final Individual chil = this.indis.get(riChild.get(ch));
+                            final int fch = flop(ch, nch);
+                            final Individual chil = this.indis.get(riChild.get(fch));
                             if (!chil.ridxSpouse.isEmpty()) {
                                 if (sp1 < 0) {
-                                    sp1 = ch;
+                                    sp1 = fch;
                                 } else if (sp2 < 0) {
-                                    sp2 = ch;
+                                    sp2 = fch;
                                 }
                             }
                         }
@@ -516,7 +531,7 @@ public class Layout {
                             pchil.setSeqWithSpouses(xForLevel, left, cleannext2);
                             nexthouse.addAll(cleannext2);
                             left = false;
-                            if (pchil.sex == 1 && !guard.contains(pchil)) {
+                            if (/* TODO why was this here? it caused some children to be skipped altogether: pchil.sex == 1 &&*/ !guard.contains(pchil)) {
                                 todo.add(pchil);
                                 guard.add(pchil);
                             }
@@ -552,6 +567,11 @@ public class Layout {
         }
 
         this.indis.forEach(Individual::layOut);
+    }
+
+    private static int flop(final int ch, final int nch) {
+        final int h = ch/2;
+        return (ch == 2*h) ? h : nch-(h+1);
     }
 
 

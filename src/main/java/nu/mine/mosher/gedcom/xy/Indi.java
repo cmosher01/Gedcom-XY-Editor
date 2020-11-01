@@ -25,32 +25,27 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
-import nu.mine.mosher.gedcom.date.DatePeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.sql.*;
+import java.util.*;
 
 public class Indi {
     private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
 
-    public static final int XY_SCALE = 2;
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
 
-    private final DatePeriod death;
     private final String name;
 
     private Metrics metrics;
     private final TreeNode<GedcomLine> node;
     private final String id;
+    private String idCoords;
     private final Coords coords;
     private final int sex;
-    private final DatePeriod birth;
+    private final long nBirthForSort;
+    private final String lifespan;
 
     private final StackPane plaque = new StackPane();
 
@@ -61,10 +56,6 @@ public class Indi {
 
     public int getSex() {
         return this.sex;
-    }
-
-    public DatePeriod getBirth() {
-        return this.birth;
     }
 
     public void setMetrics(final Metrics metrics) {
@@ -80,14 +71,15 @@ public class Indi {
     }
 
 
-    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String name, DatePeriod birth, DatePeriod death, String refn, final int sex) {
+    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, final int sex) {
         this.node = node;
         this.id = id;
+        this.idCoords = Objects.nonNull(idCoords) ? idCoords : "";
         this.coords = new Coords(wxyOriginal, name);
         this.sex = sex;
-        this.birth = birth;
-        this.death = death;
         this.name = name;
+        this.lifespan = lifespan;
+        this.nBirthForSort = nBirthForSort;
     }
 
     public void calc() {
@@ -175,8 +167,7 @@ public class Indi {
         if (grid == 0) {
             return c;
         }
-        final double snapped = Math.rint(Math.floor(c / grid) * grid);
-        return snapped;
+        return Math.rint(Math.floor(c / grid) * grid);
     }
 
     private String buildLabel() {
@@ -188,27 +179,13 @@ public class Indi {
             label.append("?");
         }
 
-        final String displayBirth = dateString(this.birth);
-        final String displayDeath = dateString(this.death);
-        if (!displayBirth.isEmpty() || !displayDeath.isEmpty()) {
-            label.append("\n");
-            label.append(displayBirth.isEmpty() ? "?" : displayBirth);
-            label.append('\u2013');
-            label.append(displayDeath.isEmpty() ? "?" : displayDeath);
+        if (!this.lifespan.isBlank()) {
+            label.append("\n(");
+            label.append(this.lifespan);
+            label.append(")");
         }
 
         return label.toString();
-    }
-
-    private static String dateString(final DatePeriod date) {
-        final Date d = date.getStartDate().getApproxDay().asDate();
-        if (d.getTime() == 0) {
-            return "";
-        }
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(d);
-        int year = cal.get(Calendar.YEAR);
-        return "" + year;
     }
 
     public String getId() {
@@ -229,6 +206,10 @@ public class Indi {
 
     public String name() {
         return this.name;
+    }
+
+    public long getBirthForSort() {
+        return this.nBirthForSort;
     }
 
     public TreeNode<GedcomLine> node() {
@@ -259,8 +240,48 @@ public class Indi {
         return this.coords.dirty();
     }
 
+    public void saveXyToFtm(final Connection conn, final long pkidFactTypeXy) throws SQLException {
+        final String xy = Coords.toValueXY(this.coords.get());
+        if (idCoords.isBlank()) {
+            LOG.debug(
+                "INSERT INTO Fact(LinkID, LinkTableID, FactTypeID, Preferred, Text) VALUES ({},{},{},{},'{}')",
+                Long.parseLong(id), 5L, pkidFactTypeXy, 1L, xy);
+            final String sql = "INSERT INTO Fact(LinkID, LinkTableID, FactTypeID, Preferred, Text) VALUES (?,?,?,?,?)";
+            try (final PreparedStatement insert = conn.prepareStatement(sql)) {
+                insert.setLong(1, Long.parseLong(id));
+                insert.setLong(2, 5L);
+                insert.setLong(3, pkidFactTypeXy);
+                insert.setLong(4, 1L);
+                insert.setString(5, xy);
+                insert.executeUpdate();
+
+                final ResultSet generatedKeys = insert.getGeneratedKeys();
+                if (!generatedKeys.next()) {
+                    LOG.error("Could not update internal ID");
+                    return;
+                }
+                this.idCoords = generatedKeys.getString(1);
+                this.coords.save();
+                if (generatedKeys.next()) {
+                    LOG.warn("Database returned multiple IDs when we only expected one.");
+                }
+            }
+        } else {
+            LOG.debug("UPDATE Fact SET Text = '{}' WHERE ID = {}",
+                xy, Long.parseLong(this.idCoords));
+            final String sql = "UPDATE Fact SET Text = ? WHERE ID = ?";
+            try (final PreparedStatement update = conn.prepareStatement(sql)) {
+                update.setString(1, xy);
+                update.setLong(2, Long.parseLong(this.idCoords));
+                update.executeUpdate();
+                this.coords.save();
+                LOG.debug("updated {} row(s)", update.getUpdateCount());
+            }
+        }
+    }
+
     public void saveXyToTree() {
-        final String value_XY = toValue_XY(this.coords.get());
+        final String value_XY = Coords.toValueXY(this.coords.get());
         final Optional<TreeNode<GedcomLine>> existingXyNode = findChild(this.node, "_XY");
         final TreeNode<GedcomLine> newNode = new TreeNode<>(this.node.getObject().createChild("_XY", value_XY));
         if (existingXyNode.isPresent()) {
@@ -278,14 +299,6 @@ public class Indi {
             this.node.addChild(newNode);
         }
         this.coords.save();
-    }
-
-    private static String toValue_XY(final Point2D xy) {
-        return coord(xy.getX())+" "+coord(xy.getY());
-    }
-
-    private static String coord(final double coord) {
-        return BigDecimal.valueOf(coord).setScale(XY_SCALE, RoundingMode.HALF_DOWN).toPlainString();
     }
 
     private static Optional<TreeNode<GedcomLine>> findChild(final TreeNode<GedcomLine> parent, final String tag) {

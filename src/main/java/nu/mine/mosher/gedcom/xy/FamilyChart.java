@@ -6,29 +6,27 @@ import javafx.scene.Node;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
 import org.slf4j.*;
+import org.sqlite.SQLiteConfig;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.sql.*;
 import java.util.*;
 
 public class FamilyChart {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);
 
     private final Optional<File> fileOriginal;
-    private final GedcomTree tree;
+    private final Optional<GedcomTree> tree;
     private final List<Indi> indis;
     private final List<Fami> famis;
     private final Metrics metrics;
     private final Selection selection = new Selection();
     private StringProperty selectedNameProperty = new SimpleStringProperty();
 
-    public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics) {
-        this(tree, indis, famis, metrics, null);
-    }
-
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics, final File fileOriginal) {
         this.fileOriginal = Optional.ofNullable(fileOriginal);
-        this.tree = tree;
+        this.tree = Optional.ofNullable(tree);
         this.indis = Collections.unmodifiableList(new ArrayList<>(indis));
         this.famis = Collections.unmodifiableList(new ArrayList<>(famis));
         this.metrics = metrics;
@@ -90,10 +88,119 @@ public class FamilyChart {
         return this.metrics;
     }
 
+    public boolean isGedcomFile() {
+        return this.tree.isPresent();
+    }
+
+    public void save() {
+        try {
+            trySave();
+        } catch (final Throwable e) {
+            LOG.error("Error occurred while trying to write _XY Fact to FTM database file", e);
+        }
+    }
+
+    public void trySave() throws IOException, SQLException {
+        if (this.fileOriginal.isEmpty()) {
+            LOG.error("can't happen");
+            return;
+        }
+
+        LOG.info("Opening SQLite FTM database file, for update: {}", this.fileOriginal.get().getCanonicalPath());
+        try (final Connection conn = new SQLiteConfig().createConnection("jdbc:sqlite:"+ this.fileOriginal.get().getCanonicalPath())) {
+            final long pkidFactTypeXy = prepareDatabaseForFactTypeXy(conn);
+            for (final Indi indi : this.indis) {
+                if (indi.dirty()) {
+                    indi.saveXyToFtm(conn, pkidFactTypeXy);
+                }
+            }
+        }
+    }
+
+    private static long prepareDatabaseForFactTypeXy(final Connection conn) throws SQLException {
+        if (!hasFactTypeXy(conn)) {
+            LOG.warn("Database does not have a FactType for _XY; will add one now...");
+            createFactTypeXy(conn);
+        }
+        try (final PreparedStatement select = conn.prepareStatement(
+            "SELECT FactType.ID AS pkidFactTypeXY FROM FactType WHERE FactType.Abbreviation = '_XY'")) {
+            try (final ResultSet rs = select.executeQuery()) {
+                while (rs.next()) {
+                    return rs.getLong("pkidFactTypeXY");
+                }
+            }
+        }
+        throw new SQLException("Could not find or create _XY FactType in FTM database tree file.");
+    }
+
+    private static void createFactTypeXy(final Connection conn) throws SQLException {
+        long maxID = -1L;
+        try (final PreparedStatement select = conn.prepareStatement(
+            "SELECT MAX(FactType.ID) AS maxID FROM FactType")) {
+            try (final ResultSet rs = select.executeQuery()) {
+                if (rs.next()) {
+                    maxID = rs.getLong("maxID");
+                }
+            }
+        }
+        LOG.debug("Max FactType ID: {}", maxID);
+
+        long seqID = -1L;
+        try (final PreparedStatement select = conn.prepareStatement(
+            "SELECT seq AS seqID FROM sqlite_sequence WHERE name = 'FactType'")) {
+            try (final ResultSet rs = select.executeQuery()) {
+                if (rs.next()) {
+                    seqID = rs.getLong("seqID");
+                }
+            }
+        }
+        LOG.debug("FactType sequence value: {}", seqID);
+
+        // Sanity check: since we are adding a FactType here, make sure the sequence and the primary key
+        // are what we expect them to be. Otherwise, bail out.
+        if (maxID < 0L || seqID < 0L || maxID != seqID) {
+            LOG.error("Unexpected values for FactType primary key/sequence: FactType.ID={}, seq={}", maxID, seqID);
+            throw new SQLException("Unexpected values for FactType primary key/sequence; will not update database");
+        }
+
+        if (maxID < 1000L) {
+            // Special logic here, for case where no custom FactTypes at all exist in the database.
+            // Note: FTM rigs custom FactTypes so their IDs are greater than or equal to 1001.
+            LOG.warn("No custom FactTypes were found in the database; will update FactType ID sequence to 1000.");
+            try (final PreparedStatement update = conn.prepareStatement(
+                "UPDATE sqlite_sequence SET seq = 1000 WHERE name = 'FactType'")) {
+                update.executeUpdate();
+            }
+        }
+
+        try (final PreparedStatement insert = conn.prepareStatement(
+            "INSERT INTO FactType(Name, ShortName, Abbreviation, FactClass, Tag) " +
+                "VALUES('_XY','_XY','_XY',263,'EVEN')")) {
+            insert.executeUpdate();
+        }
+    }
+
+    private static boolean hasFactTypeXy(final Connection conn) throws SQLException {
+        try (final PreparedStatement select = conn.prepareStatement(
+            "SELECT COUNT(*) AS count FROM FactType WHERE FactType.Abbreviation = '_XY'")) {
+            try (final ResultSet rs = select.executeQuery()) {
+                while (rs.next()) {
+                    return 0 < rs.getInt("count");
+                }
+            }
+        }
+        return false;
+    }
+
     public void saveAs(final File file) throws IOException {
+        if (!this.tree.isPresent()) {
+            LOG.error("Cannot call \"saveAs\" without a GEDCOM file.");
+            return;
+        }
+
         this.indis.stream().filter(Indi::dirty).forEach(Indi::saveXyToTree);
-        tree.timestamp();
-        Gedcom.writeFile(tree, new BufferedOutputStream(new FileOutputStream(file)));
+        tree.get().timestamp();
+        Gedcom.writeFile(tree.get(), new BufferedOutputStream(new FileOutputStream(file)));
     }
 
     public void saveSkeleton(final boolean exportAll, final File file) throws IOException {

@@ -11,23 +11,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
-public final class FamilyChartBuilder {
-    private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilder.class);
+public final class FamilyChartBuilderGed {
+    private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilderGed.class);
 
-    private FamilyChartBuilder() {
+    private FamilyChartBuilderGed() {
         throw new IllegalStateException("not intended to be instantiated");
-    }
-
-    public static FamilyChart create(final GedcomTree tree) {
-        return create(tree, null);
     }
 
     public static FamilyChart create(final GedcomTree tree, final File original) {
@@ -84,14 +74,13 @@ public final class FamilyChartBuilder {
 
     private static Indi buildIndi(final TreeNode<GedcomLine> nodeIndi) {
         final String value_XY = getChildValue(nodeIndi, "_XY");
-        final Optional<Point2D> wxyOrig = toCoord(value_XY);
+        final Optional<Point2D> wxyOrig = Coords.toCoord(value_XY);
         // wxyOrig empty indicates that _XY either was not present, or was present but had an invalid format
         // In either of these two cases, when we save the new GEDCOM file, we want to ADD a new _XY record
 
         final String name = toName(getChildValue(nodeIndi, "NAME"));
-        final DatePeriod birth = toDate(getChildEventDate(nodeIndi, "BIRT"));
-        final DatePeriod death = toDate(getChildEventDate(nodeIndi, "DEAT"));
-        final String refn = getChildValue(nodeIndi, "REFN");
+        final String lifespan = getLifespan(getChildEventDate(nodeIndi, "BIRT"), getChildEventDate(nodeIndi, "DEAT"));
+        final long birth = calcBirthForSort(getChildEventDate(nodeIndi, "BIRT"));
         final int sex = toSex(getChildValue(nodeIndi, "SEX"));
         final String id = nodeIndi.getObject().getID();
 
@@ -103,7 +92,40 @@ public final class FamilyChartBuilder {
             }
         }
 
-        return new Indi(nodeIndi, wxyOrig, id, name, birth, death, refn, sex);
+        return new Indi(nodeIndi, wxyOrig, id, "", name, lifespan, birth, sex);
+    }
+
+    private static long calcBirthForSort(String birt) {
+        final DatePeriod db = toDate(birt);
+        final Date d = db.getStartDate().getApproxDay().asDate();
+        if (d.getTime() == 0) {
+            return 0L;
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(d);
+        int year = cal.get(Calendar.YEAR);
+        int month = cal.get(Calendar.MONTH);
+        return year*100L+month;
+    }
+
+    private static String getLifespan(String birt, String deat) {
+        final DatePeriod db = toDate(birt);
+        final DatePeriod dd = toDate(deat);
+        if (db.equals(DatePeriod.UNKNOWN) && dd.equals(DatePeriod.UNKNOWN)) {
+            return "";
+        }
+        return dateString(db)+"\u2013"+dateString(dd);
+    }
+
+    private static String dateString(final DatePeriod date) {
+        final Date d = date.getStartDate().getApproxDay().asDate();
+        if (d.getTime() == 0) {
+            return "";
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(d);
+        int year = cal.get(Calendar.YEAR);
+        return "" + year;
     }
 
     private static int toSex(final String sex) {
@@ -117,46 +139,6 @@ public final class FamilyChartBuilder {
             }
         }
         return 0;
-    }
-
-    /**
-     * parse given value of _XY line.
-     * If unrecognized format, treat as unknown tag (leave it alone), return empty
-     * @param xy
-     * @return
-     */
-    private static Optional<Point2D> toCoord(final String xy) {
-        if (Objects.isNull(xy) || xy.isEmpty()) {
-            return Optional.empty();
-        }
-
-        final String[] fields = xy.split("\\s+");
-        if (fields.length != 2) {
-            return Optional.empty();
-        }
-
-        final Optional<Double> x = parseCoord(fields[0]);
-        if (!x.isPresent()) {
-            return Optional.empty();
-        }
-
-        final Optional<Double> y = parseCoord(fields[1]);
-        if (!y.isPresent()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new Point2D(x.get(), y.get()));
-    }
-
-    private static Optional<Double> parseCoord(final String s) {
-        if (Objects.isNull(s) || s.isEmpty()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Double.parseDouble(s));
-        } catch (final NumberFormatException ignore) {
-            return Optional.empty();
-        }
     }
 
     private static String toName(final String name) {

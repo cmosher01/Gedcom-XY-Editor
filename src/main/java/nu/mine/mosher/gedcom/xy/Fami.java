@@ -71,7 +71,9 @@ public class Fami {
     }
 
     public void addChild(final Indi indi) {
-        rChild.add(indi);
+        if (Objects.nonNull(indi)) {
+            rChild.add(indi);
+        }
     }
 
     public List<Indi> getChildren() {

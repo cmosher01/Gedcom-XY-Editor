@@ -8,6 +8,7 @@ import javafx.scene.shape.Circle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.*;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -16,6 +17,7 @@ import static javafx.scene.paint.Color.TRANSPARENT;
 
 @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "WeakerAccess"})
 public final class Coords {
+    public static final int XY_SCALE = 2;
     private static final Logger LOG = LoggerFactory.getLogger(Coords.class);
 
     private static final Point2D xyMISSING = new Point2D(37, 73);
@@ -223,5 +225,54 @@ public final class Coords {
 
     public Optional<Point2D> original() {
         return this.wxyOrig;
+    }
+
+
+    /**
+     * parse given value of _XY line.
+     * If unrecognized format, treat as unknown tag (leave it alone), return empty
+     * @param xy
+     * @return
+     */
+    public static Optional<Point2D> toCoord(final String xy) {
+        if (Objects.isNull(xy) || xy.isEmpty()) {
+            return empty();
+        }
+
+        final String[] fields = xy.split("\\s+");
+        if (fields.length != 2) {
+            return empty();
+        }
+
+        final Optional<Double> x = parseCoord(fields[0]);
+        if (!x.isPresent()) {
+            return empty();
+        }
+
+        final Optional<Double> y = parseCoord(fields[1]);
+        if (!y.isPresent()) {
+            return empty();
+        }
+
+        return Optional.of(new Point2D(x.get(), y.get()));
+    }
+
+    private static Optional<Double> parseCoord(final String s) {
+        if (Objects.isNull(s) || s.isEmpty()) {
+            return empty();
+        }
+        try {
+            return Optional.of(Double.parseDouble(s));
+        } catch (final NumberFormatException ignore) {
+            return empty();
+        }
+    }
+
+    public static String toValueXY(final Point2D xy) {
+        return formatCoord(xy.getX())+" "+ formatCoord(xy.getY());
+    }
+
+    private static String formatCoord(final double coord) {
+        return BigDecimal.valueOf(coord).setScale(XY_SCALE, RoundingMode.HALF_DOWN).toPlainString();
     }
 }

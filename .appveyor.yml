@@ -1,18 +1,24 @@
 ---
-environment:
-  JAVA_HOME: 'C:\Program Files\Java\jdk1.8.0'
+image: Ubuntu2004
+stack: jdk 15
 build_script:
-  - gradlew jfxNative
-  - ls build\jfx\native
+  - ./gradlew build
+  - ls -l ./build/jpackage
 artifacts:
+  - name: debfile
+    path: 'build\jpackage\*.deb'
+  - name: rpmfile
+    path: 'build\jpackage\*.rpm'
+  - name: pkgfile
+    path: 'build\jpackage\*.pkg'
   - name: exefile
-    path: 'build\jfx\native\*.exe'
+    path: 'build\jpackage\*.exe'
 deploy:
   description: Latest stable release
   provider: GitHub
   auth_token:
     secure: TjyyWBvqvk2/j05cBmpMpWsBslEdpJV2JOWy/5Uwr7IP1zKVMx/x97deqVskxx6L
-  artifact: exefile
+  artifact: /.*file/
   on:
     branch: master
     APPVEYOR_REPO_TAG: true
