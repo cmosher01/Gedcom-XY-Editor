@@ -4,26 +4,29 @@ image:
   - macOS
   - Visual Studio 2019
 
+stack: jdk 15
+
 for:
   - matrix:
       only:
         - image: Ubuntu
     install:
-      - sudo apt-get -y update
-      - sudo apt-get -y install rpm fakeroot
+      - sudo apt-get -qq update
+      - sudo apt-get -y -q install rpm fakeroot
+
+  - matrix:
+      only:
+        - image: macOS
+    install:
+      - brew --quiet install adoptopenjdk
 
   - matrix:
       only:
         - image: Visual Studio 2019
     install:
       - cinst wixtoolset
-
-
-  - matrix:
-      only:
-        - image: macOS
-    install:
-      - brew install adoptopenjdk
+    environment:
+      JAVA_HOME: 'C:\Program Files\Java\jdk14'
 
 
 
