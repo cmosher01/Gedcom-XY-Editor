@@ -3,10 +3,6 @@ image:
   - Ubuntu2004
   - Visual Studio 2019
 
-matrix:
-  exclude:
-    - image: Ubuntu2004
-
 for:
   - matrix:
       only:
@@ -27,7 +23,6 @@ for:
       - choco install wixtoolset
     build_script:
       - gradlew build
-      - dir build\jpackage
 
 
 
@@ -40,6 +35,8 @@ artifacts:
     path: 'build\jpackage\*.pkg'
   - name: exefile
     path: 'build\jpackage\*.exe'
+  - name: msifile
+    path: 'build\jpackage\*.msi'
 
 deploy:
   description: Latest stable release
