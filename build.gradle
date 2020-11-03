@@ -30,7 +30,7 @@ javafx {
 }
 
 def os = org.gradle.internal.os.OperatingSystem.current()
-println os
+println "detected OS: ${os}"
 
 jlink {
     mergedModule {
