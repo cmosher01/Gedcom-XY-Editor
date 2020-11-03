@@ -3,14 +3,15 @@ image:
   - Ubuntu2004
   - Visual Studio 2019
 
+stack: jdk 15
+
 for:
   - matrix:
       only:
         - image: Ubuntu2004
-    stack: jdk 15
     init:
-      - sudo apt-get update
-      - sudo apt-get install -y rpm fakeroot
+      - sudo apt-get -y update
+      - sudo apt-get -y install rpm fakeroot
     build_script:
       - ./gradlew --console=plain build
 
