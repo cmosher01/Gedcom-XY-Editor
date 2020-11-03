@@ -12,7 +12,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.*;
 import nu.mine.mosher.gedcom.*;
-import nu.mine.mosher.gedcom.xy.util.ZoomPane;
+import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -23,11 +23,15 @@ import java.util.prefs.Preferences;
 import java.util.regex.*;
 
 public final class GenXyEditor extends Application {
+    private static Logger LOG;
+
+    public static class LogConfig extends LogbackConfigurator {
+    }
+
     public static void main(final String... args) {
-        System.out.println("main");
-        System.out.flush();
         try {
-            initLogging();
+            LogbackConfigurator.testSubsystem();
+            LOG = LoggerFactory.getLogger(GenXyEditor.class);
             initJdbc();
             launch(args);
         } catch (final Throwable e) {
@@ -127,24 +131,6 @@ public final class GenXyEditor extends Application {
 
 
     private static final String CLASS_DRIVER_JDBC = "org.sqlite.JDBC";
-    private static Logger LOG;
-
-    private static void initLogging() {
-//        SLF4JBridgeHandler.removeHandlersForRootLogger();
-//        SLF4JBridgeHandler.install();
-//        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
-
-        LOG = LoggerFactory.getLogger(GenXyEditor.class);
-        System.out.println("main logger class "+LOG.getClass().getCanonicalName());
-
-        LOG.trace("testing TRACE level log");
-        LOG.debug("testing DEBUG level log");
-        LOG.info("testing INFO level log");
-        LOG.error("testing ERROR level log");
-        LOG.warn("testing WARN level log");
-
-        LOG.info("Program starting.");
-    }
 
     private static void initJdbc() throws ClassNotFoundException, SQLException {
         LOG.debug("loading JDBC driver: {}...", CLASS_DRIVER_JDBC);

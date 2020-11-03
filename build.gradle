@@ -30,6 +30,10 @@ javafx {
 }
 
 jlink {
+    mergedModule {
+        additive = true
+        requires 'org.slf4j'
+    }
     launcher {
         name = 'gedcom-xy-editor'
     }

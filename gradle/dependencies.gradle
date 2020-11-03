@@ -15,9 +15,9 @@ dependencies {
     redirection of commons-logging, log4j and java.util.logging to SLF4J"
      */
     /* Jakarta Commons Logging. Also need to exclude 'commons-logging'. */
-    runtimeOnly group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.integration'
     /* Apache Log4J. */
-    runtimeOnly group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.integration'
     /* java.util.logging (JUL). Also need to use SLF4JBridgeHandler. */
     implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
 
