@@ -1,12 +1,31 @@
 ---
-image: Ubuntu2004
-stack: jdk 15
-init:
-  - sudo apt-get update
-  - sudo apt-get install -y rpm fakeroot
-build_script:
-  - ./gradlew build
-  - ls -l ./build/jpackage
+image:
+  - Ubuntu2004
+  - Visual Studio 2019
+
+stack: jdk 14
+
+for:
+  - matrix:
+      only:
+        - image: Ubuntu2004
+    init:
+      - sudo apt-get update
+      - sudo apt-get install -y rpm fakeroot
+    build_script:
+      - ./gradlew --console=plain build
+
+  - matrix:
+      only:
+        - image: Visual Studio 2019
+    init:
+      - choco install wixtoolset
+    build_script:
+      - gradlew build
+      - dir build\jpackage
+
+
+
 artifacts:
   - name: debfile
     path: 'build\jpackage\*.deb'
@@ -16,6 +35,7 @@ artifacts:
     path: 'build\jpackage\*.pkg'
   - name: exefile
     path: 'build\jpackage\*.exe'
+
 deploy:
   description: Latest stable release
   provider: GitHub

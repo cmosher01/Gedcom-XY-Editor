@@ -5,6 +5,7 @@ import org.slf4j.*;
 import org.sqlite.SQLiteConfig;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
 
@@ -38,7 +39,7 @@ public class FamilyChartBuilderFtm {
         return new FamilyChart(null, indis, famis, metrics, fileFtm);
     }
 
-    private static List<Indi> buildIndis(final Connection conn, final Map<String, Indi> mapIdToIndi) throws SQLException {
+    private static List<Indi> buildIndis(final Connection conn, final Map<String, Indi> mapIdToIndi) throws SQLException, IOException {
         final List<Indi> indis = new ArrayList<>();
         try (final PreparedStatement select = conn.prepareStatement(sqlIndi())) {
             try (final ResultSet rs = select.executeQuery()) {
@@ -132,60 +133,20 @@ public class FamilyChartBuilderFtm {
         indis.forEach(i -> i.fillMissing(coordsTopLeftAfterLayout));
     }
 
-//    private static String getRes(final String fileName) throws IOException {
-//        try (final InputStream is = FamilyChartBuilderFtm.class.getClassLoader().getResourceAsStream(fileName)) {
-//            return new String(is.readAllBytes(), StandardCharsets.US_ASCII);
-//        }
-//    }
+    private static String getRes(final String fileName) throws IOException {
+        try (final InputStream is = FamilyChartBuilderFtm.class.getResourceAsStream(fileName)) {
+            return new String(is.readAllBytes(), StandardCharsets.US_ASCII);
+        }
+    }
 
-    private static String sqlIndi() {
-        return
-        """
-        SELECT
-            Person.ID AS pkidPerson,
-            Fact.ID AS pkidFact,
-            Fact.Text AS xy,
-            (
-                SELECT F.Text FROM Fact F WHERE F.LinkTableID = 5 AND F.LinkID = Person.ID AND F.Preferred = 1 AND
-                F.FactTypeID IN (SELECT ID FROM FactType WHERE FactType.Name = 'Name')
-                LIMIT 1
-            ) name,
-            (
-                SELECT F.Text FROM Fact F WHERE F.LinkTableID = 5 AND F.LinkID = Person.ID AND F.Preferred = 1 AND
-                F.FactTypeID IN (SELECT ID FROM FactType WHERE FactType.Name = 'Sex')
-                LIMIT 1
-            ) sex,
-            (
-                SELECT F.Date FROM Fact F WHERE F.LinkTableID = 5 AND F.LinkID = Person.ID AND F.Preferred = 1 AND
-                F.FactTypeID IN (SELECT ID FROM FactType WHERE FactType.Name = 'Birth')
-                LIMIT 1
-            ) birth,
-            (
-                SELECT F.Date FROM Fact F WHERE F.LinkTableID = 5 AND F.LinkID = Person.ID AND F.Preferred = 1 AND
-                F.FactTypeID IN (SELECT ID FROM FactType WHERE FactType.Name = 'Death')
-                LIMIT 1
-            ) death
-        FROM
-            Person LEFT OUTER JOIN
-            Fact ON (
-                Fact.LinkTableID = 5 AND Fact.LinkID = Person.ID AND Fact.Preferred = 1 AND
-                Fact.FactTypeID IN (SELECT ID FROM FactType WHERE FactType.Abbreviation = '_XY'))
-        """;
+    private static String sqlIndi() throws IOException {
+        return getRes("Indi.sql");
     }
 
     private static String sqlFami() {
         return
-        """
-        SELECT
-            R.ID,
-            R.Person1ID,
-            R.Person2ID,
-            C.PersonID
-        FROM
-            Relationship AS R LEFT OUTER JOIN
-            ChildRelationship AS C ON (C.RelationshipID = R.ID)
-        ORDER BY
-            R.ID
-        """;
+        "SELECT R.ID, R.Person1ID, R.Person2ID, C.PersonID "+
+        "FROM Relationship AS R LEFT OUTER JOIN ChildRelationship AS C ON (C.RelationshipID = R.ID) "+
+        "ORDER BY R.ID";
     }
 }

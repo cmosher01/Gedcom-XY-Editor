@@ -128,16 +128,11 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
 
     protected String pattern() {
         return
-            """
-                %d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX",UTC}
-                %levelcolor(%-5p){}
-                %gray([%t]){}
-                %cyan(%c{36}#%M{18}){}
-                %levelcolor(%replace(%msg){'\\p{Cntrl}',' '}){}
-            """.
-            replaceAll("\\s+"," ").
-            trim()+
-            "%n";
+            "%d{\"yyyy-MM-dd'T'HH:mm:ss.SSSXXX\",UTC} " +
+            "%levelcolor(%-5p) " +
+            "%gray([%t]) " +
+            "%cyan(%c{36}#%M{18}) " +
+            "%levelcolor(%replace(%msg){'\\p{Cntrl}',' '}){}%n";
     }
 
 
