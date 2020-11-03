@@ -20,14 +20,6 @@ for:
     install:
       - cinst wixtoolset
 
-  - matrix:
-      only:
-        - image: macOS
-    build_script:
-      - java -version
-      - ls -l /Library/Java/JavaVirtualMachines
-      - ls -l /usr/bin/java
-
 
 
 stack: jdk 15
@@ -35,6 +27,7 @@ stack: jdk 15
 build_script:
   - java -version
   - ./gradlew --console=plain --info build
+  - ./gradlew --console=plain dependencies --configuration=runtimeClasspath
 
 
 
