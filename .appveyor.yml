@@ -1,29 +1,40 @@
 ---
 image:
-  - Ubuntu2004
+  - Ubuntu
+  - macOS
   - Visual Studio 2019
-
-stack: jdk 15
 
 for:
   - matrix:
       only:
-        - image: Ubuntu2004
-    init:
+        - image: Ubuntu
+    install:
       - sudo apt-get -y update
       - sudo apt-get -y install rpm fakeroot
-    build_script:
-      - ./gradlew --console=plain build
 
   - matrix:
       only:
         - image: Visual Studio 2019
     environment:
       JAVA_HOME: 'C:\Program Files\Java\jdk14'
-    init:
-      - choco install wixtoolset
+    install:
+      - cinst wixtoolset
+
+  - matrix:
+      only:
+        - image: macOS
     build_script:
-      - gradlew build
+      - java -version
+      - ls -l /Library/Java/JavaVirtualMachines
+      - ls -l /usr/bin/java
+
+
+
+stack: jdk 15
+
+build_script:
+  - java -version
+  - ./gradlew --console=plain --info build
 
 
 
@@ -34,6 +45,8 @@ artifacts:
     path: 'build\jpackage\*.rpm'
   - name: pkgfile
     path: 'build\jpackage\*.pkg'
+  - name: dmgfile
+    path: 'build\jpackage\*.dmg'
   - name: exefile
     path: 'build\jpackage\*.exe'
   - name: msifile

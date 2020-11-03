@@ -137,6 +137,13 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
 
 
 
+    private static final Map<Level, String> colors = Map.of(
+        Level.ERROR, ANSIConstants.BOLD + ANSIConstants.RED_FG,
+        Level.WARN, ANSIConstants.RED_FG,
+        Level.INFO, ANSIConstants.DEFAULT_FG,
+        Level.DEBUG, ANSIConstants.GREEN_FG,
+        Level.TRACE, ANSIConstants.BOLD + ANSIConstants.BLACK_FG);
+
     public static class HighlightingCompositeConverter extends ForegroundCompositeConverterBase<ILoggingEvent> {
         public static void install() {
             PatternLayout.defaultConverterMap.put("levelcolor", HighlightingCompositeConverter.class.getName());
@@ -144,13 +151,7 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
 
         @Override
         public String getForegroundColorCode(final ILoggingEvent event) {
-            return switch (event.getLevel().toInt()) {
-                case Level.ERROR_INT -> ANSIConstants.BOLD + ANSIConstants.RED_FG;
-                case Level.WARN_INT -> ANSIConstants.RED_FG;
-                default -> ANSIConstants.DEFAULT_FG;
-                case Level.DEBUG_INT -> ANSIConstants.GREEN_FG;
-                case Level.TRACE_INT -> ANSIConstants.BOLD + ANSIConstants.BLACK_FG;
-            };
+            return colors.getOrDefault(event.getLevel(), ANSIConstants.DEFAULT_FG);
         }
     }
 }

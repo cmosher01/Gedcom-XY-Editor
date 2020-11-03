@@ -1,6 +1,5 @@
 plugins {
-    id 'application'
-    id "org.openjfx.javafxplugin" version "0.0.9"
+    id 'org.openjfx.javafxplugin' version '0.0.9'
     id 'org.beryx.jlink' version '2.22.2'
 }
 
@@ -13,7 +12,7 @@ inc('version')
 group = 'nu.mine.mosher.gedcom'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_14
+    sourceCompatibility = JavaVersion.VERSION_13
     modularity.inferModulePath.set(true)
 }
 
@@ -25,17 +24,27 @@ application {
 }
 
 javafx {
-    version = "14"
-    modules = [ 'javafx.controls' ]
+    modules = [
+        'javafx.controls'
+    ]
 }
+
+def os = org.gradle.internal.os.OperatingSystem.current()
+println os
 
 jlink {
     mergedModule {
         additive = true
         requires 'org.slf4j'
     }
-    launcher {
-        name = 'gedcom-xy-editor'
+    jpackage {
+        if (os.windows) {
+            installerOptions = [
+                '--win-dir-chooser',
+                '--win-menu',
+                '--win-shortcut'
+            ]
+        }
     }
 }
 
