@@ -7,7 +7,7 @@ for:
   - matrix:
       only:
         - image: Ubuntu2004
-    stack: jdk 14
+    stack: jdk 15
     init:
       - sudo apt-get update
       - sudo apt-get install -y rpm fakeroot
