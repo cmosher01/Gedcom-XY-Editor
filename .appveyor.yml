@@ -12,13 +12,13 @@ for:
         - image: Ubuntu
     install:
       - sudo apt-get -qq update
-      - sudo apt-get -y -q install rpm fakeroot
+      - sudo apt-get -qq install rpm fakeroot
 
   - matrix:
       only:
         - image: macOS
     install:
-      - brew --quiet install adoptopenjdk
+      - brew install --quiet adoptopenjdk
 
   - matrix:
       only:
