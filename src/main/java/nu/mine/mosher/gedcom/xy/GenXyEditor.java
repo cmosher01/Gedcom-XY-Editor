@@ -16,11 +16,9 @@ import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.io.*;
-import java.net.*;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
-import java.util.jar.*;
 import java.util.prefs.Preferences;
 import java.util.regex.*;
 
@@ -35,12 +33,7 @@ public final class GenXyEditor extends Application {
             LogbackConfigurator.testSubsystem();
             LOG = LoggerFactory.getLogger(GenXyEditor.class);
 
-            final String urlManifest = "jrt:/nu.mine.mosher.gedcom.xy/META-INF/MANIFEST.MF";
-            final Manifest manifest = new Manifest(new URL(urlManifest).toURI().toURL().openStream());
-            final Attributes attributes = manifest.getMainAttributes();
-            for (final Map.Entry<Object, Object> attribute : attributes.entrySet()) {
-                LOG.info("{}={}", attribute.getKey(), attribute.getValue());
-            }
+            LOG.info("version: {}", Version.version(GenXyEditor.class.getPackage()));
 
             initJdbc();
             launch(args);
@@ -85,10 +78,9 @@ public final class GenXyEditor extends Application {
 
     @Override
     public void start(final Stage stage) {
-        stage.setTitle("GEDCOM _XY Editor");
-
         Platform.runLater(() -> {
             final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Genealogy XY Editor - Open genealogy file");
             fileChooser.setInitialDirectory(inDir());
             fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("GEDCOM files", "*.ged"),
@@ -120,6 +112,7 @@ public final class GenXyEditor extends Application {
                 Platform.setImplicitExit(false);
 
                 stage.setScene(new Scene(buildGui(stage, chart), 1920, 800));
+                stage.setTitle("Genealogy XY Editor - "+chart.originalFile().get().getCanonicalPath());
                 stage.show();
             } catch (final Exception e) {
                 Platform.exit();
@@ -262,11 +255,18 @@ public final class GenXyEditor extends Application {
             }
         });
 
+
+
         final Text statusName = new Text();
         statusName.textProperty().bind(chart.selectedName());
 
-        final HBox statusbar = new HBox();
-        statusbar.getChildren().add(statusName);
+        final Text statusVersion = new Text("v"+Version.version(GenXyEditor.class.getPackage()));
+
+        final Region ws = new Region();
+        HBox.setHgrow(ws, Priority.ALWAYS);
+        final HBox statusbar = new HBox(statusName, ws, statusVersion);
+
+
 
         final BorderPane root = new BorderPane();
         root.setTop(buildMenuBar(stage, chart));

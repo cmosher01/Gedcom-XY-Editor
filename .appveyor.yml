@@ -33,7 +33,6 @@ for:
 
 build_script:
   - ./gradlew --console=plain --info build
-  - ./gradlew --console=plain versionDisplay
   - ./gradlew --console=plain manifest --print
   - ./gradlew --console=plain dependencies --configuration=runtimeClasspath
 
