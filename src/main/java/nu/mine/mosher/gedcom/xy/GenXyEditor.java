@@ -1,6 +1,5 @@
 package nu.mine.mosher.gedcom.xy;
 
-import com.jcabi.manifests.Manifests;
 import javafx.application.*;
 import javafx.beans.property.*;
 import javafx.geometry.*;
