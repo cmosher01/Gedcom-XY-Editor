@@ -18,6 +18,7 @@ for:
       only:
         - image: macOS
     install:
+      - brew update >brew.log
       - brew install --quiet adoptopenjdk
 
   - matrix:
@@ -32,6 +33,8 @@ for:
 
 build_script:
   - ./gradlew --console=plain --info build
+  - ./gradlew --console=plain versionDisplay
+  - ./gradlew --console=plain manifest --print
   - ./gradlew --console=plain dependencies --configuration=runtimeClasspath
 
 

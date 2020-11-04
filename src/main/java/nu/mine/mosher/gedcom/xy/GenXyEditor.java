@@ -1,5 +1,6 @@
 package nu.mine.mosher.gedcom.xy;
 
+import com.jcabi.manifests.Manifests;
 import javafx.application.*;
 import javafx.beans.property.*;
 import javafx.geometry.*;
@@ -16,9 +17,11 @@ import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
+import java.util.jar.*;
 import java.util.prefs.Preferences;
 import java.util.regex.*;
 
@@ -32,6 +35,14 @@ public final class GenXyEditor extends Application {
         try {
             LogbackConfigurator.testSubsystem();
             LOG = LoggerFactory.getLogger(GenXyEditor.class);
+
+            final String urlManifest = "jrt:/nu.mine.mosher.gedcom.xy/META-INF/MANIFEST.MF";
+            final Manifest manifest = new Manifest(new URL(urlManifest).toURI().toURL().openStream());
+            final Attributes attributes = manifest.getMainAttributes();
+            for (final Map.Entry<Object, Object> attribute : attributes.entrySet()) {
+                LOG.info("{}={}", attribute.getKey(), attribute.getValue());
+            }
+
             initJdbc();
             launch(args);
         } catch (final Throwable e) {
