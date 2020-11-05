@@ -15,6 +15,7 @@ import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
+import java.awt.Desktop;
 import java.io.*;
 import java.nio.file.*;
 import java.sql.*;
@@ -79,6 +80,17 @@ public final class GenXyEditor extends Application {
     @Override
     public void start(final Stage stage) {
         Platform.runLater(() -> {
+            if (Desktop.isDesktopSupported()) {
+                final Desktop desktop = Desktop.getDesktop();
+                desktop.setAboutHandler(evt -> {
+                    final Alert alert = new Alert(Alert.AlertType.INFORMATION, "Genealogy XY Editor.", ButtonType.OK);
+                    alert.setTitle("About Genealogy XY Editor");
+                    alert.setContentText("Version "+Version.version(GenXyEditor.class.getPackage())+"\n"+
+                        "Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.");
+                    alert.showAndWait();
+                });
+            }
+
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Genealogy XY Editor - Open genealogy file");
             fileChooser.setInitialDirectory(inDir());
@@ -358,6 +370,7 @@ public final class GenXyEditor extends Application {
 
         final Menu menuEdit = new Menu("Edit");
         menuEdit.getItems().addAll(cmdNorm, cmdSnap);
+
 
 
         final MenuBar mbar = new MenuBar();

@@ -1,6 +1,6 @@
 # Gedcom-XY-Editor
 
-Copyright © 2000–2019, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
+Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
 
 [![License](https://img.shields.io/github/license/cmosher01/Gedcom-XY-Editor.svg)](https://www.gnu.org/licenses/gpl.html)
 [![Latest Release](https://img.shields.io/github/release-pre/cmosher01/Gedcom-XY-Editor.svg)](https://github.com/cmosher01/Gedcom-XY-Editor/releases/latest)

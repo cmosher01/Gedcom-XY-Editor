@@ -14,6 +14,7 @@ module nu.mine.mosher.gedcom.xy {
     requires java.logging;
     requires log.files;
     requires javafx.controls;
+    requires java.desktop;
     requires java.prefs;
     requires java.xml;
     requires java.sql;
