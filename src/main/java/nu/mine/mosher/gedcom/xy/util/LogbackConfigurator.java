@@ -25,11 +25,14 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
     protected LogbackConfigurator() {
     }
 
+    private static String file = "";
+
     @Override
     public void configure(final LoggerContext ctx) {
         addInfo("Logback configurator:     "+LogbackConfigurator.class.getCanonicalName());
         addInfo("application configurator: "+getClass().getCanonicalName());
         addInfo("application:              "+getClass().getEnclosingClass().getCanonicalName());
+        buildLogFilePath();
 
         ctx.setName(getClass().getEnclosingClass().getCanonicalName());
         ctx.setPackagingDataEnabled(true);
@@ -45,10 +48,14 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         System.err.flush();
     }
 
+    public static String getFilePath() {
+        return file;
+    }
+
     private Appender<ILoggingEvent> buildAppender(final LoggerContext ctx) {
         final FileAppender<ILoggingEvent> appender = new FileAppender<>();
         appender.setContext(ctx);
-        appender.setFile(file());
+        appender.setFile(LogbackConfigurator.getFilePath());
         appender.setName("LogFile");
         appender.setImmediateFlush(true);
 
@@ -65,15 +72,15 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         return appender;
     }
 
-    private String file() {
+    private void buildLogFilePath() {
         final SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd'T'HHmmssX");
         fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
         final String ts = fmt.format(new Date());
 
-        final File file = LogFiles.getLogFileOf(getClass().getEnclosingClass());
-        final String tsname = ts+"_"+file.getName();
+        final File f = LogFiles.getLogFileOf(getClass().getEnclosingClass());
+        final String tsname = ts+"_"+f.getName();
 
-        return Paths.get(file.getParent()).resolve(tsname).toString();
+        LogbackConfigurator.file = Paths.get(f.getParent()).resolve(tsname).toString();
     }
 
 

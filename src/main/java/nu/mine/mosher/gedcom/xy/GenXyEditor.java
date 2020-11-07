@@ -2,42 +2,54 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.application.*;
 import javafx.beans.property.*;
+import javafx.embed.swing.JFXPanel;
 import javafx.geometry.*;
+import javafx.geometry.Insets;
 import javafx.scene.*;
-import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
-import javafx.stage.*;
-import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
-import java.awt.Desktop;
+import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 import java.util.prefs.Preferences;
-import java.util.regex.*;
 
-public final class GenXyEditor extends Application {
+public final class GenXyEditor {
     private static Logger LOG;
+    private static volatile Thread threadEventsAwt;
 
     public static class LogConfig extends LogbackConfigurator {
     }
 
     public static void main(final String... args) {
         try {
-            LogbackConfigurator.testSubsystem();
+            LogConfig.testSubsystem();
             LOG = LoggerFactory.getLogger(GenXyEditor.class);
 
             LOG.info("version: {}", Version.version(GenXyEditor.class.getPackage()));
 
             initJdbc();
-            launch(args);
+            SwingUtilities.invokeAndWait(GenXyEditor::initGui);
+
+            if (Objects.nonNull(threadEventsAwt)) {
+                LOG.info("Waiting for AWT thread to end...");
+                threadEventsAwt.join();
+                LOG.info("AWT thread ended.");
+            }
+
+            LOG.info("Exiting JavaFX platform...");
+            Platform.exit();
+
+            LOG.info("End of program.");
         } catch (final Throwable e) {
             logProgramTermination(e);
         }
@@ -47,7 +59,7 @@ public final class GenXyEditor extends Application {
         return Preferences.userNodeForPackage(GenXyEditor.class);
     }
 
-    private static File inDir() {
+    public static File inDir() {
         final String def;
         final String other = prefs().get("outDir", "");
         if (!other.isEmpty()) {
@@ -58,11 +70,11 @@ public final class GenXyEditor extends Application {
         return new File(prefs().get("inDir", def));
     }
 
-    private static void inDir(final File dir) {
+    public static void inDir(final File dir) {
         prefs().put("inDir", dir.getAbsolutePath());
     }
 
-    private static File outDir() {
+    public static File outDir() {
         final String def;
         final String other = prefs().get("inDir", "");
         if (!other.isEmpty()) {
@@ -70,78 +82,60 @@ public final class GenXyEditor extends Application {
         } else {
             def = "./";
         }
-        return new File(prefs().get("outDir", "./"));
+        return new File(prefs().get("outDir", def));
     }
 
-    private static void outDir(final File dir) {
+    public static void outDir(final File dir) {
         prefs().put("outDir", dir.getAbsolutePath());
     }
 
-    @Override
-    public void start(final Stage stage) {
-        Platform.runLater(() -> {
-            if (Desktop.isDesktopSupported()) {
-                final Desktop desktop = Desktop.getDesktop();
-                desktop.setAboutHandler(evt -> {
-                    final Alert alert = new Alert(Alert.AlertType.INFORMATION, "Genealogy XY Editor.", ButtonType.OK);
-                    alert.setTitle("About Genealogy XY Editor");
-                    alert.setContentText("Version "+Version.version(GenXyEditor.class.getPackage())+"\n"+
-                        "Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.");
-                    alert.showAndWait();
-                });
-            }
+    private static void initGui() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("Not running on event dispatch thread.");
+        }
 
-            final FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Genealogy XY Editor - Open genealogy file");
-            fileChooser.setInitialDirectory(inDir());
-            fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("GEDCOM files", "*.ged"),
-                new FileChooser.ExtensionFilter("all files", "*.*"));
-            final File fileToOpen = fileChooser.showOpenDialog(null);
-            if (Objects.isNull(fileToOpen)) {
-                LOG.warn("User cancelled opening file. Program will exit.");
-                Platform.exit();
-                return;
-            }
-            inDir(fileToOpen.getParentFile());
-            try {
-                final FamilyChart chart;
+        threadEventsAwt = Thread.currentThread();
 
-                final String filetype = filetypeOf(fileToOpen);
-                if (filetype.equalsIgnoreCase("GED")) {
-                    final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
-                    chart = FamilyChartBuilderGed.create(tree, fileToOpen);
-                } else {
-                    chart = FamilyChartBuilderFtm.create(fileToOpen);
-                }
-                chart.setFromOrig();
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (final Throwable e) {
+            LOG.warn("Error trying to set the look and feel; ignoring it.", e);
+        }
 
-                stage.setOnCloseRequest(t -> {
-                    if (!exitIfSafe(stage, chart)) {
-                        t.consume();
-                    }
-                });
-                Platform.setImplicitExit(false);
+        final JFrame frame = new JFrame("FX");
+        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        frame.setSize(1920, 800);
 
-                stage.setScene(new Scene(buildGui(stage, chart), 1920, 800));
-                stage.setTitle("Genealogy XY Editor - "+chart.originalFile().get().getCanonicalPath());
-                stage.show();
-            } catch (final Exception e) {
-                Platform.exit();
-                throw new IllegalStateException(e);
+        final JFXPanel fxPanel = new JFXPanel(); // this also initializes JavaFX toolkit
+        Platform.setImplicitExit(false);
+
+        final CommandHandler cmd = new CommandHandler(frame);
+
+        // TODO allow multiple open documents
+        // TODO remove specialized Open handling (just make it File/Open menu item)
+        final Optional<FamilyChart> chart = cmd.openFile();
+        if (chart.isEmpty()) {
+            cmd.quitApp();
+            return;
+        }
+
+        cmd.setAboutHandler();
+        cmd.setQuitHandler(chart.get());
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                cmd.quitIfSafe(chart.get());
             }
         });
-    }
 
-    private static final Pattern patFiletype = Pattern.compile("^.*\\.(.*)$");
+        frame.setMenuBar(cmd.buildMenuBar(chart.get()));
 
-    private String filetypeOf(final File file) {
-        final Matcher matcher = patFiletype.matcher(file.getName());
-        if (!matcher.matches()) {
-            return "";
-        }
-        final String ft = matcher.group(1);
-        return Objects.isNull(ft) ? "" : ft;
+        frame.setTitle("Genealogy XY Editor - " + chart.get().originalFile().get().getAbsolutePath());
+        frame.add(fxPanel);
+        frame.setVisible(true);
+
+        Platform.runLater(() -> fxPanel.setScene(new Scene(buildGui(chart.get()))));
     }
 
 
@@ -163,6 +157,7 @@ public final class GenXyEditor extends Application {
     }
 
     private static void logProgramTermination(final Throwable e) {
+        Objects.requireNonNull(e);
         if (Objects.nonNull(LOG)) {
             LOG.error("Program terminating due to error:", e);
         } else {
@@ -176,30 +171,11 @@ public final class GenXyEditor extends Application {
         }
     }
 
-    private static boolean exitIfSafe(final Stage stage, final FamilyChart chart) {
-        boolean safe = false;
-        if (chart.dirty()) {
-            final Alert alert = new Alert(Alert.AlertType.WARNING, "Your unsaved changes will be DISCARDED.", ButtonType.OK, ButtonType.CANCEL);
-            alert.setTitle("Changes will be discarded");
-            final Optional<ButtonType> response = alert.showAndWait();
-            if (response.isPresent() && response.get() == ButtonType.OK) {
-                LOG.warn("User confirmed discarding changes:");
-                chart.indis().stream().filter(Indi::dirty).forEach(Indi::logDiscard);
-                safe = true;
-            }
-        } else {
-            safe = true;
+    private static Parent buildGui(final FamilyChart chart) {
+        if (!Platform.isFxApplicationThread()) {
+            throw new IllegalStateException();
         }
-        if (safe) {
-            LOG.info("Stopping program due to user request.");
-            stage.setOnCloseRequest(null);
-            stage.close();
-            Platform.exit();
-        }
-        return safe;
-    }
 
-    private static Parent buildGui(final Stage stage, final FamilyChart chart) {
         final Pane canvas = new Pane();
         canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colorBg(), CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -268,147 +244,24 @@ public final class GenXyEditor extends Application {
         });
 
 
-
-        final Text statusName = new Text();
-        statusName.textProperty().bind(chart.selectedName());
-
-        final Text statusVersion = new Text("v"+Version.version(GenXyEditor.class.getPackage()));
-
-        final Region ws = new Region();
-        HBox.setHgrow(ws, Priority.ALWAYS);
-        final HBox statusbar = new HBox(statusName, ws, statusVersion);
-
+        final HBox statusbar = buildStatusBar(chart);
 
 
         final BorderPane root = new BorderPane();
-        root.setTop(buildMenuBar(stage, chart));
         root.setCenter(workspace);
         root.setBottom(statusbar);
 
         return root;
     }
 
-    private static MenuBar buildMenuBar(final Stage stage, final FamilyChart chart) {
-        final Menu menuFile = new Menu("File");
+    private static HBox buildStatusBar(FamilyChart chart) {
+        final Text statusName = new Text();
+        statusName.textProperty().bind(chart.selectedName());
 
-        if (chart.isGedcomFile()) {
-            final MenuItem cmdSaveAs = new MenuItem("Save As...");
-            cmdSaveAs.setMnemonicParsing(true);
-            cmdSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
-            cmdSaveAs.setOnAction(t -> {
-                final FileChooser fileChooser = new FileChooser();
-                fileChooser.setInitialDirectory(outDir());
-                if (chart.originalFile().isPresent()) {
-                    fileChooser.setInitialFileName(chart.originalFile().get().getName());
-                }
-                final File file = fileChooser.showSaveDialog(stage);
-                if (Objects.isNull(file)) {
-                    return;
-                }
-                outDir(file.getParentFile());
-                try {
-                    chart.saveAs(file);
-                } catch (final IOException e) {
-                    // TODO: this is not nice
-                    LOG.error("An error occurred while trying to save file, file={}", file, e);
-                }
-            });
+        final Text statusVersion = new Text(Version.version(GenXyEditor.class.getPackage()));
 
-            final MenuItem cmdExportDirty = new MenuItem("Export Changed As Skeletons...");
-            cmdExportDirty.setMnemonicParsing(true);
-            cmdExportDirty.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
-            cmdExportDirty.setOnAction(t -> {
-                exportSkel(stage, chart, false);
-            });
-
-            final MenuItem cmdExportAll = new MenuItem("Export ALL As Skeletons...");
-            cmdExportAll.setMnemonicParsing(true);
-            cmdExportAll.setAccelerator(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN));
-            cmdExportAll.setOnAction(t -> {
-                exportSkel(stage, chart, true);
-            });
-
-            menuFile.getItems().addAll(cmdExportDirty, cmdExportAll, new SeparatorMenuItem(), cmdSaveAs);
-        } else {
-            final MenuItem cmdSave = new MenuItem("Save");
-            cmdSave.setMnemonicParsing(true);
-            cmdSave.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
-            cmdSave.setOnAction(t -> {
-                chart.save();
-            });
-            menuFile.getItems().addAll(cmdSave);
-        }
-
-        /* Mac platform provides its own Quit on the system menu */
-        if (!mac()) {
-            final MenuItem cmdQuit = new MenuItem("Quit");
-            cmdQuit.setMnemonicParsing(true);
-            cmdQuit.setAccelerator(new KeyCodeCombination(KeyCode.Q, KeyCombination.SHORTCUT_DOWN));
-            cmdQuit.setOnAction(t -> exitIfSafe(stage, chart));
-            menuFile.getItems().addAll(new SeparatorMenuItem(), cmdQuit);
-        }
-
-
-        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
-        cmdNorm.setOnAction(t -> {
-            final Alert alert = new Alert(Alert.AlertType.INFORMATION, "This will normalize the coordinates of all people.", ButtonType.OK, ButtonType.CANCEL);
-            alert.setTitle("Normalize ALL Coordinates");
-            alert.setHeaderText(null);
-            final Optional<ButtonType> response = alert.showAndWait();
-            if (response.isPresent() && response.get() == ButtonType.OK) {
-                chart.userNormalize();
-            }
-        });
-
-        final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
-        cmdSnap.setOnAction(t -> {
-            final TextInputDialog dialog = new TextInputDialog();
-            dialog.setContentText("Snap to grid current size is " + chart.metrics().grid() + ". Change to:");
-            final Optional<String> result = dialog.showAndWait();
-            result.ifPresent(s -> chart.metrics().setGrid(s));
-        });
-
-        final Menu menuEdit = new Menu("Edit");
-        menuEdit.getItems().addAll(cmdNorm, cmdSnap);
-
-
-
-        final MenuBar mbar = new MenuBar();
-        mbar.useSystemMenuBarProperty().set(true);
-        mbar.getMenus().addAll(menuFile, menuEdit);
-        return mbar;
-    }
-
-    private static void exportSkel(final Stage stage, final FamilyChart chart, final boolean exportAll) {
-        final FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(outDir());
-        if (chart.originalFile().isPresent()) {
-            fileChooser.setInitialFileName(skelNameOf(chart.originalFile().get().getName()));
-        } else {
-            fileChooser.setInitialFileName(".skel.ged");
-        }
-        final File file = fileChooser.showSaveDialog(stage);
-        if (Objects.isNull(file)) {
-            return;
-        }
-        outDir(file.getParentFile());
-        try {
-            chart.saveSkeleton(exportAll, file);
-        } catch (final IOException e) {
-            // TODO: this is not nice
-            LOG.error("An error occurred while trying to save file, file={}", file, e);
-        }
-    }
-
-    private static String skelNameOf(String name) {
-        return name.replaceFirst(".ged$", ".skel.ged");
-    }
-
-    private static boolean mac() {
-        return os().startsWith("mac") || os().startsWith("darwin");
-    }
-
-    private static String os() {
-        return System.getProperty("os.name", "unknown").toLowerCase();
+        final Region ws = new Region();
+        HBox.setHgrow(ws, Priority.ALWAYS);
+        return new HBox(statusName, ws, statusVersion);
     }
 }

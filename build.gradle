@@ -14,7 +14,7 @@ group = 'nu.mine.mosher.gedcom'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_13
-    modularity.inferModulePath.set(true)
+    modularity.inferModulePath.set true
 }
 
 inc('dependencies')
@@ -26,7 +26,8 @@ application {
 
 javafx {
     modules = [
-        'javafx.controls'
+        'javafx.controls',
+        'javafx.swing'
     ]
 }
 
