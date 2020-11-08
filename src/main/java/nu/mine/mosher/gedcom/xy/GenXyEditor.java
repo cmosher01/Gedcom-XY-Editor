@@ -1,5 +1,6 @@
 package nu.mine.mosher.gedcom.xy;
 
+import ch.qos.logback.classic.*;
 import javafx.application.*;
 import javafx.beans.property.*;
 import javafx.embed.swing.JFXPanel;
@@ -13,6 +14,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
@@ -32,8 +34,7 @@ public final class GenXyEditor {
 
     public static void main(final String... args) {
         try {
-            LogConfig.testSubsystem();
-            LOG = LoggerFactory.getLogger(GenXyEditor.class);
+            initLogging();
 
             LOG.info("version: {}", Version.version(GenXyEditor.class.getPackage()));
 
@@ -53,6 +54,14 @@ public final class GenXyEditor {
         } catch (final Throwable e) {
             logProgramTermination(e);
         }
+    }
+
+    private static void initLogging() {
+        LogConfig.testSubsystem();
+        final LoggerContext ctx = (LoggerContext)LoggerFactory.getILoggerFactory();
+        ctx.getLogger("sun.awt.X11.wrappers").setLevel(Level.WARN);
+
+        LOG = LoggerFactory.getLogger(GenXyEditor.class);
     }
 
     public static Preferences prefs() {
