@@ -59,7 +59,7 @@ public final class GenXyEditor {
     private static void initLogging() {
         LogConfig.testSubsystem();
         final LoggerContext ctx = (LoggerContext)LoggerFactory.getILoggerFactory();
-        ctx.getLogger("sun.awt.X11.wrappers").setLevel(Level.WARN);
+        ctx.getLogger("sun.awt.X11").setLevel(Level.WARN);
 
         LOG = LoggerFactory.getLogger(GenXyEditor.class);
     }
