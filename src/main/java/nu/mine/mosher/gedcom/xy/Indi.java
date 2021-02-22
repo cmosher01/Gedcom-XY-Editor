@@ -6,8 +6,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.Event;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -25,11 +24,13 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
+import nu.mine.mosher.gedcom.xy.util.SvgBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
+import java.util.regex.*;
 
 public class Indi {
     private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
@@ -37,6 +38,8 @@ public class Indi {
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
 
     private final String name;
+    private final String nameGiven;
+    private final String nameSur;
 
     private Metrics metrics;
     private final TreeNode<GedcomLine> node;
@@ -80,6 +83,38 @@ public class Indi {
         this.name = name;
         this.lifespan = lifespan;
         this.nBirthForSort = nBirthForSort;
+        this.nameGiven = parseNameGiven(name);
+        this.nameSur = parseNameSur(name);
+    }
+
+    private static final Pattern PAT_NAME = Pattern.compile("(.*)/([^/]*?)/([^/]*?)");
+
+    private static String parseNameSur(String name) {
+        final Matcher matcher = PAT_NAME.matcher(name);
+        if (!matcher.matches()) {
+            return "";
+        }
+
+        return matcher.group(2).trim();
+    }
+
+    private static String parseNameGiven(String name) {
+        final Matcher matcher = PAT_NAME.matcher(name);
+        if (!matcher.matches()) {
+            return name.trim();
+        }
+        final String n1 = matcher.group(1);
+        final String n2 = matcher.group(3);
+        if (n1.isBlank() && n2.isBlank()) {
+            return "";
+        }
+        if (!n1.isBlank() && n2.isBlank()) {
+            return n1.trim();
+        }
+        if (n1.isBlank() && !n2.isBlank()) {
+            return n2.trim();
+        }
+        return n1.trim()+" ~ "+n2.trim();
     }
 
     public void calc() {
@@ -278,6 +313,16 @@ public class Indi {
                 LOG.debug("updated {} row(s)", update.getUpdateCount());
             }
         }
+    }
+
+    public void saveSvg(final SvgBuilder svg) {
+        final String dates =
+            this.lifespan.isBlank()
+                ? ""
+                : ("("+this.lifespan+")");
+
+        final Bounds bounds = this.plaque.getBoundsInParent();
+        svg.addPerson(bounds, this.nameGiven, this.nameSur, dates, this.id);
     }
 
     public void saveXyToTree() {

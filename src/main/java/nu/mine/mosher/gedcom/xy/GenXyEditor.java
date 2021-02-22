@@ -17,6 +17,7 @@ import org.slf4j.*;
 import org.slf4j.Logger;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
@@ -38,6 +39,8 @@ public final class GenXyEditor {
 
             LOG.info("version: {}", Version.version(GenXyEditor.class.getPackage()));
 
+            logFonts();
+
             initJdbc();
             SwingUtilities.invokeAndWait(GenXyEditor::initGui);
 
@@ -53,6 +56,12 @@ public final class GenXyEditor {
             LOG.info("End of program.");
         } catch (final Throwable e) {
             logProgramTermination(e);
+        }
+    }
+
+    private static void logFonts() {
+        for (final Font font : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
+            LOG.info("Font: {}/{}/{}", font.getFontName(), font.getFamily(), font.getName());
         }
     }
 

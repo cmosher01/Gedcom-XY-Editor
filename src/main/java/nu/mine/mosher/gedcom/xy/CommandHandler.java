@@ -9,6 +9,8 @@ import nu.mine.mosher.gedcom.xy.util.Version;
 import org.slf4j.*;
 
 import javax.swing.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.*;
@@ -63,9 +65,14 @@ public class CommandHandler {
             menuFile.add(cmdSave);
         }
 
+        final MenuItem cmdSvg = new MenuItem("Export as SVG");
+        cmdSvg.addActionListener(e -> exportSvg(chart));
+        menuFile.add(cmdSvg);
+
+        menuFile.addSeparator();
+
         final MenuItem cmdQuit = new MenuItem("Exit");
         cmdQuit.addActionListener(e -> quitIfSafe(chart));
-        menuFile.addSeparator();
         menuFile.add(cmdQuit);
 
 
@@ -104,7 +111,6 @@ public class CommandHandler {
         mbar.setHelpMenu(menuHelp);
         return mbar;
     }
-
 
 
     private void normalize(final FamilyChart chart) {
@@ -194,6 +200,34 @@ public class CommandHandler {
         SwingUtilities.invokeLater(frame::dispose);
     }
 
+
+    private void exportSvg(final FamilyChart chart) {
+        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Export SVG file", FileDialog.SAVE);
+        fd.setDirectory(GenXyEditor.outDir().getPath());
+        if (chart.originalFile().isPresent()) {
+            fd.setFile(svgNameOf(chart.originalFile().get().getName()));
+        } else {
+            fd.setFile(".svg");
+        }
+
+        fd.setVisible(true);
+
+        final String d = fd.getDirectory();
+        final String f = fd.getFile();
+        fd.dispose();
+
+        if (Objects.isNull(f) || Objects.isNull(d)) {
+            return;
+        }
+        final File fileToSaveAs = new File(d,f);
+        GenXyEditor.outDir(fileToSaveAs.getParentFile());
+        try {
+            chart.saveSvg(fileToSaveAs);
+        } catch (final Exception e) {
+            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
+        }
+    }
+
     private void exportSkel(final FamilyChart chart, final boolean exportAll) {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Not running on event dispatch thread.");
@@ -226,6 +260,10 @@ public class CommandHandler {
 
     private static String skelNameOf(final String name) {
         return name.replaceFirst(".ged$", ".skel.ged");
+    }
+
+    private static String svgNameOf(final String name) {
+        return name.replaceFirst(".ged$", ".svg").replaceFirst(".ftm$", ".svg");
     }
 
     public Optional<FamilyChart> openFile() {

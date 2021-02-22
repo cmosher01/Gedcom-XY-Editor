@@ -19,6 +19,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import nu.mine.mosher.gedcom.xy.util.SvgBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -375,6 +376,18 @@ public class Fami {
             plaque.layoutYProperty().bind(phantom.layoutYProperty().subtract(h / 2.0D));
 
             return phantom;
+        }
+    }
+
+    public void saveAvg(SvgBuilder svg) {
+        svg.addLine(this.parentBar1);
+        svg.addLine(this.parentBar2);
+        svg.addLine(this.descentBar1);
+        svg.addLine(this.descentBar2);
+        svg.addLine(this.descentBar3);
+        svg.addLine(this.childBar);
+        if (!this.rChild.isEmpty()) {
+            Arrays.asList(this.rChildBar).forEach(svg::addLine);
         }
     }
 

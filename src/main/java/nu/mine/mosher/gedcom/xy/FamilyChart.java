@@ -5,9 +5,15 @@ import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
+import nu.mine.mosher.gedcom.xy.util.SvgBuilder;
 import org.slf4j.*;
 import org.sqlite.SQLiteConfig;
+import org.w3c.dom.Document;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
@@ -201,6 +207,27 @@ public class FamilyChart {
         this.indis.stream().filter(Indi::dirty).forEach(Indi::saveXyToTree);
         tree.get().timestamp();
         Gedcom.writeFile(tree.get(), new BufferedOutputStream(new FileOutputStream(file)));
+    }
+
+    public void saveSvg(final File fileToSaveAs) throws ParserConfigurationException, TransformerException {
+        final long fontsize = Math.round(Math.rint(this.metrics.getFontSize()));
+        final SvgBuilder svg = new SvgBuilder(fontsize);
+
+        this.famis.forEach(i -> i.saveAvg(svg));
+        this.indis.forEach(i -> i.saveSvg(svg));
+
+        saveDoc(svg.get(), fileToSaveAs);
+    }
+
+    private static void saveDoc(final Document document, final File fileToSaveAs) throws TransformerException {
+        final Transformer transformer = TransformerFactory.newInstance().newTransformer();
+
+        transformer.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
+        transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+        transformer.transform(new DOMSource(document), new StreamResult(fileToSaveAs));
     }
 
     public void saveSkeleton(final boolean exportAll, final File file) throws IOException {
