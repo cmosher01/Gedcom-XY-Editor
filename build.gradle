@@ -9,8 +9,16 @@ version="2.2.0"
 group = 'nu.mine.mosher.gedcom'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_15
     modularity.inferModulePath.set true
+}
+compileJava {
+    options.compilerArgs << '-parameters'
+    options.compilerArgs << "--enable-preview"
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs += "--enable-preview"
 }
 
 repositories {
