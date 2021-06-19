@@ -1,27 +1,40 @@
 plugins {
-    id 'org.openjfx.javafxplugin' version '0.0.9'
-    id 'org.beryx.jlink' version '2.22.2'
-    id 'com.coditory.manifest' version '0.1.8'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+    id 'org.beryx.jlink' version '2.24.0'
+    id 'com.coditory.manifest' version '0.1.14'
 }
 
-def inc(module) {
-    apply from: "${projectDir}/gradle/${module}.gradle"
-}
-
-inc('version')
+version="2.2.0"
 
 group = 'nu.mine.mosher.gedcom'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_13
+    sourceCompatibility = JavaVersion.VERSION_16
     modularity.inferModulePath.set true
 }
 
-inc('dependencies')
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.release', {
+        exclude group: 'nu.mine.mosher.mopper', module: 'mopper'
+    }
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: 'latest.release'
+
+    implementation group: 'nu.mine.mosher.io', name: 'log-files', version: 'latest.release'
+
+    implementation group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
+}
 
 application {
-    mainModule.set 'nu.mine.mosher.gedcom.xy'
-    mainClass.set 'nu.mine.mosher.gedcom.xy.GenXyEditor'
+    getMainModule().set 'nu.mine.mosher.gedcom.xy'
+    getMainClass().set 'nu.mine.mosher.gedcom.xy.GenXyEditor'
 }
 
 javafx {
@@ -32,6 +45,7 @@ javafx {
 }
 
 jar {
+    //noinspection GroovyAssignabilityCheck
     manifest {
         attributes(
             'Specification-Version': manifest.attributes.get('Implementation-Version'),
@@ -41,7 +55,6 @@ jar {
 }
 
 def os = org.gradle.internal.os.OperatingSystem.current()
-println "detected OS: ${os}"
 
 jlink {
     mergedModule {

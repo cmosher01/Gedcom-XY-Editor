@@ -63,9 +63,10 @@ public class FamilyChartBuilderFtm {
         final int sex = rs.getInt("sex");
         final String lifespan = getLifespan(rs.getString("birth"), rs.getString("death"));
         final long birth = calcBirthForSort(rs.getString("birth"));
+        final Place birthplace = Place.fromFtmPlace(rs.getString("birthplace"));
         LOG.debug("read _XY fact from FTM file: {}, {}, {}", pkidPerson, xy, name);
 
-        return new Indi(null, wxyOrig, pkidPerson, pkidFact, name, lifespan, birth, sex);
+        return new Indi(null, wxyOrig, pkidPerson, pkidFact, name, lifespan, birth, birthplace, sex);
     }
 
     private static long calcBirthForSort(String birth) {

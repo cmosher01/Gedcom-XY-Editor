@@ -49,6 +49,7 @@ public class Indi {
     private final int sex;
     private final long nBirthForSort;
     private final String lifespan;
+    private final String tagline;
 
     private final StackPane plaque = new StackPane();
 
@@ -74,7 +75,7 @@ public class Indi {
     }
 
 
-    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, final int sex) {
+    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, Place birthplace, final int sex) {
         this.node = node;
         this.id = id;
         this.idCoords = Objects.nonNull(idCoords) ? idCoords : "";
@@ -85,6 +86,7 @@ public class Indi {
         this.nBirthForSort = nBirthForSort;
         this.nameGiven = parseNameGiven(name);
         this.nameSur = parseNameSur(name);
+        this.tagline = birthplace.toString();
     }
 
     private static final Pattern PAT_NAME = Pattern.compile("(.*)/([^/]*?)/([^/]*?)");
@@ -276,18 +278,20 @@ public class Indi {
     }
 
     public void saveXyToFtm(final Connection conn, final long pkidFactTypeXy) throws SQLException {
+        final var syncVersion = FamilyChart.readSyncVersion(conn);
         final String xy = Coords.toValueXY(this.coords.get());
         if (idCoords.isBlank()) {
             LOG.debug(
-                "INSERT INTO Fact(LinkID, LinkTableID, FactTypeID, Preferred, Text) VALUES ({},{},{},{},'{}')",
-                Long.parseLong(id), 5L, pkidFactTypeXy, 1L, xy);
-            final String sql = "INSERT INTO Fact(LinkID, LinkTableID, FactTypeID, Preferred, Text) VALUES (?,?,?,?,?)";
+                "INSERT INTO Fact(LinkID, LinkTableID, FactTypeID, Preferred, Text, SyncVersion) VALUES ({},{},{},{},'{}',{})",
+                Long.parseLong(id), 5L, pkidFactTypeXy, 1L, xy, syncVersion) ;
+            final String sql = "INSERT INTO Fact(LinkID, LinkTableID, FactTypeID, Preferred, Text, SyncVersion) VALUES (?,?,?,?,?,?)";
             try (final PreparedStatement insert = conn.prepareStatement(sql)) {
                 insert.setLong(1, Long.parseLong(id));
                 insert.setLong(2, 5L);
                 insert.setLong(3, pkidFactTypeXy);
                 insert.setLong(4, 1L);
                 insert.setString(5, xy);
+                insert.setLong(6, syncVersion);
                 insert.executeUpdate();
 
                 final ResultSet generatedKeys = insert.getGeneratedKeys();
@@ -302,16 +306,26 @@ public class Indi {
                 }
             }
         } else {
-            LOG.debug("UPDATE Fact SET Text = '{}' WHERE ID = {}",
-                xy, Long.parseLong(this.idCoords));
-            final String sql = "UPDATE Fact SET Text = ? WHERE ID = ?";
+            LOG.debug("UPDATE Fact SET Text = '{}', SyncVersion = {} WHERE ID = {}",
+                xy, syncVersion, Long.parseLong(this.idCoords));
+            final String sql = "UPDATE Fact SET Text = ?, SyncVersion = ? WHERE ID = ?";
             try (final PreparedStatement update = conn.prepareStatement(sql)) {
                 update.setString(1, xy);
-                update.setLong(2, Long.parseLong(this.idCoords));
+                update.setLong(2, syncVersion);
+                update.setLong(3, Long.parseLong(this.idCoords));
                 update.executeUpdate();
                 this.coords.save();
                 LOG.debug("updated {} row(s)", update.getUpdateCount());
             }
+        }
+        LOG.debug("UPDATE Person SET SyncVersion = {} WHERE ID = {}",
+            syncVersion, Long.parseLong(this.id));
+        final String sql = "UPDATE Person SET SyncVersion = ? WHERE ID = ?";
+        try (final PreparedStatement update = conn.prepareStatement(sql)) {
+            update.setLong(1, syncVersion);
+            update.setLong(2, Long.parseLong(this.id));
+            update.executeUpdate();
+            LOG.debug("updated {} row(s)", update.getUpdateCount());
         }
     }
 
@@ -391,5 +405,10 @@ public class Indi {
 
     public double height() {
         return this.plaque.getHeight();
+    }
+
+    public String getTagline()
+    {
+        return this.tagline;
     }
 }

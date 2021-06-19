@@ -365,7 +365,7 @@ public class Layout {
                 for (final Individual indi : this.indis) {
                     if (!indi.mark) {
                         someleft = true;
-                        indi.setLevel(batch++ * 20);
+                        indi.setLevel(batch++ * 5);
                     }
                 }
             }

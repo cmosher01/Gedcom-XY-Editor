@@ -92,7 +92,7 @@ public final class FamilyChartBuilderGed {
             }
         }
 
-        return new Indi(nodeIndi, wxyOrig, id, "", name, lifespan, birth, sex);
+        return new Indi(nodeIndi, wxyOrig, id, "", name, lifespan, birth, null, sex);
     }
 
     private static long calcBirthForSort(String birt) {

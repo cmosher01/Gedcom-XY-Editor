@@ -83,7 +83,8 @@ public class FamilyChart {
                 } else {
                     from = "";
                 }
-                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f) [%.2fx%.2f]", i.get().name(), from, coords.getX(), coords.getY(), i.get().width(), i.get().height()));
+                final String tagline = i.get().getTagline();
+                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f) [%.2fx%.2f] %s", i.get().name(), from, coords.getX(), coords.getY(), i.get().width(), i.get().height(), tagline));
             } else {
                 this.selectedNameProperty.setValue("[nothing selected]");
             }
@@ -131,7 +132,7 @@ public class FamilyChart {
         try (final PreparedStatement select = conn.prepareStatement(
             "SELECT FactType.ID AS pkidFactTypeXY FROM FactType WHERE FactType.Abbreviation = '_XY'")) {
             try (final ResultSet rs = select.executeQuery()) {
-                while (rs.next()) {
+                if (rs.next()) {
                     return rs.getLong("pkidFactTypeXY");
                 }
             }
@@ -179,9 +180,11 @@ public class FamilyChart {
             }
         }
 
+        final var syncVersion = readSyncVersion(conn);
         try (final PreparedStatement insert = conn.prepareStatement(
-            "INSERT INTO FactType(Name, ShortName, Abbreviation, FactClass, Tag) " +
-                "VALUES('_XY','_XY','_XY',263,'EVEN')")) {
+            "INSERT INTO FactType(Name, ShortName, Abbreviation, FactClass, Tag, SyncVersion) " +
+                "VALUES('_XY','_XY','_XY',263,'EVEN',?)")) {
+            insert.setLong(1, syncVersion);
             insert.executeUpdate();
         }
     }
@@ -190,12 +193,24 @@ public class FamilyChart {
         try (final PreparedStatement select = conn.prepareStatement(
             "SELECT COUNT(*) AS count FROM FactType WHERE FactType.Abbreviation = '_XY'")) {
             try (final ResultSet rs = select.executeQuery()) {
-                while (rs.next()) {
+                if (rs.next()) {
                     return 0 < rs.getInt("count");
                 }
             }
         }
         return false;
+    }
+
+    public static long readSyncVersion(final Connection conn) throws SQLException {
+        try (final PreparedStatement select = conn.prepareStatement(
+            "SELECT StringValue AS SyncVersion FROM Setting WHERE Name = 'SyncVersion'")) {
+            try (final ResultSet rs = select.executeQuery()) {
+                if (rs.next()) {
+                    return Long.parseLong(rs.getString("SyncVersion"));
+                }
+            }
+        }
+        return 2L; // default starting SyncVersion value
     }
 
     public void saveAs(final File file) throws IOException {
