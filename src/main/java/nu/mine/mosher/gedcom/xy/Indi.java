@@ -75,7 +75,7 @@ public class Indi {
     }
 
 
-    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, Place birthplace, final int sex) {
+    public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {
         this.node = node;
         this.id = id;
         this.idCoords = Objects.nonNull(idCoords) ? idCoords : "";
@@ -86,7 +86,7 @@ public class Indi {
         this.nBirthForSort = nBirthForSort;
         this.nameGiven = parseNameGiven(name);
         this.nameSur = parseNameSur(name);
-        this.tagline = birthplace.toString();
+        this.tagline = tagline;
     }
 
     private static final Pattern PAT_NAME = Pattern.compile("(.*)/([^/]*?)/([^/]*?)");
@@ -222,6 +222,10 @@ public class Indi {
             label.append(")");
         }
 
+        if (!this.tagline.isBlank()) {
+            label.append("\n");
+            label.append(this.tagline);
+        }
         return label.toString();
     }
 

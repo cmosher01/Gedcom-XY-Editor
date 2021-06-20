@@ -147,7 +147,7 @@ public final class Metrics {
     }
 
     public Color colorIndiBg() {
-        return Solarized.BASE3;
+        return Solarized.BASE3.deriveColor(1.0D, 1.0D, 1.0D, 0.75D);
     }
 
     public Color colorSelectionChooser() {
