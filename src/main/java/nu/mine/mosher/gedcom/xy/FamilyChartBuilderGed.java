@@ -178,16 +178,11 @@ public final class FamilyChartBuilderGed {
         final Fami fami = new Fami();
         for (final TreeNode<GedcomLine> c : nodeFami) {
             final GedcomLine child = c.getObject();
-            switch (child.getTag()) {
-                case HUSB:
-                    fami.setHusb(mapIdToIndi.get(child.getPointer()));
-                    break;
-                case WIFE:
-                    fami.setWife(mapIdToIndi.get(child.getPointer()));
-                    break;
-                case CHIL:
-                    fami.addChild(mapIdToIndi.get(child.getPointer()));
-                    break;
+            switch (child.getTag())
+            {
+                case HUSB -> fami.setHusb(mapIdToIndi.get(child.getPointer()));
+                case WIFE -> fami.setWife(mapIdToIndi.get(child.getPointer()));
+                case CHIL -> fami.addChild(mapIdToIndi.get(child.getPointer()));
             }
         }
         return fami;

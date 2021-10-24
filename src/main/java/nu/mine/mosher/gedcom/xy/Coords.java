@@ -30,7 +30,7 @@ public final class Coords {
     private Point2D xyStart;
     private final Circle xyLayoutUser = new Circle(0, TRANSPARENT); // TODO make this a Point2D property
     private boolean forceDirty;
-    private BooleanProperty propDirty = new SimpleBooleanProperty();
+    private final BooleanProperty propDirty = new SimpleBooleanProperty();
 
     private void dumpToLog(final String label) {
         LOG.debug("{}: {},{},{},{},{},{},{},{}", label,
@@ -245,16 +245,13 @@ public final class Coords {
         }
 
         final Optional<Double> x = parseCoord(fields[0]);
-        if (!x.isPresent()) {
+        if (x.isEmpty()) {
             return empty();
         }
 
         final Optional<Double> y = parseCoord(fields[1]);
-        if (!y.isPresent()) {
-            return empty();
-        }
+        return y.map(oldy -> new Point2D(x.get(), oldy));
 
-        return Optional.of(new Point2D(x.get(), y.get()));
     }
 
     private static Optional<Double> parseCoord(final String s) {

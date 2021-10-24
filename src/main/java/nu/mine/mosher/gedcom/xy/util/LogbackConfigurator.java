@@ -153,7 +153,7 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
 
     public static class HighlightingCompositeConverter extends ForegroundCompositeConverterBase<ILoggingEvent> {
         public static void install() {
-            PatternLayout.defaultConverterMap.put("levelcolor", HighlightingCompositeConverter.class.getName());
+            PatternLayout.DEFAULT_CONVERTER_MAP.put("levelcolor", HighlightingCompositeConverter.class.getName());
         }
 
         @Override

@@ -121,13 +121,15 @@ public class Indi {
 
     public void calc() {
         final Text textshape = new Text();
-        final ObjectBinding<Color> fillBinding = new ObjectBinding<Color>() {
+        final ObjectBinding<Color> fillBinding = new ObjectBinding<>()
+        {
             {
                 super.bind(selected);
             }
 
             @Override
-            protected Color computeValue() {
+            protected Color computeValue()
+            {
                 return selected.get() ? metrics.colorIndiSelText() : metrics.colorIndiText();
             }
         };

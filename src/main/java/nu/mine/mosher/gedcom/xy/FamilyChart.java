@@ -28,13 +28,13 @@ public class FamilyChart {
     private final List<Fami> famis;
     private final Metrics metrics;
     private final Selection selection = new Selection();
-    private StringProperty selectedNameProperty = new SimpleStringProperty();
+    private final StringProperty selectedNameProperty = new SimpleStringProperty();
 
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics, final File fileOriginal) {
         this.fileOriginal = Optional.ofNullable(fileOriginal);
         this.tree = Optional.ofNullable(tree);
-        this.indis = Collections.unmodifiableList(new ArrayList<>(indis));
-        this.famis = Collections.unmodifiableList(new ArrayList<>(famis));
+        this.indis = List.copyOf(indis);
+        this.famis = List.copyOf(famis);
         this.metrics = metrics;
     }
 
@@ -56,9 +56,7 @@ public class FamilyChart {
     }
 
     public void setSelectionFrom(double x, double y, double w, double h) {
-        this.indis.forEach(i -> {
-            this.selection.select(i, i.intersects(x, y, w, h), false);
-        });
+        this.indis.forEach(i -> this.selection.select(i, i.intersects(x, y, w, h), false));
         updateSelectStatus();
     }
 
@@ -281,7 +279,7 @@ public class FamilyChart {
     }
 
     public List<Indi> indis() {
-        return Collections.unmodifiableList(new ArrayList<>(this.indis));
+        return List.copyOf(this.indis);
     }
 
     public StringProperty selectedName() {
@@ -329,15 +327,7 @@ public class FamilyChart {
     private static final Set<String> SKEL;
 
     static {
-        final Set<String> s = new HashSet<>();
-        s.add("NAME");
-        s.add("SEX");
-        s.add("REFN");
-        s.add("RIN");
-        s.add("_XY");
-        s.add("BIRT");
-        s.add("DEAT");
-        SKEL = Collections.unmodifiableSet(s);
+        SKEL = Set.of("NAME", "SEX", "REFN", "RIN", "_XY", "BIRT", "DEAT");
     }
 
     private static void extractSkeleton(final TreeNode<GedcomLine> indi, final PrintWriter out) {

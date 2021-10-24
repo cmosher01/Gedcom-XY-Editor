@@ -9,8 +9,6 @@ import nu.mine.mosher.gedcom.xy.util.Version;
 import org.slf4j.*;
 
 import javax.swing.*;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.*;

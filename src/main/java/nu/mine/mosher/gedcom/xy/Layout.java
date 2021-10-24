@@ -124,9 +124,9 @@ public class Layout {
 
 
     class Individual {
-        private Layout layout = Layout.this;
+        private final Layout layout = Layout.this;
 
-        private int sex; // 0=unknown, 1=male, 2=female
+        private final int sex; // 0=unknown, 1=male, 2=female
         private Point2D location = Point2D.ZERO;
 
         private final Indi indi;
@@ -134,11 +134,11 @@ public class Layout {
         private final int idx;
         private int idxFather = -1;
         private int idxMother = -1;
-        private List<Integer> ridxSpouse = new ArrayList<>();
-        private List<Integer> ridxChild = new ArrayList<>();
+        private final List<Integer> ridxSpouse = new ArrayList<>();
+        private final List<Integer> ridxChild = new ArrayList<>();
         /* indexes into famis list */
         private int idxChildToFamily = -1;
-        private List<Integer> ridxSpouseToFamily = new ArrayList<>();
+        private final List<Integer> ridxSpouseToFamily = new ArrayList<>();
 
         private boolean mark;
         private int level;

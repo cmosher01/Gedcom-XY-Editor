@@ -22,13 +22,14 @@ public final class Metrics {
 
     public static final String FONT_FAMILY_NAME = "Noto Sans";
     public static final double FONT_SIZE_NOMINAL = 8.0D;
-    public static final double FONT_SIZE_RATIO = 20.0D;
+    public static final double FONT_SIZE_RATIO = 25.0D;
     public static final double DX_DEFAULT = FONT_SIZE_NOMINAL * FONT_SIZE_RATIO;
 
     public static final double NOMINAL_DISTANCE_MIN = 5.51D;
     public static final double NOMINAL_DISTANCE_MAX = 1000.0D;
     public static final double YDIV = 29D;
     public static final String PLAQUE_MAX = "MMMMMMMMMMMMMMMM\nM\nM";
+    public static final double MARRIAGE_SPACING_FACTOR = 0.8D;
 
     private final double fontSize;
     private final double dxPartner;
@@ -42,7 +43,7 @@ public final class Metrics {
         final double dxPartner = famis.stream().mapToDouble(Fami::getMarrDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dyGeneration = famis.stream().mapToDouble(Fami::getGenDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dxAvg = calculateAverageX(indis);
-        return new Metrics(dxPartner, dyGeneration, dxAvg);
+        return new Metrics(dxPartner * MARRIAGE_SPACING_FACTOR, dyGeneration, dxAvg);
     }
 
     private static double calculateAverageX(final List<Indi> indis) {
@@ -178,7 +179,7 @@ public final class Metrics {
 
     void setGrid(final String s) {
         try {
-            final int g =Integer.parseInt(s);
+            final int g = Integer.parseInt(s);
             if (0 <= g && g <= 1000) {
                 GenXyEditor.prefs().putInt("snapToGrid", g);
             }

@@ -19,5 +19,5 @@ module nu.mine.mosher.gedcom.xy {
     requires java.prefs;
     requires java.xml;
     requires java.sql;
-    requires sqlite.jdbc;
+    requires org.xerial.sqlitejdbc;
 }

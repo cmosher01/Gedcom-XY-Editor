@@ -168,7 +168,7 @@ public final class GenXyEditor {
 
         final Optional<java.util.logging.Logger> jdbcLogger = Optional.ofNullable(driverJdbc.getParentLogger());
         if (jdbcLogger.isPresent()) {
-            jdbcLogger.get().info("Logging via JDBC driver logger: " + jdbcLogger.toString());
+            jdbcLogger.get().info("Logging via JDBC driver logger: " + jdbcLogger);
         } else {
             LOG.info("JDBC driver logger not found.");
         }

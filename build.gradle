@@ -1,6 +1,7 @@
 plugins {
+    id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.10'
-    id 'org.beryx.jlink' version '2.24.0'
+    id 'org.beryx.jlink' version '2.24.4'
     id 'com.coditory.manifest' version '0.1.14'
 }
 
@@ -14,12 +15,12 @@ java {
 }
 compileJava {
     options.compilerArgs << '-parameters'
-    options.compilerArgs << "--enable-preview"
+//    options.compilerArgs << "--enable-preview"
 }
 
-tasks.withType(JavaExec) {
-    jvmArgs += "--enable-preview"
-}
+//tasks.withType(JavaExec) {
+//    jvmArgs += "--enable-preview"
+//}
 
 repositories {
     mavenCentral()
@@ -88,10 +89,3 @@ jlink {
 assemble {
     dependsOn tasks.jpackage
 }
-
-//kludge to work around bug when running from IntelliJ. See https://youtrack.jetbrains.com/issue/IDEA-197469
-//sourceSets {
-//    main {
-//        output.resourcesDir = java.outputDir
-//    }
-//}
