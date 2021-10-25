@@ -3,6 +3,9 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.0.10'
     id 'org.beryx.jlink' version '2.24.4'
     id 'com.coditory.manifest' version '0.1.14'
+
+    // TODO: remove this once it's released into the application plugin:
+    id 'org.javamodularity.moduleplugin' version '1.8.10' apply false
 }
 
 version="2.2.1"
