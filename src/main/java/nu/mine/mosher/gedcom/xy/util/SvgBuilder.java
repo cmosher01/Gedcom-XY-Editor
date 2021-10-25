@@ -29,7 +29,8 @@ public class SvgBuilder {
 
                 ".person { fill: dimgray; }\n" +
                 ".nameGiven { font-weight: bold; }\n" +
-                ".date { fill: darkgray; font-size: 65%; }\n"
+                ".date { fill: darkgray; font-size: 65%; }\n" +
+                ".tagline { fill: darkgray; font-size: 65%; }\n"
         );
         this.svg.appendChild(style);
     }
@@ -56,7 +57,7 @@ public class SvgBuilder {
         this.svg.appendChild(e);
     }
 
-    public void addPerson(final Bounds bounds, String nameGiven, String nameSur, final String dates, final String refn) {
+    public void addPerson(final Bounds bounds, String nameGiven, String nameSur, final String dates, final String tagLine, final String refn) {
         final Element eRect = this.doc.createElementNS(W3C_SVG_NS_URI, "rect");
         eRect.setAttribute("x", Double.toString(bounds.getMinX()));
         eRect.setAttribute("y", Double.toString(bounds.getMinY()));
@@ -73,10 +74,10 @@ public class SvgBuilder {
             nameSur = "\u00A0" + nameSur;
         }
 
-        addText(bounds, nameGiven, nameSur, dates, refn, "");
+        addText(bounds, nameGiven, nameSur, dates, tagLine, refn, "");
     }
 
-    private void addText(final Bounds bounds, String nameGiven, String nameSur, final String dates, final String refn, final String mask) {
+    private void addText(final Bounds bounds, String nameGiven, String nameSur, final String dates, final String tagLine, final String refn, final String mask) {
         final Element eText = this.doc.createElementNS(W3C_SVG_NS_URI, "text");
         eText.setAttribute("class", "person"+mask);
         eText.setAttribute("data-refn", refn);
@@ -104,6 +105,13 @@ public class SvgBuilder {
         eDate.setAttribute("dy", ""+this.fontsize);
         eDate.setTextContent(dates);
         eText.appendChild(eDate);
+
+        final Element eTagLine = this.doc.createElementNS(W3C_SVG_NS_URI, "tspan");
+        eTagLine.setAttribute("class", "tagline"+mask);
+        eTagLine.setAttribute("x", Double.toString(bounds.getMinX()));
+        eTagLine.setAttribute("dy", ""+this.fontsize);
+        eTagLine.setTextContent(tagLine);
+        eText.appendChild(eTagLine);
 
         this.svg.appendChild(eText);
     }

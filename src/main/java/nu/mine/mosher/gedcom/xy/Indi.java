@@ -342,7 +342,7 @@ public class Indi {
                 : ("("+this.lifespan+")");
 
         final Bounds bounds = this.plaque.getBoundsInParent();
-        svg.addPerson(bounds, this.nameGiven, this.nameSur, dates, this.id);
+        svg.addPerson(bounds, this.nameGiven, this.nameSur, dates, this.tagline, this.id);
     }
 
     public void saveXyToTree() {
