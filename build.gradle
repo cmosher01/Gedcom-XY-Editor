@@ -8,7 +8,7 @@ plugins {
     id 'org.javamodularity.moduleplugin' version '1.8.10' apply false
 }
 
-version="2.2.1"
+version="2.2.2"
 
 group = 'nu.mine.mosher.gedcom'
 
@@ -18,12 +18,7 @@ java {
 }
 compileJava {
     options.compilerArgs << '-parameters'
-//    options.compilerArgs << "--enable-preview"
 }
-
-//tasks.withType(JavaExec) {
-//    jvmArgs += "--enable-preview"
-//}
 
 repositories {
     mavenCentral()

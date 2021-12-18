@@ -86,7 +86,7 @@ public class Indi {
         this.nBirthForSort = nBirthForSort;
         this.nameGiven = parseNameGiven(name);
         this.nameSur = parseNameSur(name);
-        this.tagline = tagline;
+        this.tagline = Optional.ofNullable(tagline).orElse("");
     }
 
     private static final Pattern PAT_NAME = Pattern.compile("(.*)/([^/]*?)/([^/]*?)");
