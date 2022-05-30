@@ -283,7 +283,8 @@ public class CommandHandler {
             try {
                 chart[0] = tryReadChartFromFile(fileToOpen);
             } catch (final Throwable e) {
-                e.printStackTrace(); // TODO better error handling
+                LOG.error("unexpected error while reading from file", e);
+                // TODO better error handling
             } finally {
                 latch.countDown();
             }

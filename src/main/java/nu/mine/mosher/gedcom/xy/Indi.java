@@ -76,16 +76,17 @@ public class Indi {
 
 
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {
+        final String n = name == null ? "" : name;
         this.node = node;
         this.id = id;
         this.idCoords = Objects.nonNull(idCoords) ? idCoords : "";
-        this.coords = new Coords(wxyOriginal, name);
+        this.coords = new Coords(wxyOriginal, n);
         this.sex = sex;
-        this.name = name;
+        this.name = n;
         this.lifespan = lifespan;
         this.nBirthForSort = nBirthForSort;
-        this.nameGiven = parseNameGiven(name);
-        this.nameSur = parseNameSur(name);
+        this.nameGiven = parseNameGiven(n);
+        this.nameSur = parseNameSur(n);
         this.tagline = Optional.ofNullable(tagline).orElse("");
     }
 
