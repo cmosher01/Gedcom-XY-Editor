@@ -13,6 +13,8 @@ individuals in a GEDCOM file, graphically on a traditional drop-line chart.
 The program has a genealogically oriented *layout algorithm*, to automatically
 arrange the individuals by family relationships.
 
+![image](./docs/gedcom-xy-editor-screenshot.jpg)
+
 It can export the chart to an SVG format file.
 
 The program allows for an optional “skeleton” export, with minimal identifying
