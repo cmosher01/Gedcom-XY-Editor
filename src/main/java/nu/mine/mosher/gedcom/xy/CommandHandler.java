@@ -63,6 +63,10 @@ public class CommandHandler {
             menuFile.add(cmdSave);
         }
 
+        final MenuItem cmdPdf = new MenuItem("Export as PDF");
+        cmdPdf.addActionListener(e -> exportPdf(chart));
+        menuFile.add(cmdPdf);
+
         final MenuItem cmdSvg = new MenuItem("Export as SVG");
         cmdSvg.addActionListener(e -> exportSvg(chart));
         menuFile.add(cmdSvg);
@@ -199,6 +203,33 @@ public class CommandHandler {
     }
 
 
+    private void exportPdf(final FamilyChart chart) {
+        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Export PDF file", FileDialog.SAVE);
+        fd.setDirectory(GenXyEditor.outDir().getPath());
+        if (chart.originalFile().isPresent()) {
+            fd.setFile(pdfNameOf(chart.originalFile().get().getName()));
+        } else {
+            fd.setFile(".pdf");
+        }
+
+        fd.setVisible(true);
+
+        final String d = fd.getDirectory();
+        final String f = fd.getFile();
+        fd.dispose();
+
+        if (Objects.isNull(f) || Objects.isNull(d)) {
+            return;
+        }
+        final File fileToSaveAs = new File(d,f);
+        GenXyEditor.outDir(fileToSaveAs.getParentFile());
+        try {
+            chart.savePdf(fileToSaveAs);
+        } catch (final Exception e) {
+            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
+        }
+    }
+
     private void exportSvg(final FamilyChart chart) {
         final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Export SVG file", FileDialog.SAVE);
         fd.setDirectory(GenXyEditor.outDir().getPath());
@@ -258,6 +289,10 @@ public class CommandHandler {
 
     private static String skelNameOf(final String name) {
         return name.replaceFirst(".ged$", ".skel.ged");
+    }
+
+    private static String pdfNameOf(final String name) {
+        return name.replaceFirst(".ged$", ".pdf").replaceFirst(".ftm$", ".pdf");
     }
 
     private static String svgNameOf(final String name) {

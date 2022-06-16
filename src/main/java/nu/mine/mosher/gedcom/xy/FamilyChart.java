@@ -1,11 +1,11 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.property.*;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
-import nu.mine.mosher.gedcom.xy.util.SvgBuilder;
+import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 import org.sqlite.SQLiteConfig;
 import org.w3c.dom.Document;
@@ -18,6 +18,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
+import java.util.function.BinaryOperator;
 
 public class FamilyChart {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);
@@ -222,11 +223,20 @@ public class FamilyChart {
         Gedcom.writeFile(tree.get(), new BufferedOutputStream(new FileOutputStream(file)));
     }
 
+    public void savePdf(final File fileToSaveAs) throws IOException {
+        final long fontsize = Math.round(Math.rint(this.metrics.getFontSize()));
+
+        try (final PdfBuilder builder = new PdfBuilder(this.metrics, fileToSaveAs, calculateSize())) {
+            this.famis.forEach(i -> i.savePdf(builder));
+            this.indis.forEach(i -> i.savePdf(builder));
+        }
+    }
+
     public void saveSvg(final File fileToSaveAs) throws ParserConfigurationException, TransformerException {
         final long fontsize = Math.round(Math.rint(this.metrics.getFontSize()));
         final SvgBuilder svg = new SvgBuilder(fontsize);
 
-        this.famis.forEach(i -> i.saveAvg(svg));
+        this.famis.forEach(i -> i.saveSvg(svg));
         this.indis.forEach(i -> i.saveSvg(svg));
 
         saveDoc(svg.get(), fileToSaveAs);
@@ -287,7 +297,20 @@ public class FamilyChart {
     }
 
     public Optional<File> originalFile() {
-        return fileOriginal;
+        return this.fileOriginal;
+    }
+
+    public Point2D calculateSize() {
+        final Bounds bounds = this.indis.stream().map(Indi::bounds).reduce((b1, b2) -> {
+            final double xMin = Math.min(b1.getMinX(), b2.getMinX());
+            final double xMax = Math.max(b1.getMaxX(), b2.getMaxX());
+            final double width = Math.abs(xMax-xMin);
+            final double yMin = Math.min(b1.getMinY(), b2.getMinY());
+            final double yMax = Math.max(b1.getMaxY(), b2.getMaxY());
+            final double height = Math.abs(yMax-yMin);
+            return new BoundingBox(xMin, yMin, width, height);
+        }).get();
+        return new Point2D(bounds.getWidth(), bounds.getHeight());
     }
 
     public class Selection {

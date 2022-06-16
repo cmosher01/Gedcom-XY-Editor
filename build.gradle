@@ -29,6 +29,7 @@ dependencies {
         exclude group: 'nu.mine.mosher.mopper', module: 'mopper'
     }
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: 'latest.release'
+    implementation group: 'com.itextpdf', name: 'itext7-core', version: 'latest.release'
 
     implementation group: 'nu.mine.mosher.io', name: 'log-files', version: 'latest.release'
 

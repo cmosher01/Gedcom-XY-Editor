@@ -19,7 +19,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
-import nu.mine.mosher.gedcom.xy.util.SvgBuilder;
+import nu.mine.mosher.gedcom.xy.util.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -379,7 +379,20 @@ public class Fami {
         }
     }
 
-    public void saveAvg(SvgBuilder svg) {
+    public void savePdf(PdfBuilder builder) {
+        builder.addLine(this.parentBar1);
+        builder.addLine(this.parentBar2);
+        builder.addLine(this.descentBar1);
+        builder.addLine(this.descentBar2);
+        builder.addLine(this.descentBar3);
+        builder.addLine(this.childBar);
+        if (!this.rChild.isEmpty()) {
+            Arrays.asList(this.rChildBar).forEach(builder::addLine);
+        }
+        this.phantomPanes.stream().map(Node::getBoundsInParent).forEach(builder::addPhantom);
+    }
+
+    public void saveSvg(SvgBuilder svg) {
         svg.addLine(this.parentBar1);
         svg.addLine(this.parentBar2);
         svg.addLine(this.descentBar1);

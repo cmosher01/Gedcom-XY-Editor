@@ -20,4 +20,6 @@ module nu.mine.mosher.gedcom.xy {
     requires java.xml;
     requires java.sql;
     requires org.xerial.sqlitejdbc;
+    requires kernel;
+    requires layout;
 }

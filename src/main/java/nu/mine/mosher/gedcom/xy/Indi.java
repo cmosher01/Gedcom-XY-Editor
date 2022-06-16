@@ -24,7 +24,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
-import nu.mine.mosher.gedcom.xy.util.SvgBuilder;
+import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -336,6 +336,16 @@ public class Indi {
         }
     }
 
+    public void savePdf(final PdfBuilder builder) {
+        final String dates =
+            this.lifespan.isBlank()
+                ? ""
+                : ("("+this.lifespan+")");
+
+        final Bounds bounds = this.plaque.getBoundsInParent();
+        builder.addPerson(bounds, this.nameGiven, this.nameSur, dates, this.tagline, this.id);
+    }
+
     public void saveSvg(final SvgBuilder svg) {
         final String dates =
             this.lifespan.isBlank()
@@ -412,6 +422,10 @@ public class Indi {
 
     public double height() {
         return this.plaque.getHeight();
+    }
+
+    public Bounds bounds() {
+        return this.plaque.getBoundsInParent();
     }
 
     public String getTagline()
