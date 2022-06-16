@@ -1,11 +1,9 @@
 package nu.mine.mosher.gedcom.xy;
 
 
-
 import javafx.application.Platform;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.exception.InvalidLevel;
-import nu.mine.mosher.gedcom.xy.util.Version;
 import org.slf4j.*;
 
 import javax.swing.*;
@@ -14,11 +12,9 @@ import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.file.Files;
 import java.sql.SQLException;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 public class CommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(CommandHandler.class);
@@ -397,7 +393,7 @@ public class CommandHandler {
             JOptionPane.showMessageDialog(
                 frame,
                 "Genealogy XY Editor\n\n" +
-                    "Version " + Version.version(GenXyEditor.class.getPackage()) + "\n" +
+                    "Version " + GenXyEditor.VERSION + "\n" +
                     "Log file: "+ GenXyEditor.LogConfig.getFilePath() + "\n\n" +
                     "Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.",
                 "Genealogy XY Editor",

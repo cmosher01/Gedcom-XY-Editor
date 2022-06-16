@@ -2,31 +2,15 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.StackPane;
+import javafx.geometry.*;
+import javafx.scene.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
+import javafx.scene.shape.*;
+import javafx.scene.text.*;
 import nu.mine.mosher.gedcom.xy.util.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static nu.mine.mosher.gedcom.xy.Indi.CORNERS;
 

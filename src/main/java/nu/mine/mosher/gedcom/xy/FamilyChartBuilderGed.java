@@ -2,13 +2,10 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.Point2D;
 import nu.mine.mosher.collection.TreeNode;
-import nu.mine.mosher.gedcom.GedcomLine;
-import nu.mine.mosher.gedcom.GedcomTag;
-import nu.mine.mosher.gedcom.GedcomTree;
+import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.date.DatePeriod;
 import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;

@@ -1,23 +1,20 @@
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+
 plugins {
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.10'
-    id 'org.beryx.jlink' version '2.24.4'
-    id 'com.coditory.manifest' version '0.1.14'
-
-    // TODO: remove this once it's released into the application plugin:
-    id 'org.javamodularity.moduleplugin' version '1.8.10' apply false
+    id 'org.openjfx.javafxplugin' version '0.0.13'
+    id 'org.beryx.jlink' version '2.25.0'
+    id 'com.coditory.manifest' version '0.2.0'
 }
 
-version="2.2.2"
+version = '2.2.3+'+jar.manifest.attributes.get('SCM-Commit-Hash')
 
 group = 'nu.mine.mosher.gedcom'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_15
-    modularity.inferModulePath.set true
-}
-compileJava {
-    options.compilerArgs << '-parameters'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of 15
+    }
 }
 
 repositories {
@@ -41,8 +38,8 @@ dependencies {
 }
 
 application {
-    getMainModule().set 'nu.mine.mosher.gedcom.xy'
-    getMainClass().set 'nu.mine.mosher.gedcom.xy.GenXyEditor'
+    mainModule = 'nu.mine.mosher.gedcom.xy'
+    mainClass = 'nu.mine.mosher.gedcom.xy.GenXyEditor'
 }
 
 javafx {
@@ -52,39 +49,19 @@ javafx {
     ]
 }
 
-jar {
-    //noinspection GroovyAssignabilityCheck
-    manifest {
-        attributes(
-            'Specification-Version': manifest.attributes.get('Implementation-Version'),
-            'Implementation-Version': manifest.attributes.get('Implementation-Version').toString()+"+"+manifest.attributes.get('SCM-Commit-Hash').toString()
-        )
-    }
-}
-
-def os = org.gradle.internal.os.OperatingSystem.current()
-
 jlink {
     mergedModule {
         additive = true
         requires 'org.slf4j'
     }
     jpackage {
-        if (os.windows) {
-            installerOptions += [
-                '--win-dir-chooser',
-                '--win-menu',
-                '--win-shortcut'
-            ]
-        } else if (os.linux) {
-            installerOptions += [
-                '--linux-shortcut'
-            ]
+        if (DefaultNativePlatform.currentOperatingSystem.windows) {
+            installerOptions += [ '--win-dir-chooser', '--win-menu', '--win-shortcut' ]
+        } else if (DefaultNativePlatform.currentOperatingSystem.linux) {
+            installerOptions += [ '--linux-shortcut' ]
         }
         installerOptions += [ '--verbose' ]
     }
 }
 
-assemble {
-    dependsOn tasks.jpackage
-}
+tasks.assemble.dependsOn tasks.jpackage

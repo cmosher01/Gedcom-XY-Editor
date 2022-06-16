@@ -15,7 +15,7 @@ import javafx.scene.shape.Line;
 import nu.mine.mosher.gedcom.xy.Metrics;
 
 import java.io.*;
-import java.util.*;
+import java.util.Objects;
 
 public class PdfBuilder implements AutoCloseable {
     private static final javafx.scene.paint.Color SOL_PLAQUE_FILL = Solarized.BASE3;

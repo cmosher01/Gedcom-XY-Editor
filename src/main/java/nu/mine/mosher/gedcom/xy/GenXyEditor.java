@@ -1,25 +1,24 @@
 package nu.mine.mosher.gedcom.xy;
 
 import ch.qos.logback.classic.*;
-import javafx.application.*;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.embed.swing.JFXPanel;
-import javafx.geometry.*;
 import javafx.geometry.Insets;
+import javafx.geometry.*;
 import javafx.scene.*;
-import javafx.scene.input.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import nu.mine.mosher.gedcom.xy.util.*;
-import org.slf4j.*;
 import org.slf4j.Logger;
+import org.slf4j.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.nio.file.*;
 import java.sql.*;
@@ -27,6 +26,8 @@ import java.util.*;
 import java.util.prefs.Preferences;
 
 public final class GenXyEditor {
+    public static final String VERSION = GenXyEditor.class.getModule().getDescriptor().version().get().toString();
+
     private static Logger LOG;
     private static volatile Thread threadEventsAwt;
 
@@ -37,7 +38,7 @@ public final class GenXyEditor {
         try {
             initLogging();
 
-            LOG.info("version: {}", Version.version(GenXyEditor.class.getPackage()));
+            LOG.info("version: {}", VERSION);
 
             logFonts();
 
@@ -276,7 +277,7 @@ public final class GenXyEditor {
         final Text statusName = new Text();
         statusName.textProperty().bind(chart.selectedName());
 
-        final Text statusVersion = new Text(Version.version(GenXyEditor.class.getPackage()));
+        final Text statusVersion = new Text(VERSION);
 
         final Region ws = new Region();
         HBox.setHgrow(ws, Priority.ALWAYS);

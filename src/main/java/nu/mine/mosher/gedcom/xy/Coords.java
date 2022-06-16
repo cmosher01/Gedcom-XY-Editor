@@ -1,16 +1,12 @@
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.*;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Circle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.math.*;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.Optional.empty;
 import static javafx.scene.paint.Color.TRANSPARENT;

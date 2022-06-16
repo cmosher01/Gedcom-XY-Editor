@@ -18,7 +18,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
-import java.util.function.BinaryOperator;
 
 public class FamilyChart {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);

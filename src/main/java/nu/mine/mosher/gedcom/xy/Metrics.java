@@ -1,19 +1,13 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.Point2D;
-import javafx.scene.Group;
-import javafx.scene.Scene;
+import javafx.scene.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
+import javafx.scene.text.*;
 import nu.mine.mosher.gedcom.xy.util.Solarized;
 import org.slf4j.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeSet;
-
+import java.util.*;
 
 import static java.util.stream.Collectors.*;
 
