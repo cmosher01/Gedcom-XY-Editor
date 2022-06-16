@@ -7,7 +7,8 @@ plugins {
     id 'com.coditory.manifest' version '0.2.0'
 }
 
-version = '2.2.3+'+jar.manifest.attributes.get('SCM-Commit-Hash')
+def versionSimple = '2.2.3'
+version = versionSimple+'+'+jar.manifest.attributes.get('SCM-Commit-Hash')
 
 group = 'nu.mine.mosher.gedcom'
 
@@ -55,6 +56,7 @@ jlink {
         requires 'org.slf4j'
     }
     jpackage {
+        appVersion = versionSimple
         if (DefaultNativePlatform.currentOperatingSystem.windows) {
             installerOptions += [ '--win-dir-chooser', '--win-menu', '--win-shortcut' ]
         } else if (DefaultNativePlatform.currentOperatingSystem.linux) {

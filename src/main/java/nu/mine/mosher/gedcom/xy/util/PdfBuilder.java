@@ -15,7 +15,7 @@ import javafx.scene.shape.Line;
 import nu.mine.mosher.gedcom.xy.Metrics;
 
 import java.io.*;
-import java.util.Objects;
+import java.util.*;
 
 public class PdfBuilder implements AutoCloseable {
     private static final javafx.scene.paint.Color SOL_PLAQUE_FILL = Solarized.BASE3;
@@ -91,48 +91,12 @@ public class PdfBuilder implements AutoCloseable {
     }
 
     public void addPhantom(final Bounds bounds) {
-        this.canvas
-            .saveState()
-            .setStrokeColor(COLOR_LINES)
-            .setLineWidth(0.5f)
-            .setFillColor(COLOR_PLAQUE_FILL)
-            .setExtGState(new PdfExtGState().setFillOpacity(0.7f))
-            .roundRectangle((float)x(bounds.getMinX()), (float)y(bounds.getMaxY()), (float)bounds.getWidth(), (float)bounds.getHeight(), 3.0f)
-            .fillStroke()
-            .restoreState()
-        ;
-        final var p = new Paragraph()
-            .setTextAlignment(TextAlignment.CENTER)
-            .setMultipliedLeading(0.85f)
-            .setFontKerning(FontKerning.YES)
-            .setFontSize((float)this.metrics.getFontSize())
-            .add(new Text("\u00A0?\u00A0"))
-        ;
-        final float FUDGE_Y = 2.0f;
-        final float FUDGE_X = 0f;
-
-        var rect = new Rectangle(
-            (float)x(bounds.getMinX())-FUDGE_X,
-            (float)y(bounds.getMaxY())-FUDGE_Y,
-            (float)bounds.getWidth()+FUDGE_X,
-            (float)bounds.getHeight()+FUDGE_Y);
-
-        try (final var ch = new Canvas(this.canvas, rect)) {
-            ch.add(p);
-        }
+        drawRect(bounds);
+        drawText(bounds, new Text("\u00A0?\u00A0"));
     }
 
     public void addPerson(final Bounds bounds, String nameGiven, String nameSur, String dates, String tagLine, final String refn) {
-        this.canvas
-            .saveState()
-            .setStrokeColor(COLOR_LINES)
-            .setLineWidth(0.5f)
-            .setFillColor(COLOR_PLAQUE_FILL)
-            .setExtGState(new PdfExtGState().setFillOpacity(0.7f))
-            .roundRectangle((float)x(bounds.getMinX()), (float)y(bounds.getMaxY()), (float)bounds.getWidth(), (float)bounds.getHeight(), 3.0f)
-            .fillStroke()
-            .restoreState()
-        ;
+        drawRect(bounds);
 
         Text tG, tS;
         if (nameGiven.isBlank() && nameSur.isBlank()) {
@@ -159,16 +123,31 @@ public class PdfBuilder implements AutoCloseable {
         }
         var tT = new Text(tagLine).setFont(FONT);
 
+        drawText(bounds, tG, tS, tD, tT);
+    }
+
+    private void drawRect(Bounds bounds) {
+        this.canvas
+            .saveState()
+            .setStrokeColor(COLOR_LINES)
+            .setLineWidth(0.5f)
+            .setFillColor(COLOR_PLAQUE_FILL)
+            .setExtGState(new PdfExtGState().setFillOpacity(0.7f))
+            .roundRectangle((float)x(bounds.getMinX()), (float)y(bounds.getMaxY()), (float)bounds.getWidth(), (float)bounds.getHeight(), 3.0f)
+            .fillStroke()
+            .restoreState()
+        ;
+    }
+
+    private void drawText(final Bounds bounds, final Text... rt) {
         final var p = new Paragraph()
             .setTextAlignment(TextAlignment.CENTER)
             .setMultipliedLeading(0.85f)
             .setFontKerning(FontKerning.YES)
             .setFontSize((float)this.metrics.getFontSize())
-            .add(tG)
-            .add(tS)
-            .add(tD)
-            .add(tT)
         ;
+
+        Arrays.stream(rt).forEach(p::add);
 
         final float FUDGE_Y = 2.0f;
         final float FUDGE_X = 0f;

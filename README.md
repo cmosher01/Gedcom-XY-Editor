@@ -1,6 +1,6 @@
 # Gedcom-XY-Editor
 
-Copyright © 2000–2021, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
+Copyright © 2000–2022, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
 
 [![License](https://img.shields.io/github/license/cmosher01/Gedcom-XY-Editor.svg)](https://www.gnu.org/licenses/gpl.html)
 [![Latest Release](https://img.shields.io/github/release-pre/cmosher01/Gedcom-XY-Editor.svg)](https://github.com/cmosher01/Gedcom-XY-Editor/releases/latest)
@@ -15,7 +15,7 @@ arrange the individuals by family relationships.
 
 ![image](./docs/gedcom-xy-editor-screenshot.jpg)
 
-It can export the chart to an SVG format file.
+It can export the chart as a PDF file or an SVG file.
 
 The program allows for an optional “skeleton” export, with minimal identifying
 information for individuals, intended for *merging* into an existing GEDCOM
