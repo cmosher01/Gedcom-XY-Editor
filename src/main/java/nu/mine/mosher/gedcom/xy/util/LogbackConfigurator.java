@@ -28,7 +28,7 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
     private static String file = "";
 
     @Override
-    public void configure(final LoggerContext ctx) {
+    public ExecutionStatus configure(final LoggerContext ctx) {
         addInfo("Logback configurator:     "+LogbackConfigurator.class.getCanonicalName());
         addInfo("application configurator: "+getClass().getCanonicalName());
         addInfo("application:              "+getClass().getEnclosingClass().getCanonicalName());
@@ -46,6 +46,8 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         StatusPrinter.print(ctx);
         System.out.flush();
         System.err.flush();
+
+        return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
     }
 
     public static String getFilePath() {
@@ -101,33 +103,33 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         final Throwable e = new Throwable("TEST EXAMPLE EXCEPTION (this is only a test)");
         e.fillInStackTrace();
 
-        LOG.trace("testing TRACE level log");
-        LOG.debug("testing DEBUG level log");
-        LOG.info ("testing INFO  level log");
-        LOG.warn ("testing WARN  level log");
-        LOG.error("testing ERROR level log");
-        LOG.warn ("testing stack trace log", e);
+        LOG.trace("Testing TRACE level logging");
+        LOG.debug("Testing DEBUG level logging");
+        LOG.info ("Testing INFO  level logging");
+        LOG.warn ("Testing WARN  level logging");
+        LOG.error("Testing ERROR level logging");
+        LOG.warn ("Testing stack trace logging", e);
     }
 
     private static void testLog4j() {
         final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(LogbackConfigurator.class);
-        logger.fatal("Testing org.apache.log4j FATAL log level: OK");
-        logger.debug("Testing org.apache.log4j DEBUG log level.");
-        logger.trace("Testing org.apache.log4j TRACE log level: "+
+        logger.fatal("Testing org.apache.log4j FATAL level logging: OK");
+        logger.debug("Testing org.apache.log4j DEBUG level logging.");
+        logger.trace("Testing org.apache.log4j TRACE level logging: "+
             "(This log message should be formatted according to the Logback configuration, not org.apache.log4j).");
     }
 
     private static void testJcl() {
         final org.apache.commons.logging.Log logger = org.apache.commons.logging.LogFactory.getLog(LogbackConfigurator.class);
-        logger.fatal("Testing org.apache.commons.logging FATAL log level: OK");
-        logger.trace("Testing org.apache.commons.logging TRACE log level: "+
+        logger.fatal("Testing org.apache.commons.logging FATAL level logging: OK");
+        logger.trace("Testing org.apache.commons.logging TRACE level logging: "+
             "(This log message should be formatted according to the Logback configuration, not org.apache.commons.logging).");
     }
 
     private static void testJul() {
         final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(LogbackConfigurator.class.getCanonicalName());
-        logger.severe("Testing java.util.logging SEVERE log level: OK");
-        logger.finest("Testing java.util.logging FINEST log level: "+
+        logger.severe("Testing java.util.logging SEVERE level logging: OK");
+        logger.finest("Testing java.util.logging FINEST level logging: "+
             "(This log message should be formatted according to the Logback configuration, not java.util.logging).");
     }
 

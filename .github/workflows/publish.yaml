@@ -1,0 +1,42 @@
+---
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  "publish":
+    strategy:
+      matrix:
+        os:
+          - "ubuntu-latest"
+          - "windows-latest"
+          - "macos-latest"
+
+    runs-on: "${{ matrix.os }}"
+
+    permissions:
+      contents: "write"
+
+    steps:
+      - uses: "actions/checkout@v3"
+
+      - uses: "actions/setup-java@v3"
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          settings-path: "${{ github.workspace }}"
+
+      - uses: "gradle/gradle-build-action@v2"
+        with:
+          arguments: "build"
+
+      - uses: "softprops/action-gh-release@v1"
+        with:
+          files: |
+            ./build/jpackage/*.deb
+            ./build/jpackage/*.rpm
+            ./build/jpackage/*.pkg
+            ./build/jpackage/*.dmg
+            ./build/jpackage/*.exe
+            ./build/jpackage/*.msi

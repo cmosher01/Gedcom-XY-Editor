@@ -1,25 +1,27 @@
-import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
-
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.25.0'
-    id 'com.coditory.manifest' version '0.2.0'
+    id 'com.coditory.manifest' version '0.2.1'
 }
 
-def versionSimple = '2.2.3'
+def versionSimple = '2.2.4'
 version = versionSimple+'+'+jar.manifest.attributes.get('SCM-Commit-Hash')
 
 group = 'nu.mine.mosher.gedcom'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of 15
+        languageVersion = JavaLanguageVersion.of 17
     }
+    modularity.inferModulePath = true
 }
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri('https://public:\u0067hp_fya6Kseu3XOBMg2icbg7f1LP6ZFYjj35v4Zj@maven.pkg.github.com/cmosher01/*')
+    }
 }
 
 dependencies {
@@ -50,6 +52,9 @@ javafx {
     ]
 }
 
+def os = org.gradle.internal.os.OperatingSystem.current()
+println "detected OS: ${os}"
+
 jlink {
     mergedModule {
         additive = true
@@ -57,10 +62,16 @@ jlink {
     }
     jpackage {
         appVersion = versionSimple
-        if (DefaultNativePlatform.currentOperatingSystem.windows) {
-            installerOptions += [ '--win-dir-chooser', '--win-menu', '--win-shortcut' ]
-        } else if (DefaultNativePlatform.currentOperatingSystem.linux) {
-            installerOptions += [ '--linux-shortcut' ]
+        if (os.windows) {
+            installerOptions += [
+                '--win-dir-chooser',
+                '--win-menu',
+                '--win-shortcut'
+            ]
+        } else if (os.linux) {
+            installerOptions += [
+                '--linux-shortcut'
+            ]
         }
         installerOptions += [ '--verbose' ]
     }
