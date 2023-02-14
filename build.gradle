@@ -5,7 +5,7 @@ plugins {
     id 'com.coditory.manifest' version '0.2.1'
 }
 
-def versionSimple = '2.2.4'
+def versionSimple = '2.2.5'
 version = versionSimple+'+'+jar.manifest.attributes.get('SCM-Commit-Hash')
 
 group = 'nu.mine.mosher.gedcom'
