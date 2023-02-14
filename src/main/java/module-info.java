@@ -22,4 +22,5 @@ module nu.mine.mosher.gedcom.xy {
     requires org.xerial.sqlitejdbc;
     requires kernel;
     requires layout;
+    requires io;
 }

@@ -1,6 +1,7 @@
 package nu.mine.mosher.gedcom.xy.util;
 
 
+import com.itextpdf.io.font.constants.*;
 import com.itextpdf.kernel.colors.*;
 import com.itextpdf.kernel.font.*;
 import com.itextpdf.kernel.geom.*;
@@ -12,12 +13,15 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
 import javafx.geometry.*;
 import javafx.scene.shape.Line;
-import nu.mine.mosher.gedcom.xy.Metrics;
+import nu.mine.mosher.gedcom.xy.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
 
 public class PdfBuilder implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(PdfBuilder.class);
+
     private static final javafx.scene.paint.Color SOL_PLAQUE_FILL = Solarized.BASE3;
     private static final Color COLOR_PLAQUE_FILL = new DeviceRgb(
         (float)SOL_PLAQUE_FILL.getRed(), (float)SOL_PLAQUE_FILL.getGreen(), (float)SOL_PLAQUE_FILL.getBlue());
@@ -25,15 +29,30 @@ public class PdfBuilder implements AutoCloseable {
     private static final Color COLOR_LINES = new DeviceRgb(
         (float)SOL_LINES.getRed(), (float)SOL_LINES.getGreen(), (float)SOL_LINES.getBlue());
 
-    private static final PdfFont FONT;
-    private static final PdfFont FONT_BOLD;
-    private static final PdfFont FONT_ITALIC;
+    private static PdfFont FONT;
+    private static PdfFont FONT_BOLD;
+    private static PdfFont FONT_ITALIC;
     static {
         try {
-            FONT = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf");
+            FONT = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regularxxxxxxxxxxxxxxxxxxxxx.ttf");
             FONT_BOLD = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf");
             FONT_ITALIC = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf");
         } catch (Exception e) {
+            LOG.error("Error loading NotoSans fonts.", e);
+            // continue
+        }
+        try {
+            FONT = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+            FONT_BOLD = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+            FONT_ITALIC = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
+        } catch (Exception e) {
+            LOG.error("Error loading PDF-standard Helvetica fonts.", e);
+            // continue
+        }
+        try {
+            FONT_ITALIC = FONT_BOLD = FONT = PdfFontFactory.createFont();
+        } catch (Exception e) {
+            LOG.error("Error loading PDF-standard default font.", e);
             throw new RuntimeException(e);
         }
     }
