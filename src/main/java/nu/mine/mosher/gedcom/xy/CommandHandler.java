@@ -284,15 +284,15 @@ public class CommandHandler {
     }
 
     private static String skelNameOf(final String name) {
-        return name.replaceFirst(".ged$", ".skel.ged");
+        return name.replaceFirst("(?i)\\.ged$", ".skel.ged");
     }
 
     private static String pdfNameOf(final String name) {
-        return name.replaceFirst(".ged$", ".pdf").replaceFirst(".ftm$", ".pdf");
+        return name.replaceFirst("(?i)\\.ged$", ".pdf").replaceFirst("(?i)\\.ftm$", ".pdf");
     }
 
     private static String svgNameOf(final String name) {
-        return name.replaceFirst(".ged$", ".svg").replaceFirst(".ftm$", ".svg");
+        return name.replaceFirst("(?i)\\.ged$", ".svg").replaceFirst("(?i)\\.ftm$", ".svg");
     }
 
     public Optional<FamilyChart> openFile() {

@@ -75,7 +75,7 @@ public final class FamilyChartBuilderGed {
         // wxyOrig empty indicates that _XY either was not present, or was present but had an invalid format
         // In either of these two cases, when we save the new GEDCOM file, we want to ADD a new _XY record
 
-        final String name = toName(getChildValue(nodeIndi, "NAME"));
+        final String name = getChildValue(nodeIndi, "NAME");
         final String lifespan = getLifespan(getChildEventDate(nodeIndi, "BIRT"), getChildEventDate(nodeIndi, "DEAT"));
         final long birth = calcBirthForSort(getChildEventDate(nodeIndi, "BIRT"));
         final int sex = toSex(getChildValue(nodeIndi, "SEX"));
@@ -136,10 +136,6 @@ public final class FamilyChartBuilderGed {
             }
         }
         return 0;
-    }
-
-    private static String toName(final String name) {
-        return name.replaceAll("/", "");
     }
 
     private static DatePeriod toDate(final String date) {

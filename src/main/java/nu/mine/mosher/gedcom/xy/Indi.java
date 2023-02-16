@@ -198,11 +198,7 @@ public class Indi {
     private String buildLabel() {
         final StringBuilder label = new StringBuilder(32);
 
-        if (!this.name.isEmpty()) {
-            label.append(this.name);
-        } else {
-            label.append("?");
-        }
+        label.append(buildNameForDisplay());
 
         if (!this.lifespan.isBlank()) {
             label.append("\n(");
@@ -215,6 +211,19 @@ public class Indi {
             label.append(this.tagline);
         }
         return label.toString();
+    }
+
+    private String buildNameForDisplay() {
+        if (this.nameGiven.isBlank() && this.nameSur.isBlank()) {
+            return "?";
+        }
+        if (this.nameGiven.isBlank()) {
+            return this.nameSur;
+        }
+        if (this.nameSur.isBlank()) {
+            return this.nameGiven;
+        }
+        return this.nameGiven+" "+this.nameSur;
     }
 
     public String getId() {
