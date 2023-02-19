@@ -69,10 +69,10 @@ public class PdfBuilder implements AutoCloseable {
 
 
 
-    public PdfBuilder(Metrics metrics, File fileToSaveAs, Point2D size) throws IOException {
+    public PdfBuilder(Metrics metrics, File fileToSaveAs, Bounds size) throws IOException {
         this.metrics = metrics;
         this.margin = (float)(2.0*this.metrics.getWidthMax());
-        this.psize = new PageSize((float)(size.getX()+2.0*this.margin), (float)(size.getY()+2.0*this.margin));
+        this.psize = new PageSize((float)(size.getWidth()+2.0*this.margin), (float)(size.getHeight()+2.0*this.margin));
         this.writer = new PdfWriter(fileToSaveAs);
         this.pdfdoc = new PdfDocument(this.writer);
         this.pdfPage = this.pdfdoc.addNewPage(psize);

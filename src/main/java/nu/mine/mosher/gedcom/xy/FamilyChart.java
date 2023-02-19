@@ -233,7 +233,7 @@ public class FamilyChart {
 
     public void saveSvg(final File fileToSaveAs) throws ParserConfigurationException, TransformerException {
         final long fontsize = Math.round(Math.rint(this.metrics.getFontSize()));
-        final SvgBuilder svg = new SvgBuilder(fontsize);
+        final SvgBuilder svg = new SvgBuilder(fontsize, calculateSize());
 
         this.famis.forEach(i -> i.saveSvg(svg));
         this.indis.forEach(i -> i.saveSvg(svg));
@@ -299,8 +299,8 @@ public class FamilyChart {
         return this.fileOriginal;
     }
 
-    public Point2D calculateSize() {
-        final Bounds bounds = this.indis.stream().map(Indi::bounds).reduce((b1, b2) -> {
+    public Bounds calculateSize() {
+        return this.indis.stream().map(Indi::bounds).reduce((b1, b2) -> {
             final double xMin = Math.min(b1.getMinX(), b2.getMinX());
             final double xMax = Math.max(b1.getMaxX(), b2.getMaxX());
             final double width = Math.abs(xMax-xMin);
@@ -309,7 +309,6 @@ public class FamilyChart {
             final double height = Math.abs(yMax-yMin);
             return new BoundingBox(xMin, yMin, width, height);
         }).get();
-        return new Point2D(bounds.getWidth(), bounds.getHeight());
     }
 
     public class Selection {
