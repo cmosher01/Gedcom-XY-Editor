@@ -29,6 +29,8 @@ public class PdfBuilder implements AutoCloseable {
     private static final Color COLOR_LINES = new DeviceRgb(
         (float)SOL_LINES.getRed(), (float)SOL_LINES.getGreen(), (float)SOL_LINES.getBlue());
 
+    private static final Insets MARGIN = new Insets(100.0d);
+
     private static PdfFont FONT;
     private static PdfFont FONT_BOLD;
     private static PdfFont FONT_ITALIC;
@@ -60,23 +62,28 @@ public class PdfBuilder implements AutoCloseable {
 
 
     private final Metrics metrics;
+    private final Point poffset;
     private final PageSize psize;
-    private final PdfWriter writer;
     private final PdfDocument pdfdoc;
-    private final PdfPage pdfPage;
     private final PdfCanvas canvas;
-    private final float margin;
 
 
 
-    public PdfBuilder(Metrics metrics, File fileToSaveAs, Bounds size) throws IOException {
+    public PdfBuilder(Metrics metrics, File fileToSaveAs, Bounds bounds) throws IOException {
         this.metrics = metrics;
-        this.margin = (float)(2.0*this.metrics.getWidthMax());
-        this.psize = new PageSize((float)(size.getWidth()+2.0*this.margin), (float)(size.getHeight()+2.0*this.margin));
-        this.writer = new PdfWriter(fileToSaveAs);
-        this.pdfdoc = new PdfDocument(this.writer);
-        this.pdfPage = this.pdfdoc.addNewPage(psize);
-        this.canvas = new PdfCanvas(this.pdfPage);
+
+        final var page = new BoundingBox(
+            bounds.getMinX() - MARGIN.getLeft(),
+            bounds.getMinY() - MARGIN.getTop(),
+            bounds.getWidth() + MARGIN.getLeft() + MARGIN.getRight(),
+            bounds.getHeight() + MARGIN.getTop() + MARGIN.getBottom());
+        this.poffset = new Point(page.getMinX(), page.getMinY());
+        this.psize = new PageSize((float)page.getWidth(), (float)page.getHeight());
+
+        final var writer = new PdfWriter(fileToSaveAs);
+        this.pdfdoc = new PdfDocument(writer);
+        final var pdfPage = this.pdfdoc.addNewPage(psize);
+        this.canvas = new PdfCanvas(pdfPage);
     }
 
     public void close() {
@@ -102,11 +109,11 @@ public class PdfBuilder implements AutoCloseable {
     }
 
     private double x(double x) {
-        return this.margin+x;
+        return x-this.poffset.getX();
     }
 
     private double y(double y) {
-        return this.psize.getHeight()-(this.margin+y);
+        return this.psize.getHeight()-(y-this.poffset.getY());
     }
 
     public void addPhantom(final Bounds bounds) {
@@ -159,23 +166,20 @@ public class PdfBuilder implements AutoCloseable {
     }
 
     private void drawText(final Bounds bounds, final Text... rt) {
+        final var DY = (float)this.metrics.getFontSize();
+
         final var p = new Paragraph()
             .setTextAlignment(TextAlignment.CENTER)
-            .setMultipliedLeading(0.85f)
             .setFontKerning(FontKerning.YES)
-            .setFontSize((float)this.metrics.getFontSize())
-        ;
+            .setFontSize(DY);
 
         Arrays.stream(rt).forEach(p::add);
 
-        final float FUDGE_Y = 2.0f;
-        final float FUDGE_X = 0f;
-
         var rect = new Rectangle(
-            (float)x(bounds.getMinX())-FUDGE_X,
-            (float)y(bounds.getMaxY())-FUDGE_Y,
-            (float)bounds.getWidth()+FUDGE_X,
-            (float)bounds.getHeight()+FUDGE_Y);
+            (float)x(bounds.getMinX()),
+            (float)y(bounds.getMaxY())-DY,
+            (float)bounds.getWidth(),
+            (float)bounds.getHeight()+DY);
 
         try (final var ch = new Canvas(this.canvas, rect)) {
             ch.add(p);

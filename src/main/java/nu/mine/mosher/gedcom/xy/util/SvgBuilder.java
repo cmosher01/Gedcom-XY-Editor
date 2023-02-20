@@ -10,34 +10,45 @@ import java.util.Objects;
 
 public class SvgBuilder {
     private static final String W3C_SVG_NS_URI = "http://www.w3.org/2000/svg";
-    private static final Dimension MARGIN = new Dimension(100, 100);
+    private static final Insets MARGIN = new Insets(100.0d);
 
     private final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-    private final Bounds size;
     private final long fontsize;
     private final Element svg = this.doc.createElementNS(W3C_SVG_NS_URI, "svg");
 
-    public SvgBuilder(final long fontsize, final Bounds size) throws ParserConfigurationException {
-        this.size = size;
+    public SvgBuilder(final long fontsize, final Bounds bounds) throws ParserConfigurationException {
         this.fontsize = fontsize;
 
-        final var fullX = Math.round(Math.rint(this.size.getMinX()-MARGIN.width));
-        final var fullY = Math.round(Math.rint(this.size.getMinY()-MARGIN.height));
-        final var fullWidth = Math.round(Math.rint(this.size.getWidth()+2*MARGIN.width));
-        final var fullHeight = Math.round(Math.rint(this.size.getHeight()+2*MARGIN.height));
+        final var page = new BoundingBox(
+            bounds.getMinX() - MARGIN.getLeft(),
+            bounds.getMinY() - MARGIN.getTop(),
+            bounds.getWidth() + MARGIN.getLeft() + MARGIN.getRight(),
+            bounds.getHeight() + MARGIN.getTop() + MARGIN.getBottom());
 
-        this.svg.setAttribute("width", Long.toString(fullWidth));
-        this.svg.setAttribute("height", Long.toString(fullHeight));
+        this.svg.setAttribute("width", Long.toString(Math.round(Math.rint(page.getWidth()))));
+        this.svg.setAttribute("height", Long.toString(Math.round(Math.rint(page.getHeight()))));
 
-        this.svg.setAttribute("viewBox", String.format("%d %d %d %d", fullX, fullY, fullWidth, fullHeight));
+        this.svg.setAttribute("viewBox",
+            String.format("%d %d %d %d",
+                Math.round(Math.rint(page.getMinX())),
+                Math.round(Math.rint(page.getMinY())),
+                Math.round(Math.rint(page.getWidth())),
+                Math.round(Math.rint(page.getHeight()))));
 
-        ////////////////// to debug calculation of chart's full boundary:
-//        final Element eRect = this.doc.createElementNS(W3C_SVG_NS_URI, "rect");
-//        eRect.setAttribute("x", Long.toString(fullX));
-//        eRect.setAttribute("y", Long.toString(fullY));
-//        eRect.setAttribute("width", Long.toString(fullWidth));
-//        eRect.setAttribute("height", Long.toString(fullHeight));
-//        this.svg.appendChild(eRect);
+        ////////////////// to debug calculation of chart boundary:
+//        final Element eRectDebugChartBounds = this.doc.createElementNS(W3C_SVG_NS_URI, "rect");
+//        eRectDebugChartBounds.setAttribute("x", Long.toString(Math.round(Math.rint(bounds.getMinX()))));
+//        eRectDebugChartBounds.setAttribute("y", Long.toString(Math.round(Math.rint(bounds.getMinY()))));
+//        eRectDebugChartBounds.setAttribute("width", Long.toString(Math.round(Math.rint(bounds.getWidth()))));
+//        eRectDebugChartBounds.setAttribute("height", Long.toString(Math.round(Math.rint(bounds.getHeight()))));
+//        this.svg.appendChild(eRectDebugChartBounds);
+        ////////////////// to debug calculation of chart boundary with margins (i.e., the page size):
+//        final Element eRectDebugPageBounds = this.doc.createElementNS(W3C_SVG_NS_URI, "rect");
+//        eRectDebugPageBounds.setAttribute("x", Long.toString(Math.round(Math.rint(this.page.getMinX()))));
+//        eRectDebugPageBounds.setAttribute("y", Long.toString(Math.round(Math.rint(this.page.getMinY()))));
+//        eRectDebugPageBounds.setAttribute("width", Long.toString(Math.round(Math.rint(this.page.getWidth()))));
+//        eRectDebugPageBounds.setAttribute("height", Long.toString(Math.round(Math.rint(this.page.getHeight()))));
+//        this.svg.appendChild(eRectDebugPageBounds);
         //////////////////
 
         this.doc.appendChild(svg);
