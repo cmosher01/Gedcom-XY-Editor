@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.prefs.Preferences;
 
 public final class GenXyEditor {
-    public static final String VERSION = GenXyEditor.class.getModule().getDescriptor().version().get().toString();
+    public static final String VERSION = GenXyEditor.class.getPackage().getImplementationVersion();
 
     private static Logger LOG;
     private static volatile Thread threadEventsAwt;

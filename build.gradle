@@ -1,12 +1,12 @@
 plugins {
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
-    id 'org.beryx.jlink' version '2.25.0'
-    id 'com.coditory.manifest' version '0.2.1'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'org.beryx.runtime' version '1.13.1'
+    id 'com.coditory.manifest' version '0.2.6'
 }
 
-def versionSimple = '2.2.6'
-version = versionSimple+'+'+jar.manifest.attributes.get('SCM-Commit-Hash')
+def versionMinor = '2.3'
+version = "${versionMinor}.0".toString()
 
 group = 'nu.mine.mosher.gedcom'
 
@@ -14,7 +14,6 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of 17
     }
-    modularity.inferModulePath = true
 }
 
 repositories {
@@ -33,15 +32,14 @@ dependencies {
 
     implementation group: 'nu.mine.mosher.io', name: 'log-files', version: 'latest.release'
 
-    implementation group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.integration'
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+    implementation group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.release'
+    implementation group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.release'
+    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.release'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.release'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
 }
 
 application {
-    mainModule = 'nu.mine.mosher.gedcom.xy'
     mainClass = 'nu.mine.mosher.gedcom.xy.GenXyEditor'
 }
 
@@ -52,29 +50,12 @@ javafx {
     ]
 }
 
-def os = org.gradle.internal.os.OperatingSystem.current()
-println "detected OS: ${os}"
-
-jlink {
-    mergedModule {
-        additive = true
-        requires 'org.slf4j'
-    }
+runtime {
     jpackage {
-        appVersion = versionSimple
-        if (os.windows) {
-            installerOptions += [
-                '--win-dir-chooser',
-                '--win-menu',
-                '--win-shortcut'
-            ]
-        } else if (os.linux) {
-            installerOptions += [
-                '--linux-shortcut'
-            ]
-        }
-        installerOptions += [ '--verbose' ]
+        appVersion = versionMinor
     }
 }
 
-tasks.assemble.dependsOn tasks.jpackage
+assemble {
+    dependsOn tasks.jpackage
+}
