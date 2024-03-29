@@ -31,9 +31,6 @@ public final class GenXyEditor {
     private static Logger LOG;
     private static volatile Thread threadEventsAwt;
 
-    public static class LogConfig extends LogbackConfigurator {
-    }
-
     public static void main(final String... args) {
         try {
             initLogging();
@@ -67,7 +64,7 @@ public final class GenXyEditor {
     }
 
     private static void initLogging() {
-        LogConfig.testSubsystem();
+        LogbackConfigurator.testSubsystem();
         final LoggerContext ctx = (LoggerContext)LoggerFactory.getILoggerFactory();
         ctx.getLogger("sun.awt.X11").setLevel(Level.WARN);
 

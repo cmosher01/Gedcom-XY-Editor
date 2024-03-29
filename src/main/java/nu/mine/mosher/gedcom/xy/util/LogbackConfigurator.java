@@ -7,6 +7,7 @@ import ch.qos.logback.core.*;
 import ch.qos.logback.core.pattern.color.*;
 import ch.qos.logback.core.spi.ContextAwareBase;
 import ch.qos.logback.core.util.StatusPrinter;
+import nu.mine.mosher.gedcom.xy.GenXyEditor;
 import nu.mine.mosher.io.LogFiles;
 
 import java.io.File;
@@ -22,25 +23,25 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
     }
 
-    protected LogbackConfigurator() {
-    }
 
+
+    private static final Class<?> ofClass = GenXyEditor.class;
     private static String file = "";
 
     @Override
     public ExecutionStatus configure(final LoggerContext ctx) {
         addInfo("Logback configurator:     "+LogbackConfigurator.class.getCanonicalName());
         addInfo("application configurator: "+getClass().getCanonicalName());
-        addInfo("application:              "+getClass().getEnclosingClass().getCanonicalName());
+        addInfo("application:              "+ofClass.getCanonicalName());
         buildLogFilePath();
 
-        ctx.setName(getClass().getEnclosingClass().getCanonicalName());
+        ctx.setName(ofClass.getName());
         ctx.setPackagingDataEnabled(true);
 
         final Appender<ILoggingEvent> appender = buildAppender(ctx);
 
         final Logger LOG_ROOT = ctx.getLogger(Logger.ROOT_LOGGER_NAME);
-        LOG_ROOT.setLevel(Level.TRACE);
+        LOG_ROOT.setLevel(Level.INFO);
         LOG_ROOT.addAppender(appender);
 
         StatusPrinter.print(ctx);
@@ -79,7 +80,10 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
         final String ts = fmt.format(new Date());
 
-        final File f = LogFiles.getLogFileOf(getClass().getEnclosingClass());
+        System.err.println("App class: "+ofClass);
+        final File f = LogFiles.getLogFileOf(ofClass);
+        System.err.println("Log file path: "+f.getPath());
+
         final String tsname = ts+"_"+f.getName();
 
         LogbackConfigurator.file = Paths.get(f.getParent()).resolve(tsname).toString();

@@ -4,6 +4,7 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.application.Platform;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.exception.InvalidLevel;
+import nu.mine.mosher.gedcom.xy.util.LogbackConfigurator;
 import org.slf4j.*;
 
 import javax.swing.*;
@@ -394,7 +395,7 @@ public class CommandHandler {
                 frame,
                 "Genealogy XY Editor\n\n" +
                     "Version " + GenXyEditor.VERSION + "\n" +
-                    "Log file: "+ GenXyEditor.LogConfig.getFilePath() + "\n\n" +
+                    "Log file: "+ LogbackConfigurator.getFilePath() + "\n\n" +
                     "Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.",
                 "Genealogy XY Editor",
                 JOptionPane.INFORMATION_MESSAGE));

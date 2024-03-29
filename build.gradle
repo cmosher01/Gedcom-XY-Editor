@@ -54,6 +54,17 @@ runtime {
     jpackage {
         appVersion = versionMinor
     }
+    modules = [
+        'java.sql',
+        'java.desktop',
+        'java.logging',
+        'java.prefs',
+        'java.xml',
+        'java.naming',
+        'jdk.unsupported.desktop',
+        'jdk.unsupported',
+        'java.datatransfer'
+    ]
 }
 
 assemble {
