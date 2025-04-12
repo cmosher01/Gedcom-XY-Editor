@@ -45,9 +45,13 @@ public class FamilyChart {
 
     public void setFromOrig() {
         this.indis.forEach(i -> i.setSelection(this.selection));
+        calc();
+        this.indis.forEach(Indi::startCoordTracking);
+    }
+
+    public void calc() {
         this.indis.forEach(Indi::calc);
         this.famis.forEach(Fami::calc);
-        this.indis.forEach(Indi::startCoordTracking);
     }
 
     public void clearSelection() {

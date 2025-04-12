@@ -33,6 +33,13 @@ public final class Metrics {
     private final double heightNominal;
     private final Font font;
 
+    // TODO: make more than just two color schemes
+    // Note: the initial scheme (set here) must match the
+    // initial menu-item setting
+    private ColorScheme colors = new ColorSchemeBold();
+
+
+
     public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis) {
         final double dxPartner = famis.stream().mapToDouble(Fami::getMarrDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dyGeneration = famis.stream().mapToDouble(Fami::getGenDistance).filter(Metrics::nominalDistance).average().orElse(0D);
@@ -82,7 +89,7 @@ public final class Metrics {
 
         this.fontSize = clamp(6, Math.rint(this.dxAvg/ FONT_SIZE_RATIO), 24);
 
-        this.font = Font.font(FONT_FAMILY_NAME, this.fontSize);
+        this.font = Font.font(FONT_FAMILY_NAME, FontWeight.BOLD, this.fontSize);
         final Text text = new Text(PLAQUE_MAX);
         text.setFont(this.font);
         new Scene(new Group(text));
@@ -125,40 +132,8 @@ public final class Metrics {
         return this.font;
     }
 
-    public Color colorLines() {
-        return Solarized.YELLOW;
-    }
-
-    public Color colorIndiBorder() {
-        return Solarized.GREEN;
-    }
-
-    public Color colorIndiDirtyBorder() {
-        return Solarized.BLUE;
-    }
-
-    public Color colorIndiText() {
-        return Solarized.BASE00;
-    }
-
-    public Color colorIndiBg() {
-        return Solarized.BASE3.deriveColor(1.0D, 1.0D, 1.0D, 0.75D);
-    }
-
-    public Color colorSelectionChooser() {
-        return Solarized.MAGENTA;
-    }
-
-    public Color colorIndiSelText() {
-        return Solarized.MAGENTA;
-    }
-
-    public Color colorIndiSelBg() {
-        return Solarized.BASE2;
-    }
-
-    public Color colorBg() {
-        return Color.TRANSPARENT;
+    public ColorScheme colors() {
+        return this.colors;
     }
 
     private static double clamp(final double min, final double n, final  double max) {
@@ -184,5 +159,9 @@ public final class Metrics {
 
     public int grid() {
         return GenXyEditor.prefs().getInt("snapToGrid", 25);
+    }
+
+    public void setColors(final ColorScheme newColorScheme) {
+        this.colors = Objects.requireNonNull(newColorScheme);
     }
 }

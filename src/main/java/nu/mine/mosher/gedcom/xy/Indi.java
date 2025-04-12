@@ -106,6 +106,8 @@ public class Indi {
     }
 
     public void calc() {
+        final ColorScheme colors = this.metrics.colors();
+
         final Text textshape = new Text();
         final ObjectBinding<Color> fillBinding = new ObjectBinding<>()
         {
@@ -116,7 +118,7 @@ public class Indi {
             @Override
             protected Color computeValue()
             {
-                return selected.get() ? metrics.colorIndiSelText() : metrics.colorIndiText();
+                return selected.get() ? colors.indiSelText() : colors.indiText();
             }
         };
         textshape.fillProperty().bind(fillBinding);
@@ -132,12 +134,12 @@ public class Indi {
         final double w = textshape.getLayoutBounds().getWidth() + inset * 2.0D;
         final double h = textshape.getLayoutBounds().getHeight() + inset * 2.0D;
 
-        final Background bgNormal = new Background(new BackgroundFill(metrics.colorIndiBg(), CORNERS, Insets.EMPTY));
-        final Background bgSelected = new Background(new BackgroundFill(metrics.colorIndiSelBg(), CORNERS, Insets.EMPTY));
+        final Background bgNormal = new Background(new BackgroundFill(colors.indiBg(), CORNERS, Insets.EMPTY));
+        final Background bgSelected = new Background(new BackgroundFill(colors.indiSelBg(), CORNERS, Insets.EMPTY));
         this.plaque.backgroundProperty().bind(Bindings.when(selected).then(bgSelected).otherwise(bgNormal));
 
-        final Border borderNormal = new Border(new BorderStroke(metrics.colorIndiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
-        final Border borderDirty = new Border(new BorderStroke(metrics.colorIndiDirtyBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
+        final Border borderNormal = new Border(new BorderStroke(colors.indiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
+        final Border borderDirty = new Border(new BorderStroke(colors.indiBorderDirty(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
         this.plaque.borderProperty().bind(Bindings.when(this.coords.propertyDirty()).then(borderDirty).otherwise(borderNormal));
 
         StackPane.setMargin(textshape, new Insets(inset));

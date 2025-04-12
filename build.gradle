@@ -2,11 +2,11 @@ plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'org.beryx.runtime' version '1.13.1'
-    id 'com.coditory.manifest' version '0.2.6'
+    id 'com.coditory.manifest' version '1.1.0'
 }
 
 def versionMinor = '2.3'
-version = "${versionMinor}.0".toString()
+version = "${versionMinor}.1".toString()
 
 group = 'nu.mine.mosher.gedcom'
 

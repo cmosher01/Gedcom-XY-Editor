@@ -89,6 +89,16 @@ public class CommandHandler {
 
 
 
+        final Menu menuView = new Menu("View");
+
+        final CheckboxMenuItem cmdBold = new CheckboxMenuItem("High Contrast");
+        cmdBold.setState(true);
+        cmdBold.addItemListener(e -> boldView(chart, cmdBold.getState()));
+
+        menuView.add(cmdBold);
+
+
+
 
         final Menu menuHelp = new Menu("Help");
 
@@ -107,6 +117,8 @@ public class CommandHandler {
         final MenuBar mbar = new MenuBar();
         mbar.add(menuFile);
         mbar.add(menuEdit);
+//        mbar.add(menuView); // TODO: need to BIND colors, example here: https://stackoverflow.com/questions/63082242/javafx-scenebuilder-binding-objectproperty
+
         mbar.setHelpMenu(menuHelp);
         return mbar;
     }
@@ -130,6 +142,13 @@ public class CommandHandler {
             "Snap to grid current size is " + chart.metrics().grid() + ". Change to:",
             chart.metrics().grid()));
         result.ifPresent(s -> chart.metrics().setGrid(s));
+    }
+
+    private void boldView(final FamilyChart chart, final boolean checked) {
+        if (chart.metrics().colors().bold() != checked) {
+            chart.metrics().setColors(checked ? new ColorSchemeBold() : new ColorSchemeSolarized());
+            chart.calc();
+        }
     }
 
     private void saveAs(final FamilyChart chart) {
@@ -296,7 +315,7 @@ public class CommandHandler {
         return name.replaceFirst("(?i)\\.ged$", ".svg").replaceFirst("(?i)\\.ftm$", ".svg");
     }
 
-    public Optional<FamilyChart> openFile() {
+    public Optional<FamilyChart> openFile(final boolean destroy) {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Not running on event dispatch thread.");
         }
@@ -305,15 +324,15 @@ public class CommandHandler {
             return Optional.empty();
         }
 
-        return readChartFromFile(fileToOpen.get());
+        return readChartFromFile(fileToOpen.get(), destroy);
     }
 
-    private Optional<FamilyChart> readChartFromFile(final File fileToOpen) {
+    private Optional<FamilyChart> readChartFromFile(final File fileToOpen, final boolean destroy) {
         final FamilyChart[] chart = new FamilyChart[1];
         final CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                chart[0] = tryReadChartFromFile(fileToOpen);
+                chart[0] = tryReadChartFromFile(fileToOpen, destroy);
             } catch (final Throwable e) {
                 LOG.error("unexpected error while reading from file", e);
                 // TODO better error handling
@@ -330,7 +349,7 @@ public class CommandHandler {
         return Optional.ofNullable(chart[0]);
     }
 
-    private static FamilyChart tryReadChartFromFile(final File fileToOpen) throws IOException, InvalidLevel, SQLException {
+    private static FamilyChart tryReadChartFromFile(final File fileToOpen, final boolean destroy) throws IOException, InvalidLevel, SQLException {
         final FamilyChart chart;
 
         final String filetype = filetypeOf(fileToOpen);
@@ -338,7 +357,7 @@ public class CommandHandler {
             final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
             chart = FamilyChartBuilderGed.create(tree, fileToOpen);
         } else {
-            chart = FamilyChartBuilderFtm.create(fileToOpen);
+            chart = FamilyChartBuilderFtm.create(fileToOpen, destroy);
         }
 
         chart.setFromOrig();

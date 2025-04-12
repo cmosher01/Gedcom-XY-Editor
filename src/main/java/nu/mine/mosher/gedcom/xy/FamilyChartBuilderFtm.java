@@ -12,7 +12,7 @@ import java.util.*;
 public class FamilyChartBuilderFtm {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilderFtm.class);
 
-    public static FamilyChart create(final File fileFtm) throws IOException, SQLException {
+    public static FamilyChart create(final File fileFtm, final boolean destroy) throws IOException, SQLException {
         final List<Indi> indis;
         final List<Fami> famis;
         LOG.info("Opening SQLite FTM database file, read-only: {}", fileFtm.getCanonicalPath());
@@ -25,7 +25,7 @@ public class FamilyChartBuilderFtm {
             famis = buildFamis(conn, Collections.unmodifiableMap(mapIdToIndi));
         }
 
-        if (indis.stream().noneMatch(Indi::hadOriginalXY)) {
+        if (indis.stream().noneMatch(Indi::hadOriginalXY) || destroy) {
             LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
             new Layout(indis, famis).cleanAll();
         }

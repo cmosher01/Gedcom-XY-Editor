@@ -30,12 +30,18 @@ public final class GenXyEditor {
 
     private static Logger LOG;
     private static volatile Thread threadEventsAwt;
+    private static volatile String arg0 = "";
 
     public static void main(final String... args) {
         try {
             initLogging();
 
             LOG.info("version: {}", VERSION);
+
+            // TODO: handle args better
+            if (0 < args.length) {
+                arg0 = args[0];
+            }
 
             logFonts();
 
@@ -129,7 +135,8 @@ public final class GenXyEditor {
 
         // TODO allow multiple open documents
         // TODO remove specialized Open handling (just make it File/Open menu item)
-        final Optional<FamilyChart> chart = cmd.openFile();
+        final boolean destroy = Objects.nonNull(GenXyEditor.arg0) && arg0.equals("--destroy-layout");
+        final Optional<FamilyChart> chart = cmd.openFile(destroy);
         if (chart.isEmpty()) {
             cmd.quitApp();
             return;
@@ -193,7 +200,7 @@ public final class GenXyEditor {
         }
 
         final Pane canvas = new Pane();
-        canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colorBg(), CornerRadii.EMPTY, Insets.EMPTY)));
+        canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colors().bg(), CornerRadii.EMPTY, Insets.EMPTY)));
 
         chart.addGraphicsTo(canvas.getChildren());
 
@@ -214,7 +221,7 @@ public final class GenXyEditor {
                 final Rectangle sel = new Rectangle(t.getX(), t.getY(), 0D, 0D);
                 sel.setFill(Color.TRANSPARENT);
                 sel.setStrokeWidth(1.0D);
-                sel.setStroke(chart.metrics().colorSelectionChooser());
+                sel.setStroke(chart.metrics().colors().selector());
                 sel.getStrokeDashArray().addAll(3.0D);
                 canvas.getChildren().add(sel);
                 chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());

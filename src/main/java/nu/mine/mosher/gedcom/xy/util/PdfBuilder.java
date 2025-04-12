@@ -36,7 +36,7 @@ public class PdfBuilder implements AutoCloseable {
     private static PdfFont FONT_ITALIC;
     static {
         try {
-            FONT = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regularxxxxxxxxxxxxxxxxxxxxx.ttf");
+            FONT = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf");
             FONT_BOLD = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf");
             FONT_ITALIC = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf");
         } catch (Exception e) {
