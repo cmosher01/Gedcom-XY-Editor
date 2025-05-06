@@ -1,6 +1,7 @@
 package nu.mine.mosher.gedcom.xy.util;
 
 
+import com.itextpdf.io.font.*;
 import com.itextpdf.io.font.constants.*;
 import com.itextpdf.kernel.colors.*;
 import com.itextpdf.kernel.font.*;
@@ -35,10 +36,24 @@ public class PdfBuilder implements AutoCloseable {
     private static PdfFont FONT_BOLD;
     private static PdfFont FONT_ITALIC;
     static {
+        initFonts();
+    }
+    private static void initFonts()
+    {
+        try {
+            FONT = PdfBuilder.getFontRes("NotoSans-Regular.ttf");
+            FONT_BOLD = PdfBuilder.getFontRes("NotoSans-Bold.ttf");
+            LOG.info("Successfully loaded NotoSans font resources.");
+            return;
+        } catch (Exception e) {
+            LOG.error("Error loading NotoSans font resource.", e);
+            // continue
+        }
         try {
             FONT = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf");
             FONT_BOLD = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf");
-            FONT_ITALIC = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf");
+//            FONT_ITALIC = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf");
+            return;
         } catch (Exception e) {
             LOG.error("Error loading NotoSans fonts.", e);
             // continue
@@ -46,13 +61,15 @@ public class PdfBuilder implements AutoCloseable {
         try {
             FONT = PdfFontFactory.createFont(StandardFonts.HELVETICA);
             FONT_BOLD = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-            FONT_ITALIC = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
+//            FONT_ITALIC = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
+            return;
         } catch (Exception e) {
             LOG.error("Error loading PDF-standard Helvetica fonts.", e);
             // continue
         }
         try {
-            FONT_ITALIC = FONT_BOLD = FONT = PdfFontFactory.createFont();
+            /* FONT_ITALIC = */ FONT_BOLD = FONT = PdfFontFactory.createFont();
+            return;
         } catch (Exception e) {
             LOG.error("Error loading PDF-standard default font.", e);
             throw new RuntimeException(e);
@@ -183,6 +200,20 @@ public class PdfBuilder implements AutoCloseable {
 
         try (final var ch = new Canvas(this.canvas, rect)) {
             ch.add(p);
+        }
+    }
+
+
+
+    private static PdfFont getFontRes(final String fileName) throws IOException {
+        final byte[] f = getRes(fileName);
+        final FontProgram fp = FontProgramFactory.createFont(f);
+        return PdfFontFactory.createFont(fp);
+    }
+
+    private static byte[] getRes(final String fileName) throws IOException {
+        try (final InputStream is = PdfBuilder.class.getResourceAsStream(fileName)) {
+            return Objects.requireNonNull(is).readAllBytes();
         }
     }
 }

@@ -43,7 +43,7 @@ public final class GenXyEditor {
                 arg0 = args[0];
             }
 
-            logFonts();
+//            logFonts();
 
             initJdbc();
             SwingUtilities.invokeAndWait(GenXyEditor::initGui);

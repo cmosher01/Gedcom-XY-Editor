@@ -147,7 +147,6 @@ public class CommandHandler {
     private void boldView(final FamilyChart chart, final boolean checked) {
         if (chart.metrics().colors().bold() != checked) {
             chart.metrics().setColors(checked ? new ColorSchemeBold() : new ColorSchemeSolarized());
-            chart.calc();
         }
     }
 
