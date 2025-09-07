@@ -6,7 +6,7 @@ plugins {
 }
 
 def versionMinor = '2.3'
-version = "${versionMinor}.2".toString()
+version = "${versionMinor}.3".toString()
 
 group = 'nu.mine.mosher.gedcom'
 
