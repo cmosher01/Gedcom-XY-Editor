@@ -141,45 +141,40 @@ public class Layout {
         }
 
         void setLevel(final int lev) {
-            //already done
-            if (this.mark) {
-                return;
-            }
-
-            //doing
-            this.mark = true;
-
-            //self
             this.level = lev;
 
             // position along y axis
             moveYto((MAX_LEVEL - this.level) * GEN_HEIGHT);
+        }
+
+        void addRelativesTo(final Deque<LevelSetting> levelSettingDeque) {
+            final int lev = this.level;
 
             //father
             if (idxFather >= 0) {
-                layout.indis.get(idxFather).setLevel(lev + 1);
+                levelSettingDeque.offer(new LevelSetting(layout.indis.get(idxFather), lev + 1));
             }
             //mother (only if no father)
             else if (idxMother >= 0) {
-                layout.indis.get(idxMother).setLevel(lev + 1);
+                levelSettingDeque.offer(new LevelSetting(layout.indis.get(idxMother), lev + 1));
             }
 
             //siblings
             if (idxChildToFamily >= 0) {
                 final Family fami = layout.famis.get(idxChildToFamily);
                 for (int i = 0; i < fami.children.size(); ++i) {
-                    layout.indis.get(fami.children.get(i)).setLevel(lev);
+                    levelSettingDeque.offer(new LevelSetting(layout.indis.get(fami.children.get(i)), lev));
                 }
             }
 
             //children
             for (final Integer i : ridxChild) {
-                layout.indis.get(i).setLevel(lev - 1);
+                levelSettingDeque.offer(new LevelSetting(layout.indis.get(i), lev - 1));
             }
 
             //spouses
             for (final Integer i : ridxSpouse) {
-                layout.indis.get(i).setLevel(lev);
+                levelSettingDeque.offer(new LevelSetting(layout.indis.get(i), lev));
             }
         }
 
@@ -326,12 +321,33 @@ public class Layout {
     }
 
 
+    class LevelSetting {
+        public final Individual indi;
+        public final int level;
+
+        public LevelSetting(final Individual indi, final int level) {
+            this.indi = indi;
+            this.level = level;
+        }
+    }
 
 
 
 
 
+    private void setIslandLevels(final Individual indi, final int level) {
+        final Deque<LevelSetting> levelSettingDeque = new LinkedList<>();
+        levelSettingDeque.offer(new LevelSetting(indi,level));
 
+        while (!levelSettingDeque.isEmpty()) {
+            final LevelSetting setting = levelSettingDeque.poll();
+            if (!setting.indi.mark) {
+                setting.indi.mark = true;
+                setting.indi.setLevel(setting.level);
+                setting.indi.addRelativesTo(levelSettingDeque);
+            }
+        }
+    }
 
 
 
@@ -353,7 +369,7 @@ public class Layout {
                 for (final Individual indi : this.indis) {
                     if (!indi.mark) {
                         someleft = true;
-                        indi.setLevel(batch++ * 5);
+                        setIslandLevels(indi, batch++ * 5);
                     }
                 }
             }
