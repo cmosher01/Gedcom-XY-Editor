@@ -1,5 +1,5 @@
 /*
-    Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
+    Copyright © 2000–2026, Christopher Alan Mosher, New York, New York, USA, <cmosher01@gmail.com>.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,19 +26,26 @@ import java.util.stream.*;
 /**
  * Genealogical automatic intelligent drop-line chart layout algorithm.
  */
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Layout {
     private static final Logger LOG = LoggerFactory.getLogger(Layout.class);
-
-    public static final double MAX_LEVEL = 5000.0D;
-    private static final double GEN_HEIGHT = 108D;
+    private static final double MAX_LEVEL = 5000.0D;
     private static final double MAX_WIDTH = 54D; // TODO calculate max width?
+    private static final double GEN_HEIGHT = 108D;
     private static final double DX_INDIVIDUAL = 1.2D * MAX_WIDTH;
-    public static final Translation RIGHT_OF = new Translation(DX_INDIVIDUAL, 0.0D);
     private static final double DY_INDIVIDUAL = GEN_HEIGHT; // TODO is this good?
-    public static final Translation BELOW = new Translation(0.0D, DY_INDIVIDUAL);
-    public static final Translation ABOVE = new Translation(0.0D, -DY_INDIVIDUAL);
-    public static final Translation GEN_BELOW = new Translation(0.0D, GEN_HEIGHT);
-    public static final double DX_FAMILY = 5.0D * MAX_WIDTH;
+    private static final double DX_FAMILY = 5.0D * MAX_WIDTH;
+    private static final Translation RIGHT_OF = new Translation(DX_INDIVIDUAL, 0.0D);
+    private static final Translation ABOVE = new Translation(0.0D, -DY_INDIVIDUAL);
+    private static final Translation BELOW = new Translation(0.0D, DY_INDIVIDUAL);
+    private static final Translation GEN_BELOW = new Translation(0.0D, 1.2D * DY_INDIVIDUAL);
+
+
+
+    private final List<Individual> indis;
+    private final List<Family> famis;
+
+
 
     public Layout(final List<Indi> indis, final List<Fami> famis) {
         this.indis = IntStream.range(0, indis.size())
@@ -56,10 +63,9 @@ public class Layout {
             final Fami fami = f.fami;
 
             final Optional<Indi> husb = fami.getHusb();
+            f.husb = getIdxOfSpouseOrNegativeOne(mapIndis, husb);
             final Optional<Indi> wife = fami.getWife();
-
-            f.husb = spidx(mapIndis, husb);
-            f.wife = spidx(mapIndis, wife);
+            f.wife = getIdxOfSpouseOrNegativeOne(mapIndis, wife);
 
             addSpouse(mapIndis, f, husb, wife);
             addSpouse(mapIndis, f, wife, husb);
@@ -67,41 +73,21 @@ public class Layout {
             fami.getChildren().forEach(c -> {
                 final Individual cChild = mapIndis.get(c);
                 cChild.idxChildToFamily = f.idx;
-                f.children.add(cChild.idx);
+                f.ridxChild.add(cChild.idx);
                 if (husb.isPresent()) {
                     final Individual cHusb = mapIndis.get(husb.get());
                     cHusb.ridxChild.add(mapIndis.get(c).idx);
                     cChild.idxFather = cHusb.idx;
-                    //f.husb = cHusb.idx; // TODO test this
                 }
                 if (wife.isPresent()) {
                     final Individual cWife = mapIndis.get(wife.get());
                     cWife.ridxChild.add(mapIndis.get(c).idx);
                     cChild.idxMother = cWife.idx;
-                    //f.wife = cWife.idx; // TODO test this
                 }
             });
         });
     }
 
-    private static int spidx(final Map<Indi, Individual> mapIndis, final Optional<Indi> spouse) {
-        if (spouse.isEmpty()) {
-            return -1;
-        }
-        final var optIdv = Optional.ofNullable(mapIndis.get(spouse.get()));
-        if (optIdv.isEmpty()) {
-            return -1;
-        }
-        return optIdv.get().idx;
-    }
-
-    private static void addSpouse(Map<Indi, Individual> mapIndis, Family fami, Optional<Indi> indi, Optional<Indi> spouse) {
-        if (indi.isPresent()) {
-            final Individual cindi = mapIndis.get(indi.get());
-            cindi.ridxSpouseToFamily.add(fami.idx);
-            spouse.ifPresent(i -> cindi.ridxSpouse.add(mapIndis.get(i).idx));
-        }
-    }
 
 
 
@@ -110,8 +96,8 @@ public class Layout {
 
 
 
-    private final List<Individual> indis;
-    private final List<Family> famis;
+    record LevelSetting(Individual indi, int level) { }
+
 
 
     class Family {
@@ -121,74 +107,23 @@ public class Layout {
         /* indexes into indis list */
         private int husb = -1;
         private int wife = -1;
-        private final List<Integer> children = new ArrayList<>();
+        private final List<Integer> ridxChild = new ArrayList<>();
+        private List<Integer> ridxChildSortedCache = null;
+
 
         public Family(final Fami fami, final int idx) {
             this.fami = fami;
             this.idx = idx;
         }
 
-        void getSortedChildren(final List<Integer> riChild) {
-            riChild.clear();
-            riChild.addAll(children);
-            riChild.sort(Comparator.comparing(i -> Layout.this.indis.get(i).getBirthForSort()));
+        public List<Integer> getSortedChildren() {
+            if (Objects.isNull(this.ridxChildSortedCache)) {
+                final var newList = new ArrayList<>(this.ridxChild);
+                newList.sort(Comparator.comparing(i -> Layout.this.indis.get(i).getBirthForSort()));
+                this.ridxChildSortedCache = Collections.unmodifiableList(newList);
+            }
+            return this.ridxChildSortedCache;
         }
-
-//        public boolean isUnplacedFully() {
-//            final var unplacedHusb = isUnplacedIdvOpt(this.husb);
-//            final var unplacedWife = isUnplacedIdvOpt(this.wife);
-//
-//            return unplacedHusb && unplacedWife && isUnplacedAllChildren();
-//        }
-
-//        public Optional<Individual> findExactlyOneParentUnplaced() {
-//            final var unplacedHusb = isUnplacedIdvOpt(this.husb);
-//            final var unplacedWife = isUnplacedIdvOpt(this.wife);
-//            final var unplacedExactlyOneParent =
-//                (!unplacedHusb &&  unplacedWife) ||
-//                ( unplacedHusb && !unplacedWife);
-//
-//            final Optional<Individual> ret;
-//            if (unplacedExactlyOneParent && isUnplacedAllChildren()) {
-//                if (unplacedHusb) {
-//                    ret = Optional.of(Layout.this.indis.get(husb));
-//                } else {
-//                    ret = Optional.of(Layout.this.indis.get(wife));
-//                }
-//            } else {
-//                ret = Optional.empty();
-//            }
-//
-//            return ret;
-//        }
-
-//        private boolean isUnplacedAllChildren() {
-//            int cChildPlaced = 0;
-//            for (final var iChild : this.children) {
-//                final var isPlacedChild = isUnplacedIdvOpt(iChild);
-//                if (isPlacedChild) {
-//                    cChildPlaced++;
-//                }
-//            }
-//            return (cChildPlaced == 0);
-//        }
-
-//        private boolean isUnplacedIdvOpt(int iIdv) {
-//            final var ivdOpt = Layout.this.indis.get(iIdv);
-//            return Objects.nonNull(ivdOpt) && ivdOpt.isPlaced();
-//        }
-
-//        public Individual getOneParent() {
-//            final var idvHusbOpt = Layout.this.indis.get(this.husb);
-//            if (Objects.nonNull(idvHusbOpt)) {
-//                return idvHusbOpt;
-//            }
-//            final var idvWifeOpt = Layout.this.indis.get(this.wife);
-//            if (Objects.nonNull(idvWifeOpt)) {
-//                return idvWifeOpt;
-//            }
-//            return null;
-//        }
 
 
 
@@ -197,15 +132,13 @@ public class Layout {
 // used to classify families into use cases concerning placed vs. unplaced parents and children
 
         public boolean hasPlacedChildren() {
-            return (0 < cPlacedChildren());
-        }
-
-        /**
-         * count of placed children
-         * @return 0 if no children, otherwise count of children that are placed
-         */
-        public int cPlacedChildren() {
-            return (int)this.children.stream().filter(Layout.this::isPlacedIdv).count();
+            for (final var i : this.ridxChild) {
+                final var optIdv = findIdvByIdx(i);
+                if (optIdv.isPresent() && optIdv.get().isPlaced()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -213,11 +146,14 @@ public class Layout {
          * @return 0, 1, or 2
          */
         public int cParents() {
+            final var optHusb = findIdvByIdx(this.husb);
+            final var optWife = findIdvByIdx(this.wife);
+
             int c = 0;
-            if (findIdvByIdx(this.husb).isPresent()) {
+            if (optHusb.isPresent()) {
                 c++;
             }
-            if (findIdvByIdx(this.wife).isPresent()) {
+            if (optWife.isPresent()) {
                 c++;
             }
             return c;
@@ -231,14 +167,54 @@ public class Layout {
          * @return 0, 1, or 2
          */
         public int cPlacedParents() {
+            final var optHusb = findIdvByIdx(this.husb);
+            final var optWife = findIdvByIdx(this.wife);
+
             int c = 0;
-            if (isPlacedIdv(this.husb)) {
+            if (optHusb.isPresent() && optHusb.get().isPlaced()) {
                 c++;
             }
-            if (isPlacedIdv(this.wife)) {
+            if (optWife.isPresent() && optWife.get().isPlaced()) {
                 c++;
             }
             return c;
+        }
+
+        /**
+         * Gets one of the parents, if any, preferring the husband.
+         *
+         * @return husband if present, otherwise wife if present, otherwise empty
+         */
+        private Optional<Individual> preferHusband() {
+            final var optHusb = findIdvByIdx(this.husb);
+            final var optWife = findIdvByIdx(this.wife);
+
+            final Optional<Individual> optParent;
+            if (optHusb.isPresent() && optWife.isPresent()) {
+                optParent = optHusb;
+            } else if (optHusb.isPresent()) {
+                optParent = optHusb;
+            } else if (optWife.isPresent()) {
+                optParent = optWife;
+            } else {
+                optParent = Optional.empty();
+            }
+            return optParent;
+        }
+
+        /**
+         * Finds the "first" child, based on the birthdate
+         * (if there are any children at all)
+         * @return first child if any, otherwise empty
+         */
+        private Optional<Individual> firstChild() {
+            // Get first child in fml.
+            final var riChild = getSortedChildren();
+            if (riChild.isEmpty()) {
+                return Optional.empty();
+            }
+
+            return findIdvByIdx(riChild.get(0));
         }
     }
 
@@ -282,6 +258,10 @@ public class Layout {
             return this.indi;
         }
 
+        // "levels" are used during a full cleaning (not a partial cleaning) to indicate
+        // what "generation" the Individual is in, and therefore dictate its placement
+        // within the chart along the Y axis.
+
         void setLevel(final int lev) {
             this.level = lev;
 
@@ -304,8 +284,8 @@ public class Layout {
             //siblings
             if (idxChildToFamily >= 0) {
                 final Family fami = layout.famis.get(idxChildToFamily);
-                for (int i = 0; i < fami.children.size(); ++i) {
-                    levelSettingDeque.offer(new LevelSetting(layout.indis.get(fami.children.get(i)), lev));
+                for (int i = 0; i < fami.ridxChild.size(); ++i) {
+                    levelSettingDeque.offer(new LevelSetting(layout.indis.get(fami.ridxChild.get(i)), lev));
                 }
             }
 
@@ -482,33 +462,10 @@ public class Layout {
     }
 
 
-    class LevelSetting {
-        public final Individual indi;
-        public final int level;
-
-        public LevelSetting(final Individual indi, final int level) {
-            this.indi = indi;
-            this.level = level;
-        }
-    }
 
 
 
 
-
-    private void setIslandLevels(final Individual indi, final int level) {
-        final Deque<LevelSetting> levelSettingDeque = new LinkedList<>();
-        levelSettingDeque.offer(new LevelSetting(indi,level));
-
-        while (!levelSettingDeque.isEmpty()) {
-            final LevelSetting setting = levelSettingDeque.poll();
-            if (!setting.indi.mark) {
-                setting.indi.mark = true;
-                setting.indi.setLevel(setting.level);
-                setting.indi.addRelativesTo(levelSettingDeque);
-            }
-        }
-    }
 
 
 
@@ -526,9 +483,9 @@ public class Layout {
         }
 
         if (this.indis.stream().noneMatch(i -> i.getOrigIndi().hadOriginalXY())) {
-            cleanAll();
+            cleanAll(); // FULL LAYOUT
         } else {
-            cleanUnplaced();
+            cleanUnplaced(); // PARTIAL LAYOUT
         }
     }
 
@@ -573,10 +530,12 @@ public class Layout {
         do any smart checking to see which family should be laid out first.
 
         TODO: When moving (any, or specific) people, should we prevent overlapping
-        with other people in the tree?
-     */
+        with other people in the tree? How would we determine where to move them to?
 
-    /*
+
+
+
+
         Different cases of the parents being placed within a family:
         1.  No parents in family.
         2.  Exactly one parent in family:
@@ -589,7 +548,7 @@ public class Layout {
 
         Different cases of the children being placed within a family:
         U.  No children, or only unplaced children, in family.
-        P.  At least one placed child within family, and either no other children,
+        P.  At least one placed child, and either no other children
             or only unplaced other children, in family.
 
         How to handle each combination. After each case's action is complete, it could
@@ -622,78 +581,12 @@ public class Layout {
                 [done]
     */
 
-
-//    private void placeUnplacedFamily(final Family fml) {
-//        // If fully unplaced, place one parent below existing tree
-//        if (fml.isUnplacedFully()) {
-//            final var idvParent = fml.getOneParent();
-//            if (Objects.isNull(idvParent)) {
-//                // TODO fully unplaced children with no parents
-//            } else {
-//                placeIdvBelowOther(idvParent, getLowest());
-//            }
-//        }
-//
-//        // If exactly one parent unplaced, place other parent to right of already placed parent
-//        final var optOnlyPlacedParent = fml.findExactlyOneParentUnplaced();
-//        if (optOnlyPlacedParent.isPresent()) {
-//            placeIdvToRightOfRightmostPlacedSpouse(optOnlyPlacedParent.get());
-//            // TODO if no spouse exists, ^^^ this does nothing
-//        } else {
-//            // TODO either no other spouse exists, or
-//        }
-//    }
-
-
-//    private void cleanUnplaced() {
-//        final var todo = new LinkedList<>(
-//            this.indis.stream()
-//                .filter(i -> !i.getOrigIndi().hadOriginalXY())
-//                .toList());
-//
-//        final var done = new HashSet<Individual>();
-//
-//        todo.forEach(i -> cleanUnplacedWithSpouse(i, done));
-//        todo.removeAll(done);
-//        done.clear();
-//
-//        todo.forEach(i -> cleanUnplacedSiblings(i, done));
-//        todo.removeAll(done);
-//        done.clear();
-//
-//        // TODO more cleaning
-//    }
-//
-//    private void cleanUnplacedSiblings(final Individual idv, final HashSet<Individual> done) {
-//        if (done.contains(idv)) {
-//            return;
-//        }
-//
-//        if (0 <= idv.idxChildToFamily) {
-//            final Family fml = famis.get(idv.idxChildToFamily);
-//            if (2 <= fml.children.size()) {
-//                fml.children.forEach(c -> indis.get(c).);
-//                done.add(idv);
-//            }
-//        }
-//    }
-//
-//    private void cleanUnplacedWithSpouse(final Individual idv, final HashSet<Individual> done) {
-//        if (!idv.ridxSpouse.isEmpty()) {
-//            final var sp = indis.get(idv.ridxSpouse.get(0));
-//            if (sp.isPlaced()) {
-//                placeRelativeTo(idv, sp, new Translation(DX_INDIVIDUAL, 0.0D));
-//                done.add(idv);
-//            }
-//        }
-//    }
-
     public void cleanUnplaced() {
         this.famis.forEach(this::cleanFamily);
     }
 
     private void cleanFamily(final Family fml) {
-        // WARNING: values within each if block can modify the
+        // WARNING: values within each "if" block can modify the
         // results of future if statement conditions. Don't
         // rearrange or refactor without careful testing.
         if (!fml.hasPlacedChildren() && fml.cParents() == 0) {
@@ -794,76 +687,44 @@ public class Layout {
         }
     }
 
-    // if there are no placed children, does nothing
-    private void placeParentAboveChildren(final Family fml) {
-        final List<Integer> riChild = new ArrayList<>();
-        fml.getSortedChildren(riChild);
-        final var optLeftmost = findLeftmost(riChild);
-        final var optTopmost = findTopmost(riChild);
-        if (optLeftmost.isPresent() && optTopmost.isPresent()) {
-            final Optional<Individual> optParent = findOneParent(fml);
-            if (optParent.isPresent()) {
-                final var topleft = new Point2D(
-                    optLeftmost.get().getLocationOrOriginal().getX(),
-                    optTopmost.get().getLocationOrOriginal().getY());
-                optParent.get().moveToAndLayOut(ABOVE.applyTo(topleft));
-            }
-        }
-    }
 
 
-    private void placeParentAtBottom(final Family fml) {
-        final Optional<Individual> optParent = findOneParent(fml);
-        if (optParent.isPresent()) {
-            final var posBottomLeft = getBottomLeftPositionForParent();
-            optParent.get().moveToAndLayOut(posBottomLeft);
-        }
-    }
 
-    private Optional<Individual> findOneParent(final Family fml) {
-        final var optHusb = findIdvByIdx(fml.husb);
-        final var optWife = findIdvByIdx(fml.wife);
 
-        final Optional<Individual> optParent;
-        if (optHusb.isPresent() && optWife.isPresent()) {
-            optParent = optHusb;
-        } else if (optHusb.isPresent()) {
-            optParent = optHusb;
-        } else if (optWife.isPresent()) {
-            optParent = optWife;
-        } else {
-            optParent = Optional.empty();
-        }
-        return optParent;
-    }
-
+    // U1 . No parents in family.
+    //      No children, or only unplaced children, in family.
+    //
+    //      Place first child (if any) below bottom of tree.
+    //
     // assume there are no placed children (i.e., no children, or only unplaced children)
     private void placeFirstChildOfFamilyAtBottom(final Family fml) {
-        // Get first child in fml.
-        final List<Integer> riChild = new ArrayList<>();
-        fml.getSortedChildren(riChild);
-        if (riChild.isEmpty()) {
-            return;
+        final var optFirstChild = fml.firstChild();
+        if (optFirstChild.isPresent()) {
+            optFirstChild.get().moveToAndLayOut(GEN_BELOW.applyTo(getBottomLeftPosition()));
         }
-
-        final var firstChild = this.indis.get(riChild.get(0));
-        final var posBottomLeft = getBottomLeftPositionForChild();
-        firstChild.moveToAndLayOut(posBottomLeft);
     }
 
-//    private void placeChildrenOfFamily(final Family fml) {
-//        if (fml.children.isEmpty()) {
-//            return;
-//        }
-//
-//        placeFirstUnplacedChildOfFamily(fml);
-//        placeSubsequentUnplacedChildrenOfFamily(fml);
-//    }
+    // U2a. Exactly one parent in family, who is unplaced.
+    //      No children, or only unplaced children, in family.
+    //
+    //      Place parent below bottom of tree.
+    //
+    // U3a. Two parents in family, neither placed.
+    //      No children, or only unplaced children, in family.
+    //
+    //      Place husband below bottom of tree (or next to spouse, if any other???)
+    private void placeParentAtBottom(final Family fml) {
+        final Optional<Individual> optParent = fml.preferHusband();
+        if (optParent.isPresent()) {
+            optParent.get().moveToAndLayOut(BELOW.applyTo(getBottomLeftPosition()));
+        }
+    }
 
     // U2b. Exactly one parent in family, who is placed.
     //      No children, or only unplaced children, in family.
     //
     //      Place first child (if any) below parent.
+    //
     // U3c. Two parents in family, both placed.
     //      No children, or only unplaced children, in family.
     //
@@ -882,188 +743,175 @@ public class Layout {
             return;
         }
 
+        // calculate new position: (left-most parent x, bottom-most parent y)
+        final var bottomleft = new Point2D(
+            optLeftmostParent.get().getLocationOrOriginal().getX(),
+            optBottomParent.get().getLocationOrOriginal().getY());
+
         // Get first child in fml.
-        final List<Integer> riChild = new ArrayList<>();
-        fml.getSortedChildren(riChild);
-        if (riChild.isEmpty()) {
-            // should never happen
-            return;
-        }
-        final var optFirstChild = findIdvByIdx(riChild.get(0));
+        final var optFirstChild = fml.firstChild();
         if (optFirstChild.isEmpty()) {
             // should never happen
             return;
         }
 
-        // Move first child to: (at left-most parent x, below bottom-most parent y)
-        final var bottomleft = new Point2D(
-            optLeftmostParent.get().getLocationOrOriginal().getX(),
-            optBottomParent.get().getLocationOrOriginal().getY());
-
+        // Move first child to below bottom-left of parents
         optFirstChild.get().moveToAndLayOut(BELOW.applyTo(bottomleft));
     }
 
+    // U3b. Two parents in family, exactly one placed.
+    //      No children, or only unplaced children, in family.
+    //
+    //      Place unplaced parent to right of placed parent.
+    //
+    // P3b. Two parents in family, exactly one placed.
+    //      At least one placed child within family
+    //
+    //      Place unplaced parent to right of placed parent.
+    private void placeUnplacedSpouseToRightOfPlacedSpouse(final Family fml) {
+        final var optHusb = findIdvByIdx(fml.husb);
+        if (optHusb.isEmpty()) {
+            return; // should never happen
+        }
+        final var h = optHusb.get();
+        final var optWife = findIdvByIdx(fml.wife);
+        if (optWife.isEmpty()) {
+            return; // should never happen
+        }
+        final var w = optWife.get();
+
+        if (h.isPlaced()) {
+            w.moveToAndLayOut(RIGHT_OF.applyTo(h.getLocationOrOriginal()));
+        } else {
+            h.moveToAndLayOut(RIGHT_OF.applyTo(w.getLocationOrOriginal()));
+        }
+    }
+
+    // P1 . No parents in family.
+    //      At least one placed child within family
+    //
+    //      Place any and all unplaced other children to right of rightmost placed child.
+    //
+    // P2b. Exactly one parent in family, who is placed.
+    //      At least one placed child within family
+    //
+    //      Place any and all unplaced other children to right of rightmost placed child.
+    //
+    // P3c. Two parents in family, both placed.
+    //      At least one placed child within family
+    //
+    //      Place any and all unplaced other children to right of rightmost placed child.
     private void placeSubsequentUnplacedChildrenOfFamily(final Family fml) {
-        final var optRight = findRightmostPlacedChildOf(fml);
+        final var optRight = findRightmost(fml.ridxChild);
         if (optRight.isEmpty()) { // probably shouldn't ever happen
             return;
         }
 
-        final List<Integer> riChild = new ArrayList<>();
-        fml.getSortedChildren(riChild);
+        final var riChild = fml.getSortedChildren();
 
+        // prevChild starts as the rightmost placed child, and
+        // then walks through each unplaced child as it gets placed
         Individual prevChild = optRight.get();
         for (final int iChild : riChild) {
             final var opt = findIdvByIdx(iChild);
-            if (opt.isPresent()) {
+            if (opt.isPresent() && !opt.get().isPlaced()) {
                 final var currChild = opt.get();
-                placeIdvToRightOfOther(currChild, prevChild);
+                currChild.moveToAndLayOut(RIGHT_OF.applyTo(prevChild.getLocationOrOriginal()));
                 prevChild = currChild;
             }
         }
     }
 
-    private void placeIdvToRightOfRightmostPlacedSpouse(final Individual idv) {
-        final var opt = findRightmostPlacedSpouseOf(idv);
-        opt.ifPresent(other -> placeIdvToRightOfOther(idv, other));
-    }
+    // P2a. Exactly one parent in family, who is unplaced.
+    //      At least one placed child within family
+    //
+    //      Place parent (at leftmost placed child x, above topmost placed child y).
+    //
+    // P3a. Two parents in family, neither placed.
+    //      At least one placed child within family
+    //
+    //      Place husband (at leftmost placed child x, above topmost placed child y).
+    //
+    // if there are no placed children, does nothing
+    private void placeParentAboveChildren(final Family fml) {
+        final var optLeftmost = findLeftmost(fml.ridxChild);
+        final var optTopmost = findTopmost(fml.ridxChild);
+        if (optLeftmost.isPresent() && optTopmost.isPresent()) {
+            final var topleft = new Point2D(
+                optLeftmost.get().getLocationOrOriginal().getX(),
+                optTopmost.get().getLocationOrOriginal().getY());
 
-    private Optional<Individual> findRightmostPlacedSpouseOf(final Individual idv) {
-        return findRightmost(idv.ridxSpouse);
-    }
-
-    private void placeUnplacedSpouseToRightOfPlacedSpouse(final Family fml) {
-        if (isPlacedIdv(fml.husb)) {
-            placeIdvToRightOfOther(findIdvByIdx(fml.wife).get(), findIdvByIdx(fml.husb).get());
-        } else {
-            placeIdvToRightOfOther(findIdvByIdx(fml.husb).get(), findIdvByIdx(fml.wife).get());
-        }
-    }
-
-    private Optional<Individual> findRightmostPlacedSpouseOf(final Family fml) {
-        final Optional<Individual> ret;
-
-        if (isPlacedIdv(fml.husb) && isPlacedIdv(fml.wife)) {
-            final var optHusb = findIdvByIdx(fml.husb);
-            final var xHusb = optHusb.get().getLocationOrOriginal().getX();
-            final var optWife = findIdvByIdx(fml.wife);
-            final var xWife = optWife.get().getLocationOrOriginal().getX();
-            if (xHusb <= xWife) {
-                ret = optWife;
-            } else {
-                ret = optHusb;
+            final Optional<Individual> optParent = fml.preferHusband();
+            if (optParent.isPresent()) {
+                optParent.get().moveToAndLayOut(ABOVE.applyTo(topleft));
             }
-        } else if (isPlacedIdv(fml.husb)) {
-            ret = findIdvByIdx(fml.husb);
-        } else if (isPlacedIdv(fml.wife)) {
-            ret = findIdvByIdx(fml.wife);
-        } else {
-            ret = Optional.empty();
         }
-
-        return ret;
     }
 
-    private Optional<Individual> findRightmostPlacedChildOf(final Individual idv) {
-        return findRightmost(idv.ridxChild);
-    }
 
-    private Optional<Individual> findRightmostPlacedChildOf(final Family fml) {
-        return findRightmost(fml.children);
-    }
+
+    // these four "find{Xxx}most" functions aren't particularly efficient,
+    // but they are only ever called with a handful of indexes.
 
     private Optional<Individual> findLeftmost(final List<Integer> ridx) {
-        return ridx
-            .stream()
-            .map(this::findIdvByIdx)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .filter(Individual::isPlaced)
-            .min(Comparator.comparing(idv -> idv.getLocationOrOriginal().getX()));
+        return streamPlacedIndividuals(ridx).min(comparingX());
     }
 
     private Optional<Individual> findRightmost(final List<Integer> ridx) {
-        return ridx
-            .stream()
-            .map(this::findIdvByIdx)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .filter(Individual::isPlaced)
-            .max(Comparator.comparing(idv -> idv.getLocationOrOriginal().getX()));
+        return streamPlacedIndividuals(ridx).max(comparingX());
     }
 
     private Optional<Individual> findTopmost(final List<Integer> ridx) {
-        return ridx
-            .stream()
-            .map(this::findIdvByIdx)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .filter(Individual::isPlaced)
-            .min(Comparator.comparing(idv -> idv.getLocationOrOriginal().getY()));
+        return streamPlacedIndividuals(ridx).min(comparingY());
     }
 
     private Optional<Individual> findBottommost(final List<Integer> ridx) {
-        return ridx
+        return streamPlacedIndividuals(ridx).max(comparingY());
+    }
+
+    private static Comparator<Individual> comparingX() {
+        return Comparator.comparing(idv -> idv.getLocationOrOriginal().getX());
+    }
+
+    private static Comparator<Individual> comparingY() {
+        return Comparator.comparing(idv -> idv.getLocationOrOriginal().getY());
+    }
+
+    private Stream<Individual> streamPlacedIndividuals(final List<Integer> ridx) {
+        return
+            ridx
             .stream()
             .map(this::findIdvByIdx)
             .filter(Optional::isPresent)
             .map(Optional::get)
-            .filter(Individual::isPlaced)
-            .max(Comparator.comparing(idv -> idv.getLocationOrOriginal().getY()));
+            .filter(Individual::isPlaced);
     }
 
 
 
-
-    private Point2D getBottomLeftPositionForChild() {
-        return GEN_BELOW.applyTo(getBottomLeftPosition());
-    }
-
-    private Point2D getBottomLeftPositionForParent() {
-        return BELOW.applyTo(getBottomLeftPosition());
-    }
-
+    /**
+     * Gets the maximum Y and the minimum X positions
+     * of all the laid out Individuals.
+     *
+     * @return point (minx,maxy)
+     */
     private Point2D getBottomLeftPosition() {
-        final var idvLowest = getLowest().getLocationOrOriginal();
-        final var idvLeftmost = getLeftmost().getLocationOrOriginal();
-        return new Point2D(idvLeftmost.getX(), idvLowest.getY());
-    }
-
-    private Individual getLowest() {
-        return this.indis
-            .stream()
-            .filter(Individual::isPlaced)
-            .max(Comparator.comparing(idv -> idv.getLocationOrOriginal().getY()))
-            .get();
-    }
-
-    private Individual getLeftmost() {
-        return this.indis
-            .stream()
-            .filter(Individual::isPlaced)
-            .min(Comparator.comparing(idv -> idv.getLocationOrOriginal().getX()))
-            .get();
-    }
-
-
-
-
-    private static void placeIdvToRightOfOther(final Individual idv, final Individual other) {
-        placeIdvRelativeToOther(idv, RIGHT_OF, other);
-    }
-
-    private static void placeIdvBelowOther(final Individual idv, final Individual other) {
-        placeIdvRelativeToOther(idv, BELOW, other);
-    }
-
-    private static void placeIdvRelativeToOther(final Individual idv, final Translation t, final Individual other) {
-        final Point2D q = t.applyTo(other.getLocationOrOriginal());
-        idv.moveToAndLayOut(q);
-    }
-
-    private boolean isPlacedIdv(final int iIdvOrNegOne) {
-        final var optIdv = findIdvByIdx(iIdvOrNegOne);
-        return optIdv.isPresent() && optIdv.get().isPlaced();
+        double minx = Double.POSITIVE_INFINITY;
+        double maxy = Double.NEGATIVE_INFINITY;
+        for (final var idv : this.indis) {
+            final var pos = idv.getLocationOrOriginal();
+            if (!pos.equals(Point2D.ZERO)) {
+                final double x = pos.getX();
+                if (Double.compare(x, minx) < 0) {
+                    minx = x;
+                }
+                final double y = pos.getY();
+                if (Double.compare(maxy, y) < 0) {
+                    maxy = y;
+                }
+            }
+        }
+        return new Point2D(minx, maxy);
     }
 
     /**
@@ -1076,12 +924,9 @@ public class Layout {
      * @return the Individual, if found, or empty() if not.
      */
     private Optional<Individual> findIdvByIdx(final int idx) {
-        final Optional<Individual> ret;
-        final int n = this.indis.size();
-        if (0 <= idx && idx < n) {
+        var ret = Optional.<Individual>empty();
+        if (0 <= idx && idx < this.indis.size()) {
             ret = Optional.of(this.indis.get(idx));
-        } else {
-            ret = Optional.empty();
         }
         return ret;
     }
@@ -1106,7 +951,7 @@ public class Layout {
 
         LOG.debug("set generation levels (also sets position on y-axis)");
         {
-            clearAllIndividuals();
+            resetMarks();
             int batch = 0;
             boolean someleft = true;
             while (someleft) {
@@ -1135,7 +980,7 @@ public class Layout {
 
         LOG.debug("calc max male-branch-descendant-generations size for all indis");
         {
-            clearAllIndividuals();
+            resetMarks();
             // Finding branches
             for (final Individual indi : this.indis) {
                 int c = (indi.sex == 1) ? 1 : 0;
@@ -1165,7 +1010,7 @@ public class Layout {
 
         LOG.debug("Labeling branches");
 
-        clearAllIndividuals();
+        resetMarks();
 
         for (final Individual indi : qToClean) {
             final Deque<Individual> todo = new LinkedList<>();
@@ -1176,8 +1021,8 @@ public class Layout {
                 final Individual pgmi = todo.removeFirst();
                 for (int j = 0; j < pgmi.ridxSpouseToFamily.size(); ++j) {
                     final Family fami = this.famis.get(pgmi.ridxSpouseToFamily.get(j));
-                    for (int k = 0; k < fami.children.size(); ++k) {
-                        final Individual pchil = this.indis.get(fami.children.get(k));
+                    for (int k = 0; k < fami.ridxChild.size(); ++k) {
+                        final Individual pchil = this.indis.get(fami.ridxChild.get(k));
                         if (!pchil.mark) {
                             pchil.setRootWithSpouses(indi);
                             if (pchil.sex == 1) {
@@ -1218,7 +1063,7 @@ public class Layout {
             xForLevel.add(0.0D);
         }
 
-        clearAllIndividuals();
+        resetMarks();
         LOG.debug("Moving branches");
         while (!rptoclean2.isEmpty()) {
             final Individual psec = rptoclean2.remove();
@@ -1239,8 +1084,7 @@ public class Layout {
 
                 for (int j = 0; j < pgmi.ridxSpouseToFamily.size(); ++j) {
                     final Family fami = this.famis.get(pgmi.ridxSpouseToFamily.get(j));
-                    final List<Integer> riChild = new ArrayList<>();
-                    fami.getSortedChildren(riChild);
+                    final List<Integer> riChild = fami.getSortedChildren();
                     int nch = riChild.size();
                     if (nch > 0) {
                         // put the (first two) children with spouses on the outside edges
@@ -1318,22 +1162,55 @@ public class Layout {
         this.indis.forEach(Individual::layOut);
     }
 
+    private void resetMarks() {
+        this.indis.forEach(i -> i.mark = false);
+    }
+
+    private void setIslandLevels(final Individual indi, final int level) {
+        final Deque<LevelSetting> levelSettingDeque = new LinkedList<>();
+        levelSettingDeque.offer(new LevelSetting(indi,level));
+
+        while (!levelSettingDeque.isEmpty()) {
+            final LevelSetting setting = levelSettingDeque.poll();
+            if (!setting.indi.mark) {
+                setting.indi.mark = true;
+                setting.indi.setLevel(setting.level);
+                setting.indi.addRelativesTo(levelSettingDeque);
+            }
+        }
+    }
+
+
+
+    private static int getIdxOfSpouseOrNegativeOne(final Map<Indi, Individual> mapIndis, final Optional<Indi> spouse) {
+        if (spouse.isEmpty()) {
+            return -1;
+        }
+        final var optIdv = Optional.ofNullable(mapIndis.get(spouse.get()));
+        if (optIdv.isEmpty()) {
+            return -1;
+        }
+        return optIdv.get().idx;
+    }
+
+    private static void addSpouse(Map<Indi, Individual> mapIndis, Family fami, Optional<Indi> indi, Optional<Indi> spouse) {
+        if (indi.isPresent()) {
+            final Individual cindi = mapIndis.get(indi.get());
+            cindi.ridxSpouseToFamily.add(fami.idx);
+            spouse.ifPresent(i -> cindi.ridxSpouse.add(mapIndis.get(i).idx));
+        }
+    }
+
     private static int flop(final int ch, final int nch) {
         final int h = ch/2;
         return (ch == 2*h) ? h : nch-(h+1);
     }
 
-
     private static Comparator<Individual> primaryHouse() {
         return Comparator
-                .comparingInt((Individual i) -> i.maxMale)
-                .thenComparingInt(i -> i.level)
-                .thenComparingInt(i -> i.sex)
-                .reversed();
-    }
-
-
-    private void clearAllIndividuals() {
-        this.indis.forEach(i -> i.mark = false);
+            .comparingInt((Individual i) -> i.maxMale)
+            .thenComparingInt(i -> i.level)
+            .thenComparingInt(i -> i.sex)
+            .reversed();
     }
 }
