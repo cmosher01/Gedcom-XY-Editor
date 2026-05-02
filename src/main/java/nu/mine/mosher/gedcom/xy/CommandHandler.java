@@ -81,10 +81,14 @@ public class CommandHandler {
         final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
         cmdNorm.addActionListener(e -> normalize(chart));
 
+        final MenuItem cmdClean = new MenuItem("Lay out unplaced people");
+        cmdClean.addActionListener(e -> clean(chart));
+
         final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
         cmdSnap.addActionListener(e -> snapToGrid(chart));
 
         menuEdit.add(cmdNorm);
+//        menuEdit.add(cmdClean); TODO partial clean doesn't (appear) to work... Is it a redraw issue?
         menuEdit.add(cmdSnap);
 
 
@@ -133,6 +137,18 @@ public class CommandHandler {
             JOptionPane.WARNING_MESSAGE);
         if (response == JOptionPane.OK_OPTION) {
             chart.userNormalize();
+        }
+    }
+
+    private void clean(final FamilyChart chart) {
+        final int response = JOptionPane.showConfirmDialog(
+                frame,
+                "This will lay out any people that have not been laid out before.",
+                "Lay out unplaced people",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (response == JOptionPane.OK_OPTION) {
+            chart.userClean();
         }
     }
 

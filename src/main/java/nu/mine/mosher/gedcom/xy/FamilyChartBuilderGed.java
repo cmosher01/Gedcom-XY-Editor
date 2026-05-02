@@ -23,12 +23,13 @@ public final class FamilyChartBuilderGed {
         final List<Indi> indis = buildIndis(tree, mapIdToIndi);
         final List<Fami> famis = buildFamis(tree, Collections.unmodifiableMap(mapIdToIndi));
 
-        if (indis.stream().noneMatch(Indi::hadOriginalXY)) {
-            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
-            new Layout(indis, famis).cleanAll();
-        }
+        // TODO add destroy (like in FamilyChartBuilderFtm)
+//        if (indis.stream().noneMatch(Indi::hadOriginalXY)) {
+//            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
+            new Layout(indis, famis).clean();
+//        }
 
-        normalize(indis);
+        normalizeAndFillMissingCoords(indis);
 
         final Metrics metrics = Metrics.buildMetricsFor(indis, famis);
         famis.forEach(f -> f.setMetrics(metrics));
@@ -50,11 +51,11 @@ public final class FamilyChartBuilderGed {
         return indis;
     }
 
-    private static void normalize(final List<Indi> indis) {
+    private static void normalizeAndFillMissingCoords(final List<Indi> indis) {
         final double x = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getX).min().orElse(0D);
         final double y = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getY).min().orElse(0D);
         final Point2D coordsTopLeftAfterLayout = new Point2D(x, y);
-        indis.forEach(i -> i.fillMissing(coordsTopLeftAfterLayout));
+        indis.forEach(i -> i.fillMissingCoords(coordsTopLeftAfterLayout));
     }
 
     private static List<Fami> buildFamis(final GedcomTree tree, final Map<String, Indi> mapIdToIndi) {

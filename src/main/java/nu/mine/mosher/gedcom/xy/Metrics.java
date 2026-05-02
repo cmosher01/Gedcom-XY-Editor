@@ -2,9 +2,7 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.Point2D;
 import javafx.scene.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.*;
-import nu.mine.mosher.gedcom.xy.util.Solarized;
 import org.slf4j.*;
 
 import java.util.*;

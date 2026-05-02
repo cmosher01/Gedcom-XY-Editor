@@ -149,11 +149,8 @@ public class PdfBuilder implements AutoCloseable {
             if (nameGiven.isBlank()) {
                 nameGiven = "?";
             }
-            if (nameSur.isBlank()) {
-                nameSur = "?";
-            }
             tG = new Text(nameGiven).setFont(FONT_BOLD);
-            tS = new Text("\u00A0" + nameSur+"\n").setFont(FONT);
+            tS = new Text(" " + nameSur+"\n").setFont(FONT);
         }
 
         if (!dates.isBlank()) {

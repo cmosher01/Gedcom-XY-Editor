@@ -5,7 +5,6 @@ import javafx.scene.shape.Line;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
-import java.awt.Dimension;
 import java.util.Objects;
 
 public class SvgBuilder {
@@ -119,6 +118,7 @@ public class SvgBuilder {
         eText.setAttribute("x", Double.toString(bounds.getMinX()+(bounds.getWidth()/2.0d)));
         eText.setAttribute("y", Double.toString(bounds.getMinY()+(bounds.getHeight()/2.0d)-(this.fontsize*1.5d)));
         eText.setAttribute("dy", ""+this.fontsize);
+        // TODO need to wrap text that's too wide, with inline-size (but it's not supported in any browsers yet)
 
         final Element eNameGiven = this.doc.createElementNS(W3C_SVG_NS_URI, "tspan");
         eNameGiven.setAttribute("class", "nameGiven"+mask);
@@ -149,16 +149,5 @@ public class SvgBuilder {
         eText.appendChild(eTagLine);
 
         this.svg.appendChild(eText);
-    }
-
-
-    private static void addPointTo(final Point2D pt, final Element e, final String sfx) {
-        e.setAttribute("x" + sfx, Double.toString(pt.getX()));
-        e.setAttribute("y" + sfx, Double.toString(pt.getY()));
-    }
-
-    private static void addOffset(final double x, final double dy, final Element e) {
-        e.setAttribute("x", Double.toString(x));
-        e.setAttribute("dy", Double.toString(dy));
     }
 }

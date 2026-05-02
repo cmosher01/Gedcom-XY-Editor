@@ -32,6 +32,8 @@ public final class GenXyEditor {
     private static volatile Thread threadEventsAwt;
     private static volatile String arg0 = "";
 
+    private static final String TITLE = "Genealogy XY Editor";
+
     public static void main(final String... args) {
         try {
             initLogging();
@@ -154,7 +156,11 @@ public final class GenXyEditor {
 
         frame.setMenuBar(cmd.buildMenuBar(chart.get()));
 
-        frame.setTitle("Genealogy XY Editor - " + chart.get().originalFile().get().getAbsolutePath());
+        if (chart.get().originalFile().isPresent()) {
+            frame.setTitle(TITLE + " - " + chart.get().originalFile().get().getAbsolutePath());
+        } else {
+            frame.setTitle(TITLE);
+        }
         frame.add(fxPanel);
         frame.setVisible(true);
 
@@ -188,10 +194,15 @@ public final class GenXyEditor {
                 final Path pathTemp = Files.createTempFile(GenXyEditor.class.getName()+"-", ".log");
                 e.printStackTrace(new PrintStream(new FileOutputStream(pathTemp.toFile()), true));
             } catch (final Throwable reallyBad) {
-                e.printStackTrace();
-                reallyBad.printStackTrace();
+                lastResortLog(e, reallyBad);
             }
         }
+    }
+
+    @SuppressWarnings("CallToPrintStackTrace")
+    private static void lastResortLog(final Throwable e, final Throwable reallyBad) {
+        e.printStackTrace();
+        reallyBad.printStackTrace();
     }
 
     private static Parent buildGui(final FamilyChart chart) {
@@ -200,6 +211,9 @@ public final class GenXyEditor {
         }
 
         final Pane canvas = new Pane();
+//        canvas.setCache(true);
+//        canvas.setCacheHint(CacheHint.SPEED);
+
         canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colors().bg(), CornerRadii.EMPTY, Insets.EMPTY)));
 
         chart.addGraphicsTo(canvas.getChildren());

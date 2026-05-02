@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class FamilyChart {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChart.class);
 
@@ -289,6 +290,10 @@ public class FamilyChart {
         final Point2D coordsTopLeft = new Point2D(x, y);
         this.indis.forEach(i -> i.userNormalize(coordsTopLeft));
         updateSelectStatus();
+    }
+
+    public void userClean() {
+        new Layout(this.indis, this.famis).cleanUnplaced();
     }
 
     public List<Indi> indis() {

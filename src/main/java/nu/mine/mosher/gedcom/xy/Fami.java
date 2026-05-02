@@ -65,6 +65,7 @@ public class Fami {
         return Collections.unmodifiableList(this.rChild);
     }
 
+
     public void calc() {
         if (husb == null && wife == null && rChild.size() == 0) {
             return;

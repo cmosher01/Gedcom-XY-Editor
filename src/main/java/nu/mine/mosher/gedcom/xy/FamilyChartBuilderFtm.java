@@ -25,12 +25,12 @@ public class FamilyChartBuilderFtm {
             famis = buildFamis(conn, Collections.unmodifiableMap(mapIdToIndi));
         }
 
-        if (indis.stream().noneMatch(Indi::hadOriginalXY) || destroy) {
-            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
-            new Layout(indis, famis).cleanAll();
-        }
+//        if (indis.stream().noneMatch(Indi::hadOriginalXY) || destroy) {
+//            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
+            new Layout(indis, famis).clean();
+//        }
 
-        normalize(indis);
+        normalizeAndFillMissingCoords(indis);
 
         final Metrics metrics = Metrics.buildMetricsFor(indis, famis);
         famis.forEach(f -> f.setMetrics(metrics));
@@ -109,6 +109,11 @@ public class FamilyChartBuilderFtm {
                 }
             }
         }
+        logFamis(famis);
+        return famis;
+    }
+
+    private static void logFamis(final Collection<Fami> famis) {
         LOG.info("Calculated {} families.", famis.size());
         for (final Fami fami : famis) {
             StringBuilder sb = new StringBuilder(64);
@@ -126,14 +131,13 @@ public class FamilyChartBuilderFtm {
             }
             LOG.debug("family: {}", sb);
         }
-        return famis;
     }
 
-    private static void normalize(final List<Indi> indis) {
+    private static void normalizeAndFillMissingCoords(final List<Indi> indis) {
         final double x = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getX).min().orElse(0D);
         final double y = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getY).min().orElse(0D);
         final Point2D coordsTopLeftAfterLayout = new Point2D(x, y);
-        indis.forEach(i -> i.fillMissing(coordsTopLeftAfterLayout));
+        indis.forEach(i -> i.fillMissingCoords(coordsTopLeftAfterLayout));
     }
 
     private static String getRes(final String fileName) throws IOException {

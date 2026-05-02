@@ -148,6 +148,8 @@ public class Indi {
         this.plaque.layoutXProperty().bind(x().subtract(w / 2.0D));
         this.plaque.layoutYProperty().bind(y().subtract(h / 2.0D));
 
+
+
         this.plaque.setOnMouseEntered(t -> {
             plaque.setCursor(Cursor.HAND);
             t.consume();
@@ -264,7 +266,7 @@ public class Indi {
         return this.coords.original().isPresent();
     }
 
-    public void fillMissing(final Point2D coordsTopLeftAfterLayout) {
+    public void fillMissingCoords(final Point2D coordsTopLeftAfterLayout) {
         this.coords.fillMissing(coordsTopLeftAfterLayout);
     }
 
@@ -348,8 +350,7 @@ public class Indi {
                 ? ""
                 : ("("+this.lifespan+")");
 
-        final Bounds bounds = this.plaque.getBoundsInParent();
-        svg.addPerson(bounds, this.nameGiven, this.nameSur, dates, this.tagline, this.id);
+        svg.addPerson(bounds(), this.nameGiven, this.nameSur, dates, this.tagline, this.id);
     }
 
     public void saveXyToTree() {
