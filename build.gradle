@@ -1,18 +1,19 @@
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.beryx.runtime' version '1.13.1'
+    id 'org.beryx.runtime' version '2.0.1'
     id 'com.coditory.manifest' version '1.1.0'
 }
 
 def versionMinor = '2.3'
-version = "${versionMinor}.3".toString()
+version = "${versionMinor}.4".toString()
 
 group = 'nu.mine.mosher.gedcom'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of 17
+        languageVersion = JavaLanguageVersion.of 21
+        vendor = JvmVendorSpec.ADOPTIUM
     }
 }
 
@@ -24,19 +25,19 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'nu.mine.mosher.gedcom', name: 'gedcom-lib', version: 'latest.release', {
+    implementation 'nu.mine.mosher.gedcom:gedcom-lib:latest.release', {
         exclude group: 'nu.mine.mosher.mopper', module: 'mopper'
     }
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: 'latest.release'
-    implementation group: 'com.itextpdf', name: 'itext7-core', version: 'latest.release'
+    implementation 'org.xerial:sqlite-jdbc:latest.release'
+    implementation 'com.itextpdf:itext7-core:latest.release'
 
-    implementation group: 'nu.mine.mosher.io', name: 'log-files', version: 'latest.release'
+    implementation 'nu.mine.mosher.io:log-files:latest.release'
 
-    implementation group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.release'
-    implementation group: 'org.slf4j', name: 'log4j-over-slf4j', version: 'latest.release'
-    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: 'latest.release'
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.release'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
+    implementation 'org.slf4j:jcl-over-slf4j:latest.release'
+    implementation 'org.slf4j:log4j-over-slf4j:latest.release'
+    implementation 'org.slf4j:jul-to-slf4j:latest.release'
+    implementation 'org.slf4j:slf4j-api:latest.release'
+    implementation 'ch.qos.logback:logback-classic:latest.release'
 }
 
 application {

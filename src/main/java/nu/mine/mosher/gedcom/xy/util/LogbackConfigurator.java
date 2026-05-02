@@ -6,7 +6,7 @@ import ch.qos.logback.classic.spi.*;
 import ch.qos.logback.core.*;
 import ch.qos.logback.core.pattern.color.*;
 import ch.qos.logback.core.spi.ContextAwareBase;
-import ch.qos.logback.core.util.StatusPrinter;
+import ch.qos.logback.core.util.*;
 import nu.mine.mosher.gedcom.xy.GenXyEditor;
 import nu.mine.mosher.io.LogFiles;
 
@@ -44,7 +44,7 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         LOG_ROOT.setLevel(Level.INFO);
         LOG_ROOT.addAppender(appender);
 
-        StatusPrinter.print(ctx);
+        new StatusPrinter2().print(ctx);
         System.out.flush();
         System.err.flush();
 
@@ -159,7 +159,7 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
 
     public static class HighlightingCompositeConverter extends ForegroundCompositeConverterBase<ILoggingEvent> {
         public static void install() {
-            PatternLayout.DEFAULT_CONVERTER_MAP.put("levelcolor", HighlightingCompositeConverter.class.getName());
+            PatternLayout.DEFAULT_CONVERTER_SUPPLIER_MAP.put("levelcolor", HighlightingCompositeConverter::new);
         }
 
         @Override
