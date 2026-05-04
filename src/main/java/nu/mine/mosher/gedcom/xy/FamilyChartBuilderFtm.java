@@ -93,16 +93,29 @@ public class FamilyChartBuilderFtm {
                 Fami fami = null;
                 while (rs.next()) {
                     final int curr = rs.getInt("ID");
+                    Optional<Indi> indi;
                     if (curr != prev) {
                         if (Objects.nonNull(fami)) {
                             famis.add(fami);
                         }
                         fami = new Fami();
-                        fami.setHusb(mapIdToIndi.get(rs.getString("Person1ID")));
-                        fami.setWife(mapIdToIndi.get(rs.getString("Person2ID")));
+                        indi = Optional.ofNullable(mapIdToIndi.get(rs.getString("Person1ID")));
+                        if (indi.isPresent()) {
+                            fami.setHusb(indi.get());
+                            indi.get().addAsSpouseTo(fami);
+                        }
+                        indi = Optional.ofNullable(mapIdToIndi.get(rs.getString("Person2ID")));
+                        if (indi.isPresent()) {
+                            fami.setWife(indi.get());
+                            indi.get().addAsSpouseTo(fami);
+                        }
                         prev = curr;
                     }
-                    fami.addChild(mapIdToIndi.get(rs.getString("PersonID")));
+                    indi = Optional.ofNullable(mapIdToIndi.get(rs.getString("PersonID")));
+                    if (indi.isPresent()) {
+                        fami.addChild(indi.get());
+                        indi.get().setAsChildTo(fami);
+                    }
                 }
                 if (Objects.nonNull(fami)) {
                     famis.add(fami);

@@ -18,6 +18,11 @@ public class ColorSchemeBold implements ColorScheme {
     }
 
     @Override
+    public Color linesSel() {
+        return Solarized.MAGENTA;
+    }
+
+    @Override
     public Color indiBg() {
         return Color.WHITE;
     }

@@ -18,6 +18,11 @@ public class ColorSchemeSolarized implements ColorScheme {
     }
 
     @Override
+    public Color linesSel() {
+        return Solarized.MAGENTA;
+    }
+
+    @Override
     public Color indiBg() {
         return Solarized.BASE3.deriveColor(1.0D, 1.0D, 1.0D, 0.75D);
     }

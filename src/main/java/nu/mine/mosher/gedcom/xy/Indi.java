@@ -42,22 +42,9 @@ public class Indi {
     private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
     private FamilyChart.Selection selection;
 
+    private final Set<Fami> rfamiSpouseTo = new HashSet<>();
+    private Optional<Fami> optFamiChildTo = Optional.empty();
 
-    public int getSex() {
-        return this.sex;
-    }
-
-    public void setMetrics(final Metrics metrics) {
-        this.metrics = metrics;
-    }
-
-    public void addGraphicsTo(List<Node> addto) {
-        addto.add(this.plaque);
-    }
-
-    public void select(final boolean select) {
-        this.selected.setValue(select);
-    }
 
 
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {
@@ -104,6 +91,36 @@ public class Indi {
         }
         return n1.trim()+" ~ "+n2.trim();
     }
+
+    public int getSex() {
+        return this.sex;
+    }
+
+    public void setMetrics(final Metrics metrics) {
+        this.metrics = metrics;
+    }
+
+    public void addGraphicsTo(List<Node> addto) {
+        addto.add(this.plaque);
+    }
+
+    public void select(final boolean select) {
+        this.selected.setValue(select);
+        this.optFamiChildTo.ifPresent(fami -> fami.select(select));
+        this.rfamiSpouseTo.forEach(fami -> fami.select(select));
+    }
+
+
+
+    public void addAsSpouseTo(final Fami famiSpouseTo) {
+        this.rfamiSpouseTo.add(famiSpouseTo);
+    }
+
+    public void setAsChildTo(final Fami famiChildTo) {
+        this.optFamiChildTo = Optional.of(famiChildTo);
+    }
+
+
 
     public void calc() {
         final ColorScheme colors = this.metrics.colors();

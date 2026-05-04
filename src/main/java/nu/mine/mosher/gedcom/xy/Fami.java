@@ -1,7 +1,8 @@
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.beans.binding.DoubleBinding;
-import javafx.beans.property.DoubleProperty;
+import javafx.beans.binding.*;
+import javafx.beans.property.*;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.geometry.*;
 import javafx.scene.*;
 import javafx.scene.layout.*;
@@ -34,6 +35,12 @@ public class Fami {
 
     private Line childBar;
     private Line[] rChildBar;
+    private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
+
+
+    public void select(final boolean select) {
+        this.selected.setValue(select);
+    }
 
     public void setMetrics(final Metrics metrics) {
         this.metrics = metrics;
@@ -289,13 +296,13 @@ public class Fami {
     }
 
     private Line createLine() {
-        return createLine(metrics.colors().lines());
+        return createLine(metrics.colors().lines(), metrics.colors().linesSel());
     }
 
-    private Line createLine(final Color color) {
+    private Line createLine(final Color color, final Color colorSel) {
         final Line line = new Line();
-        line.setStroke(color);
-        line.setStrokeWidth(1.0D);
+        line.strokeProperty().bind(Bindings.when(this.selected).then(colorSel).otherwise(color));
+        line.strokeWidthProperty().bind(Bindings.when(this.selected).then(3.0D).otherwise(1.0D));
         return line;
     }
 

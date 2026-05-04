@@ -7,6 +7,7 @@ public interface ColorScheme {
 
     Color bg();
     Color lines();
+    Color linesSel();
 
     Color indiBg();
     Color indiText();
