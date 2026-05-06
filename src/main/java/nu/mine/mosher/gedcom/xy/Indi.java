@@ -200,6 +200,10 @@ public class Indi {
         this.plaque.setOnMouseClicked(Event::consume);
     }
 
+    public Point2D xyUser() {
+        return this.coords.xyUser();
+    }
+
     public void drag(final Point2D delta) {
         this.coords.dragTo(snap(this.coords.xyUser().add(delta)));
     }
@@ -445,5 +449,32 @@ public class Indi {
     public String getTagline()
     {
         return this.tagline;
+    }
+
+    /**
+     * Gets this person's parent, siblings, spouses, and children.
+     * @return list of relatives
+     */
+    public List<Indi> getRelatives() {
+        final var rindi = new ArrayList<Indi>();
+
+        // parents and siblings
+        if (this.optFamiChildTo.isPresent()) {
+            final var fami = this.optFamiChildTo.get();
+            rindi.addAll(fami.getParents());
+            rindi.addAll(fami.getChildren());
+        }
+
+        // spouses and children
+        for (final var fami : this.rfamiSpouseTo) {
+            rindi.addAll(fami.getParents());
+            rindi.addAll(fami.getChildren());
+        }
+
+        return rindi.stream().filter(s -> s != this).toList();
+    }
+
+    public double distanceFrom(final Indi other) {
+        return this.coords.get().distance(other.coords.get());
     }
 }

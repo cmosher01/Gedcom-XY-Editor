@@ -7,6 +7,7 @@ import javafx.embed.swing.JFXPanel;
 import javafx.geometry.Insets;
 import javafx.geometry.*;
 import javafx.scene.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -164,7 +165,15 @@ public final class GenXyEditor {
         frame.add(fxPanel);
         frame.setVisible(true);
 
-        Platform.runLater(() -> fxPanel.setScene(new Scene(buildGui(chart.get()))));
+
+        Platform.runLater(() -> {
+            final var scene = new Scene(buildGui(chart.get()));
+            scene.setOnKeyPressed(t -> {
+                chart.get().onKey(t);
+                t.consume();
+            });
+            fxPanel.setScene(scene);
+        });
     }
 
 
@@ -219,6 +228,7 @@ public final class GenXyEditor {
         chart.addGraphicsTo(canvas.getChildren());
 
         final ZoomPane workspace = new ZoomPane(canvas);
+        chart.setWorkspace(workspace);
         workspace.setOnMouseClicked(t -> {
             if (t.isStillSincePress()) {
                 chart.clearSelection();
@@ -279,7 +289,6 @@ public final class GenXyEditor {
                 selector.set(null);
             }
         });
-
 
         final HBox statusbar = buildStatusBar(chart);
 

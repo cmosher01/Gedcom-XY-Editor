@@ -3,6 +3,7 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.beans.property.*;
 import javafx.geometry.*;
 import javafx.scene.Node;
+import javafx.scene.input.KeyEvent;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.*;
@@ -30,6 +31,7 @@ public class FamilyChart {
     private final Metrics metrics;
     private final Selection selection = new Selection();
     private final StringProperty selectedNameProperty = new SimpleStringProperty();
+    private Scrollable paneWorkspace;
 
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics, final File fileOriginal) {
         this.fileOriginal = Optional.ofNullable(fileOriginal);
@@ -37,6 +39,10 @@ public class FamilyChart {
         this.indis = List.copyOf(indis);
         this.famis = List.copyOf(famis);
         this.metrics = metrics;
+    }
+
+    public void setWorkspace(final Scrollable workspace) {
+        this.paneWorkspace = workspace;
     }
 
     public void addGraphicsTo(final List<Node> addto) {
@@ -117,7 +123,7 @@ public class FamilyChart {
         }
 
         LOG.info("Opening SQLite FTM database file, for update: {}", this.fileOriginal.get().getCanonicalPath());
-        try (final Connection conn = new SQLiteConfig().createConnection("jdbc:sqlite:"+ this.fileOriginal.get().getCanonicalPath())) {
+        try (final Connection conn = new SQLiteConfig().createConnection("jdbc:sqlite:"+this.fileOriginal.get().getCanonicalPath())) {
             final long pkidFactTypeXy = prepareDatabaseForFactTypeXy(conn);
             for (final Indi indi : this.indis) {
                 if (indi.dirty()) {
@@ -320,9 +326,30 @@ public class FamilyChart {
         }).get();
     }
 
+    public void onKey(final KeyEvent t) {
+        final String k = t.getText();
+
+        if (k.startsWith("n")) {
+            this.selection.nudge();
+        }
+    }
+
+
     public class Selection {
         private final Set<Indi> indis = new HashSet<>();
         private Point2D orig;
+
+        public Bounds bounds() {
+            Bounds bounds = null;
+            for (final var i : this.indis) {
+                if (Objects.isNull(bounds)) {
+                    bounds = i.bounds();
+                } else {
+                    bounds = addBounds(bounds, i.bounds());
+                }
+            }
+            return bounds;
+        }
 
         public void clear() {
             this.indis.forEach(i -> i.select(false));
@@ -350,8 +377,58 @@ public class FamilyChart {
             this.indis.forEach(i -> i.drag(to.subtract(this.orig)));
             updateSelectStatus();
         }
-    }
 
+        public void nudge() {
+            if (!this.indis.isEmpty()) {
+                //  Nudge:
+                //  move selection near to closest (graphically on the chart)
+                //  unselected relative (nearest, not recursively)
+
+                //  maxr = empty
+                //  maxd = -INF
+                //  for each indi S in the selection
+                //      for each related indi (parent, sibling, spouse, child) R of S
+                //          if R is not in the selection
+                //              find distance d from S to R
+                //              if (maxd < d)
+                //                  maxR = R
+                //                  maxd = d
+                //  if maxR is present
+                //      move selection to below maxR
+                //      scroll display to center upon maxR
+
+                var maxR = Optional.<Indi>empty();
+                var maxd = Double.NEGATIVE_INFINITY;
+                for (final var S : this.indis) {
+                    for (final var R : S.getRelatives()) {
+                        if (!R.selected()) {
+                            final var d = R.distanceFrom(S);
+                            if (maxd < d) {
+                                maxR = Optional.of(R);
+                                maxd = d;
+                            }
+                        }
+                    }
+                }
+                if (maxR.isPresent()) {
+                    final var R = maxR.get();
+                    final var rx = R.xyUser().getX();
+                    final var ry = R.xyUser().getY();
+
+                    final var sx = bounds().getCenterX();
+                    final var sy = bounds().getCenterY();
+
+                    final var dx = rx - sx;
+                    final var dy = (ry + metrics.getGenDistance()) - sy;
+                    final var d = new Point2D(dx, dy);
+                    this.indis.forEach(i -> i.drag(d));
+
+                    // scroll display to relative we just moved to
+                    FamilyChart.this.paneWorkspace.scrollTo(R.xyUser());
+                }
+            }
+        }
+    }
 
 
     private static final Set<String> SKEL;
@@ -372,5 +449,14 @@ public class FamilyChart {
                 }
             }
         }
+    }
+
+
+    public static Bounds addBounds(final Bounds b1, final Bounds b2) {
+        final var minX = Math.min(b1.getMinX(), b2.getMinX());
+        final var minY = Math.min(b1.getMinY(), b2.getMinY());
+        final var maxX = Math.max(b1.getMaxX(), b2.getMaxX());
+        final var maxY = Math.max(b1.getMaxY(), b2.getMaxY());
+        return new BoundingBox(minX, minY, maxX - minX, maxY - minY);
     }
 }

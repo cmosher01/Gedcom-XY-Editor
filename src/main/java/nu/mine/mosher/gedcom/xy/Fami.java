@@ -39,7 +39,29 @@ public class Fami {
 
 
     public void select(final boolean select) {
-        this.selected.setValue(select);
+        if (select) {
+            this.selected.setValue(select);
+        } else {
+            if (noRelativesSelected()) {
+                this.selected.setValue(select);
+            }
+        }
+    }
+
+    private boolean noRelativesSelected() {
+        boolean ret = true;
+        if (this.husb != null && this.husb.selected()) {
+            ret = false;
+        } else if (this.wife != null && this.wife.selected()) {
+            ret = false;
+        } else {
+            for (final var c : rChild) {
+                if (c.selected()) {
+                    ret = false;
+                }
+            }
+        }
+        return ret;
     }
 
     public void setMetrics(final Metrics metrics) {
@@ -66,6 +88,17 @@ public class Fami {
         if (Objects.nonNull(indi)) {
             rChild.add(indi);
         }
+    }
+
+    public List<Indi> getParents() {
+        final var ret = new ArrayList<Indi>(2);
+        if (Objects.nonNull(this.husb)) {
+            ret.add(this.husb);
+        }
+        if (Objects.nonNull(this.wife)) {
+            ret.add(this.wife);
+        }
+        return ret;
     }
 
     public List<Indi> getChildren() {
