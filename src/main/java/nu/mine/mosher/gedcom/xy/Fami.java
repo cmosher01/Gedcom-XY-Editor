@@ -2,7 +2,6 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.binding.*;
 import javafx.beans.property.*;
-import javafx.beans.value.ObservableBooleanValue;
 import javafx.geometry.*;
 import javafx.scene.*;
 import javafx.scene.layout.*;
@@ -10,6 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.*;
 import nu.mine.mosher.gedcom.xy.util.*;
+
 
 import java.util.*;
 
@@ -226,7 +226,7 @@ public class Fami {
                         if (childBar.getEndX()-childBar.getStartX() < offset*2.0D) {
                             return (childBar.getEndX()+childBar.getStartX())/2.0D;
                         }
-                        return clamp(childBar.getStartX()+offset, descentLineEndParentX.get(), childBar.getEndX()-offset);
+                        return Math.clamp(descentLineEndParentX.get(), childBar.getStartX()+offset, childBar.getEndX()-offset);
                     }
                 };
 
@@ -256,25 +256,6 @@ public class Fami {
         }
     }
 
-
-
-
-
-
-
-
-    private static double clamp(final double min, final double n, final double max) {
-        if (max < min) {
-            return n;
-        }
-        if (n < min) {
-            return min;
-        }
-        if (max < n) {
-            return max;
-        }
-        return n;
-    }
 
     public double getMarrDistance() {
         if (husb == null || wife == null) {

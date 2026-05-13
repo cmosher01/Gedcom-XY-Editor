@@ -3,6 +3,7 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.text.*;
+import nu.mine.mosher.gedcom.xy.util.Grid;
 import org.slf4j.*;
 
 import java.util.*;
@@ -30,6 +31,7 @@ public final class Metrics {
     private final double widthMax;
     private final double heightNominal;
     private final Font font;
+    private final Grid grid;
 
     // TODO: make more than just two color schemes
     // Note: the initial scheme (set here) must match the
@@ -37,13 +39,14 @@ public final class Metrics {
     private ColorScheme colors = new ColorSchemeBold();
 
 
-
     public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis) {
         final double dxPartner = famis.stream().mapToDouble(Fami::getMarrDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dyGeneration = famis.stream().mapToDouble(Fami::getGenDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dxAvg = calculateAverageX(indis);
-        return new Metrics(dxPartner * MARRIAGE_SPACING_FACTOR, dyGeneration, dxAvg);
+        final Grid grid = Grid.createFromPoints(indis);
+        return new Metrics(dxPartner * MARRIAGE_SPACING_FACTOR, dyGeneration, dxAvg, grid);
     }
+
 
     private static double calculateAverageX(final List<Indi> indis) {
         final Map<Double, TreeSet<Double>> mapYtoXs = indis
@@ -80,12 +83,12 @@ public final class Metrics {
         return NOMINAL_DISTANCE_MIN < d && d < NOMINAL_DISTANCE_MAX;
     }
 
-    private Metrics(final double dxPartner, final double dyGeneration, double dxAvg) {
+    private Metrics(final double dxPartner, final double dyGeneration, final double dxAvg, final Grid grid) {
         this.dxAvg = nominalDistance(dxAvg) ? dxAvg : DX_DEFAULT;
         this.dxPartner = nominalDistance(dxPartner) ? dxPartner : dxAvg;
         this.dyGeneration = nominalDistance(dyGeneration) ? dyGeneration : dxAvg * 2.0D;
 
-        this.fontSize = clamp(6, Math.rint(this.dxAvg/ FONT_SIZE_RATIO), 24);
+        this.fontSize = Math.clamp(Double.valueOf(Math.rint(this.dxAvg / FONT_SIZE_RATIO)).intValue(), 6, 24);
 
         this.font = Font.font(FONT_FAMILY_NAME, FontWeight.BOLD, this.fontSize);
         final Text text = new Text(PLAQUE_MAX);
@@ -94,6 +97,8 @@ public final class Metrics {
         text.applyCss();
         this.widthMax = text.getLayoutBounds().getWidth();
         this.heightNominal = text.getLayoutBounds().getHeight();
+
+        this.grid = grid;
 
         LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},widthMax={},heightNominal={}", this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.font.getSize(), this.widthMax, this.heightNominal);
     }
@@ -134,32 +139,17 @@ public final class Metrics {
         return this.colors;
     }
 
-    private static double clamp(final double min, final double n, final  double max) {
-        if (n < min) {
-            return min;
-        }
-        if (max < n) {
-            return max;
-        }
-        return n;
-    }
 
-    void setGrid(final String s) {
-        try {
-            final int g = Integer.parseInt(s);
-            if (0 <= g && g <= 1000) {
-                GenXyEditor.prefs().putInt("snapToGrid", g);
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
 
-    public int grid() {
-        return GenXyEditor.prefs().getInt("snapToGrid", 25);
-    }
+
 
     public void setColors(final ColorScheme newColorScheme) {
         this.colors = Objects.requireNonNull(newColorScheme);
+    }
+
+
+
+    public Grid grid() {
+        return this.grid;
     }
 }

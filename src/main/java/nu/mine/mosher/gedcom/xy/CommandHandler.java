@@ -78,8 +78,8 @@ public class CommandHandler {
 
         final Menu menuEdit = new Menu("Edit");
 
-        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
-        cmdNorm.addActionListener(e -> normalize(chart));
+//        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
+//        cmdNorm.addActionListener(e -> normalize(chart));
 
         final MenuItem cmdClean = new MenuItem("Lay out unplaced people");
         cmdClean.addActionListener(e -> clean(chart));
@@ -87,7 +87,7 @@ public class CommandHandler {
         final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
         cmdSnap.addActionListener(e -> snapToGrid(chart));
 
-        menuEdit.add(cmdNorm);
+//        menuEdit.add(cmdNorm); // remove normalize (not really useful, and can ruin layouts already snapped-to-grid
 //        menuEdit.add(cmdClean); TODO partial clean doesn't (appear) to work... Is it a redraw issue?
         menuEdit.add(cmdSnap);
 
@@ -128,18 +128,18 @@ public class CommandHandler {
     }
 
 
-    private void normalize(final FamilyChart chart) {
-        final int response = JOptionPane.showConfirmDialog(
-            frame,
-            "This will normalize the coordinates of ALL people.",
-            "Normalize ALL coordinates",
-            JOptionPane.OK_CANCEL_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        if (response == JOptionPane.OK_OPTION) {
-            chart.userNormalize();
-        }
-    }
-
+//    private void normalize(final FamilyChart chart) {
+//        final int response = JOptionPane.showConfirmDialog(
+//            frame,
+//            "This will normalize the coordinates of ALL people.",
+//            "Normalize ALL coordinates",
+//            JOptionPane.OK_CANCEL_OPTION,
+//            JOptionPane.WARNING_MESSAGE);
+//        if (response == JOptionPane.OK_OPTION) {
+//            chart.userNormalize();
+//        }
+//    }
+//
     private void clean(final FamilyChart chart) {
         final int response = JOptionPane.showConfirmDialog(
                 frame,
@@ -153,11 +153,14 @@ public class CommandHandler {
     }
 
     private void snapToGrid(final FamilyChart chart) {
-        final Optional<String> result = Optional.ofNullable(JOptionPane.showInputDialog(
-            frame,
-            "Snap to grid current size is " + chart.metrics().grid() + ". Change to:",
-            chart.metrics().grid()));
-        result.ifPresent(s -> chart.metrics().setGrid(s));
+        final var grid = chart.metrics().grid();
+        final var sGrid = grid.display();
+        final var msg = "Snap-to-grid current size is " + sGrid + ". Change to:";
+        final var init = "";
+
+        final var result = Optional.ofNullable(JOptionPane.showInputDialog(frame, msg, init));
+
+        grid.setFromUserEnteredString(result);
     }
 
     private void boldView(final FamilyChart chart, final boolean checked) {

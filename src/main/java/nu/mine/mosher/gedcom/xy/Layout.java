@@ -1159,7 +1159,25 @@ public class Layout {
             }
         }
 
+        normalizeAllIndiCoordinates();
+
         this.indis.forEach(Individual::layOut);
+    }
+
+    private void normalizeAllIndiCoordinates() {
+        /*
+        After a full layout, individuals at the bottom of the chart
+        have Y coordinates in the 500,000's, and almost always a huge
+        empty area above all individuals. This is due to the full
+        layout algorithm that stars at the theoretical maximum
+        "bottom" of chart with MAX_LEVEL (5000) generations.
+         */
+        final double x = this.indis.stream().map(Individual::getLocationOrOriginal).mapToDouble(Point2D::getX).min().orElse(0D);
+        final double y = this.indis.stream().map(Individual::getLocationOrOriginal).mapToDouble(Point2D::getY).min().orElse(0D);
+        final Point2D coordsTopLeft = new Point2D(x, y);
+        this.indis.forEach(i -> {
+            i.location = i.getLocationOrOriginal().subtract(coordsTopLeft);
+        });
     }
 
     private void resetMarks() {

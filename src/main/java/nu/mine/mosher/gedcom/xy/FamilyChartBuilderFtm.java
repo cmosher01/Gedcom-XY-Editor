@@ -30,7 +30,7 @@ public class FamilyChartBuilderFtm {
             new Layout(indis, famis).clean();
 //        }
 
-        normalizeAndFillMissingCoords(indis);
+        fillMissingCoords(indis);
 
         final Metrics metrics = Metrics.buildMetricsFor(indis, famis);
         famis.forEach(f -> f.setMetrics(metrics));
@@ -146,7 +146,7 @@ public class FamilyChartBuilderFtm {
         }
     }
 
-    private static void normalizeAndFillMissingCoords(final List<Indi> indis) {
+    private static void fillMissingCoords(final List<Indi> indis) {
         final double x = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getX).min().orElse(0D);
         final double y = indis.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getY).min().orElse(0D);
         final Point2D coordsTopLeftAfterLayout = new Point2D(x, y);

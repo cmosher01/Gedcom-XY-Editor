@@ -7,7 +7,6 @@ import javafx.embed.swing.JFXPanel;
 import javafx.geometry.Insets;
 import javafx.geometry.*;
 import javafx.scene.*;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -173,6 +172,18 @@ public final class GenXyEditor {
                 t.consume();
             });
             fxPanel.setScene(scene);
+            // TODO why can't I ever get any zoom events?
+//            scene.setOnRotate(t -> {
+//                System.out.println("Rotate!");
+//                t.consume();
+//            });
+//            scene.setOnZoom(t -> {
+//                //workspace.zoomTowards(Math.exp(/*ZOOM_INTENSITY **/ t.getZoomFactor()), new Point2D(t.getSceneX(), t.getSceneY()));
+//                System.out.println("ZOOM!");
+//                t.consume();
+//            });
+//            scene.addEventFilter(ZoomEvent.ANY, t -> System.out.println("ZOOM FILTER"));
+
         });
     }
 
@@ -227,7 +238,8 @@ public final class GenXyEditor {
 
         chart.addGraphicsTo(canvas.getChildren());
 
-        final ZoomPane workspace = new ZoomPane(canvas);
+        final var workspace = new ZoomPane(canvas);
+
         chart.setWorkspace(workspace);
         workspace.setOnMouseClicked(t -> {
             if (t.isStillSincePress()) {
@@ -289,6 +301,9 @@ public final class GenXyEditor {
                 selector.set(null);
             }
         });
+
+
+
 
         final HBox statusbar = buildStatusBar(chart);
 

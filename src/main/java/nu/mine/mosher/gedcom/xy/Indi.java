@@ -205,19 +205,7 @@ public class Indi {
     }
 
     public void drag(final Point2D delta) {
-        this.coords.dragTo(snap(this.coords.xyUser().add(delta)));
-    }
-
-    private Point2D snap(final Point2D p) {
-        return new Point2D(snap(p.getX()), snap(p.getY()));
-    }
-
-    private double snap(final double c) {
-        final int grid = metrics.grid();
-        if (grid == 0) {
-            return c;
-        }
-        return Math.rint(Math.floor(c / grid) * grid);
+        this.coords.dragTo(this.metrics.grid().snap(this.coords.xyUser().add(delta)));
     }
 
     private String buildLabel() {
@@ -412,10 +400,10 @@ public class Indi {
         return this.coords.getOriginal();
     }
 
-    public void userNormalize(Point2D coordsTopLeft) {
-        this.coords.forceDirty(true);
-        this.coords.normalize(coordsTopLeft);
-    }
+//    public void userNormalize(Point2D coordsTopLeft) {
+//        this.coords.forceDirty(true);
+//        this.coords.normalize(coordsTopLeft);
+//    }
 
     public DoubleProperty x() {
         return this.coords.x();

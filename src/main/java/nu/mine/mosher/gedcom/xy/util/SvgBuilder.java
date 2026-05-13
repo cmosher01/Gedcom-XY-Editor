@@ -119,6 +119,8 @@ public class SvgBuilder {
         eText.setAttribute("y", Double.toString(bounds.getMinY()+(bounds.getHeight()/2.0d)-(this.fontsize*1.5d)));
         eText.setAttribute("dy", ""+this.fontsize);
         // TODO need to wrap text that's too wide, with inline-size (but it's not supported in any browsers yet)
+        // TODO revamp formatting of person plaque, using techniques from ftm-web-view, in
+        //  HeadlessWordWrap, FontBasedMetrics, ChartMetrics, etc.
 
         final Element eNameGiven = this.doc.createElementNS(W3C_SVG_NS_URI, "tspan");
         eNameGiven.setAttribute("class", "nameGiven"+mask);

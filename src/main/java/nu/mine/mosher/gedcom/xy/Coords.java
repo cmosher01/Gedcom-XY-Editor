@@ -93,7 +93,7 @@ public final class Coords {
             throw new IllegalStateException("Cannot call fillMissing more than once on Coords object.");
         }
         this.wxyStart = this.wxyLayout.orElseGet(() -> coordsTopLeftAfterLayout.add(xyMISSING));
-        this.xyStart = this.wxyStart.subtract(coordsTopLeftAfterLayout);
+        this.xyStart = this.wxyStart;//.subtract(coordsTopLeftAfterLayout);
         update();
     }
 
@@ -172,14 +172,14 @@ public final class Coords {
         return this.wxyStart.add(userMoved());
     }
 
-    /**
-     * Indicates a user-initiated normalization of coordinates.
-     * @param coordsTopLeft min(x) and min(y) of current positions of all individuals, cannot be {@code null}.
-     */
-    public void normalize(final Point2D coordsTopLeft) {
-        dragTo(xyUser().subtract(Objects.requireNonNull(coordsTopLeft)));
-        dumpToLog("normalize");
-    }
+//    /**
+//     * Indicates a user-initiated normalization of coordinates.
+//     * @param coordsTopLeft min(x) and min(y) of current positions of all individuals, cannot be {@code null}.
+//     */
+//    public void normalize(final Point2D coordsTopLeft) {
+//        dragTo(xyUser().subtract(Objects.requireNonNull(coordsTopLeft)));
+//        dumpToLog("normalize");
+//    }
 
     /**
      * Forces this object to be considered dirty, or not.

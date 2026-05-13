@@ -38,6 +38,9 @@ dependencies {
     implementation 'org.slf4j:jul-to-slf4j:latest.release'
     implementation 'org.slf4j:slf4j-api:latest.release'
     implementation 'ch.qos.logback:logback-classic:latest.release'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:latest.release'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 application {
@@ -50,6 +53,13 @@ javafx {
         'javafx.controls',
         'javafx.swing'
     ]
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events("skipped", "started", "passed", "failed")
+    }
 }
 
 runtime {

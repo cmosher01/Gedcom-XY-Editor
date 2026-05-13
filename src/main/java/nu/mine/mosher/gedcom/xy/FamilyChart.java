@@ -290,13 +290,13 @@ public class FamilyChart {
         return this.indis.stream().anyMatch(Indi::dirty);
     }
 
-    public void userNormalize() {
-        final double x = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getX).min().orElse(0D);
-        final double y = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getY).min().orElse(0D);
-        final Point2D coordsTopLeft = new Point2D(x, y);
-        this.indis.forEach(i -> i.userNormalize(coordsTopLeft));
-        updateSelectStatus();
-    }
+//    public void userNormalize() {
+//        final double x = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getX).min().orElse(0D);
+//        final double y = this.indis.stream().map(Indi::coords).mapToDouble(Point2D::getY).min().orElse(0D);
+//        final Point2D coordsTopLeft = new Point2D(x, y);
+//        this.indis.forEach(i -> i.userNormalize(coordsTopLeft));
+//        updateSelectStatus();
+//    }
 
     public void userClean() {
         new Layout(this.indis, this.famis).cleanUnplaced();
