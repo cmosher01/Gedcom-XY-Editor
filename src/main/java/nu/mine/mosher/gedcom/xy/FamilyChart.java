@@ -28,6 +28,7 @@ public class FamilyChart {
     private final Optional<GedcomTree> tree;
     private final List<Indi> indis;
     private final List<Fami> famis;
+    private final OtherChartGraphics others = new OtherChartGraphics();
     private final Metrics metrics;
     private final Selection selection = new Selection();
     private final StringProperty selectedNameProperty = new SimpleStringProperty();
@@ -43,20 +44,23 @@ public class FamilyChart {
 
     public void setWorkspace(final Scrollable workspace) {
         this.paneWorkspace = workspace;
+        this.indis.forEach(i -> i.setWorkspace(workspace));
     }
 
     public void addGraphicsTo(final List<Node> addto) {
+        this.others.addGraphicsTo(addto);
         this.famis.forEach(f -> f.addGraphicsTo(addto));
         this.indis.forEach(i -> i.addGraphicsTo(addto));
     }
 
     public void setFromOrig() {
-        this.indis.forEach(i -> i.setSelection(this.selection));
+        this.indis.forEach(i -> i.setSelectionAndBoundary(this.selection, this.others));
         calc();
         this.indis.forEach(Indi::startCoordTracking);
     }
 
     public void calc() {
+        this.others.calc(this.indis, this.metrics.colors());
         this.indis.forEach(Indi::calc);
         this.famis.forEach(Fami::calc);
     }
@@ -374,7 +378,8 @@ public class FamilyChart {
         }
 
         public void drag(final Point2D to) {
-            this.indis.forEach(i -> i.drag(to.subtract(this.orig)));
+            final var d = to.subtract(this.orig);
+            this.indis.forEach(i -> i.drag(d));
             updateSelectStatus();
         }
 
@@ -424,7 +429,9 @@ public class FamilyChart {
                     this.indis.forEach(i -> i.drag(d));
 
                     // scroll display to relative we just moved to
-                    FamilyChart.this.paneWorkspace.scrollTo(R.xyUser());
+                    // (not the group we just moved)
+                    final var to = R.xyUser();
+                    FamilyChart.this.paneWorkspace.scrollTo(to);
                 }
             }
         }

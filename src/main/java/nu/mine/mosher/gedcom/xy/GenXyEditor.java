@@ -4,8 +4,7 @@ import ch.qos.logback.classic.*;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.embed.swing.JFXPanel;
-import javafx.geometry.Insets;
-import javafx.geometry.*;
+import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -25,6 +24,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.prefs.Preferences;
 
+// TODO convert to javafx.application.Application
 public final class GenXyEditor {
     public static final String VERSION = GenXyEditor.class.getPackage().getImplementationVersion();
 
@@ -138,7 +138,7 @@ public final class GenXyEditor {
         // TODO allow multiple open documents
         // TODO remove specialized Open handling (just make it File/Open menu item)
         final boolean destroy = Objects.nonNull(GenXyEditor.arg0) && arg0.equals("--destroy-layout");
-        final Optional<FamilyChart> chart = cmd.openFile(destroy);
+        final var chart = cmd.openFile(destroy);
         if (chart.isEmpty()) {
             cmd.quitApp();
             return;
@@ -231,14 +231,34 @@ public final class GenXyEditor {
         }
 
         final Pane canvas = new Pane();
-//        canvas.setCache(true);
-//        canvas.setCacheHint(CacheHint.SPEED);
 
-        canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colors().bg(), CornerRadii.EMPTY, Insets.EMPTY)));
+//        canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colors().bg(), CornerRadii.EMPTY, Insets.EMPTY)));
+//        canvas.setBorder(new Border(new BorderStroke(
+//            Color.DARKSLATEBLUE,
+//            BorderStrokeStyle.DASHED,
+//            CornerRadii.EMPTY,
+//            new BorderWidths(3D)
+//        )));
+
+        // This helps with the scrolling problem when dragging people out of bounds:
+        canvas.setPrefSize(0D,0D);
 
         chart.addGraphicsTo(canvas.getChildren());
 
-        final var workspace = new ZoomPane(canvas);
+
+//        final var workspace = new ZoomPane(canvas, chart.boundary());
+        final var workspace = Scroller.create(canvas);
+//        workspace.setScrollBarPolicy(GesturePane.ScrollBarPolicy.ALWAYS);
+//        workspace.setFitMode(GesturePane.FitMode.FIT);
+//        workspace.setGestureEnabled(true);
+//        workspace.setBindScale(true);
+//        workspace.setTranslateX(canvas.getBoundsInLocal().getMinX());
+//        workspace.setTranslateY(canvas.getBoundsInLocal().getMinY());
+//        workspace.setMaxSize(canvas.getBoundsInLocal().getWidth(),canvas.getBoundsInLocal().getHeight());
+//        workspace.setScrollMode(GesturePane.ScrollMode.PAN);
+//        workspace.setMinScale(1e-2D);
+//        workspace.setMaxScale(1e+2D);
+//        workspace.zoomTo(0.01D, Point2D.ZERO);
 
         chart.setWorkspace(workspace);
         workspace.setOnMouseClicked(t -> {
@@ -251,8 +271,10 @@ public final class GenXyEditor {
         final ObjectProperty<Point2D> selectStart = new SimpleObjectProperty<>();
         final ObjectProperty<Rectangle> selector = new SimpleObjectProperty<>();
 
+
         canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, t -> {
             if (t.isShiftDown()) {
+//                dumpPoint("pressed", t);
                 selectStart.set(new Point2D(t.getX(), t.getY()));
                 final Rectangle sel = new Rectangle(t.getX(), t.getY(), 0D, 0D);
                 sel.setFill(Color.TRANSPARENT);
@@ -263,11 +285,14 @@ public final class GenXyEditor {
                 chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());
                 selector.set(sel);
                 t.consume();
+            } else {
+//                dumpPoint("pressed [nop]", t);
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
             if (selector.isNotNull().get()) {
+//                dumpPoint("dragged", t);
                 final Rectangle sel = selector.get();
 
                 final double x = selectStart.get().getX();
@@ -291,31 +316,62 @@ public final class GenXyEditor {
                 chart.setSelectionFrom(sel.getX(), sel.getY(), sel.getWidth(), sel.getHeight());
 
                 t.consume();
+            } else {
+//                dumpPoint("dragged [nop]", t);
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, t -> {
             if (selector.isNotNull().get()) {
+//                dumpPoint("released", t);
                 canvas.getChildren().remove(selector.get());
                 t.consume();
                 selector.set(null);
+            } else {
+//                dumpPoint("released [nop]", t);
             }
         });
 
 
 
+        final StatusBar sb = buildStatusBar(chart);
 
-        final HBox statusbar = buildStatusBar(chart);
+        final var viewport = new Pane(workspace);
+        clipToChildren(viewport);
+        viewport.setMinSize(0,0);
+        viewport.setOnMouseMoved(e -> updateStatusBar(sb,workspace,canvas,e));
+        viewport.setOnMouseDragged(e -> updateStatusBar(sb,workspace,canvas,e));
+
+
 
 
         final BorderPane root = new BorderPane();
-        root.setCenter(workspace);
-        root.setBottom(statusbar);
+        root.setCenter(viewport);
+        root.setBottom(sb);
 
         return root;
     }
 
-    private static HBox buildStatusBar(FamilyChart chart) {
+//    private static void dumpPoint(final String name, final MouseEvent event) {
+//        final var c_e = new Point2D(event.getSceneX(), event.getSceneY());
+//        System.out.printf("rctselect: %8s  c=(%7.1f,%7.1f)\n",
+//                name, c_e.getX(), c_e.getY());
+//    }
+
+    private static void updateStatusBar(final StatusBar sb, final Pane workspace, final Pane canvas, final MouseEvent e) {
+        final var v_p = new Point2D(e.getX(), e.getY());
+        final var w_p = workspace.parentToLocal(v_p);
+        final var c_p = canvas.parentToLocal(w_p);
+        sb.updateViewPort(v_p);
+        sb.updateVpToCv(c_p);
+    }
+
+    private static StatusBar buildStatusBar(FamilyChart chart) {
+        return new StatusBar();
+    }
+
+        // TODO
+    private static HBox buildStatusBarORIGINAL(FamilyChart chart) {
         final Text statusName = new Text();
         statusName.textProperty().bind(chart.selectedName());
 
@@ -324,5 +380,12 @@ public final class GenXyEditor {
         final Region ws = new Region();
         HBox.setHgrow(ws, Priority.ALWAYS);
         return new HBox(statusName, ws, statusVersion);
+    }
+
+    private static void clipToChildren(final Pane pane) {
+        final var clip = new Rectangle();
+        clip.widthProperty().bind(pane.widthProperty());
+        clip.heightProperty().bind(pane.heightProperty());
+        pane.setClip(clip);
     }
 }

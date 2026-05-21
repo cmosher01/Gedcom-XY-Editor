@@ -10,7 +10,6 @@ import javafx.scene.shape.*;
 import javafx.scene.text.*;
 import nu.mine.mosher.gedcom.xy.util.*;
 
-
 import java.util.*;
 
 import static nu.mine.mosher.gedcom.xy.Indi.CORNERS;
@@ -138,7 +137,7 @@ public class Fami {
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.x().get()).min().getAsDouble();
+                    return rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).min().getAsDouble();
                 }
             });
             childBar.endXProperty().bind(new DoubleBinding() {
@@ -150,7 +149,7 @@ public class Fami {
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.x().get()).max().getAsDouble();
+                    return rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).max().getAsDouble();
                 }
             });
             final DoubleBinding top = new DoubleBinding() {
@@ -162,7 +161,7 @@ public class Fami {
 
                 @Override
                 protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.y().get()).min().getAsDouble() - childHeight();
+                    return rChild.stream().mapToDouble(c -> c.yForParent(Fami.this).get()).min().getAsDouble() - childHeight();
                 }
             };
             childBar.startYProperty().bind(top);
@@ -173,10 +172,10 @@ public class Fami {
                 final Indi c = rChild.get(i);
                 rChildBar[i] = createLine();
 
-                rChildBar[i].startXProperty().bind(c.x());
+                rChildBar[i].startXProperty().bind(c.xForParent(this));
                 rChildBar[i].startYProperty().bind(childBar.startYProperty());
-                rChildBar[i].endXProperty().bind(c.x());
-                rChildBar[i].endYProperty().bind(c.y());
+                rChildBar[i].endXProperty().bind(c.xForParent(this));
+                rChildBar[i].endYProperty().bind(c.yForParent(this));
             }
 
 

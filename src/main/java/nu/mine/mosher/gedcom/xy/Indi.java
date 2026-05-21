@@ -21,6 +21,9 @@ public class Indi {
     private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
 
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
+    private static final double PARENT_OFFSET_X = 8.0D;
+    private static final double PARENT_OFFSET_Y = 8.0D;
+    private static final BorderWidths borderWidthsSelected = BorderWidths.DEFAULT;// TODO after fix dynamic layout, new BorderWidths(3,3,3,3);
 
     private final String name;
     private final String nameGiven;
@@ -41,10 +44,11 @@ public class Indi {
     private boolean wasSelected = false;
     private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
     private FamilyChart.Selection selection;
+    private ChartBoundary boundaryChart;
 
-    private final Set<Fami> rfamiSpouseTo = new HashSet<>();
-    private Optional<Fami> optFamiChildTo = Optional.empty();
-
+    private final List<Fami> rFamiSpouseTo = new ArrayList<>();
+    private final List<Fami> rFamiChildTo = new ArrayList<>();
+    private Scrollable workspace;
 
 
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {
@@ -106,18 +110,18 @@ public class Indi {
 
     public void select(final boolean select) {
         this.selected.setValue(select);
-        this.optFamiChildTo.ifPresent(fami -> fami.select(select));
-        this.rfamiSpouseTo.forEach(fami -> fami.select(select));
+        this.rFamiChildTo.forEach(fami -> fami.select(select));
+        this.rFamiSpouseTo.forEach(fami -> fami.select(select));
     }
 
 
 
     public void addAsSpouseTo(final Fami famiSpouseTo) {
-        this.rfamiSpouseTo.add(famiSpouseTo);
+        this.rFamiSpouseTo.add(famiSpouseTo);
     }
 
     public void setAsChildTo(final Fami famiChildTo) {
-        this.optFamiChildTo = Optional.of(famiChildTo);
+        this.rFamiChildTo.add(famiChildTo);
     }
 
 
@@ -157,11 +161,23 @@ public class Indi {
 
         final Border borderNormal = new Border(new BorderStroke(colors.indiBorder(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
         final Border borderDirty = new Border(new BorderStroke(colors.indiBorderDirty(), BorderStrokeStyle.SOLID, CORNERS, BorderWidths.DEFAULT));
-        this.plaque.borderProperty().bind(Bindings.when(this.coords.propertyDirty()).then(borderDirty).otherwise(borderNormal));
+        final Border borderNormalSelected = new Border(new BorderStroke(colors.indiBorder(), BorderStrokeStyle.SOLID, CORNERS, borderWidthsSelected));
+        final Border borderDirtySelected = new Border(new BorderStroke(colors.indiBorderDirty(), BorderStrokeStyle.SOLID, CORNERS, borderWidthsSelected));
+        this.plaque.borderProperty().bind(
+                Bindings.when(this.coords.propertyDirty())
+                .then(
+                    Bindings.when(selected)
+                    .then(borderDirtySelected)
+                    .otherwise(borderDirty))
+                .otherwise(
+                    Bindings.when(selected)
+                    .then(borderNormalSelected)
+                    .otherwise(borderNormal)));
 
         StackPane.setMargin(textshape, new Insets(inset));
         this.plaque.getChildren().addAll(textshape);
 
+        // TODO bind these, to allow dynamic sizing if font, border width, etc. change
         this.plaque.layoutXProperty().bind(x().subtract(w / 2.0D));
         this.plaque.layoutYProperty().bind(y().subtract(h / 2.0D));
 
@@ -176,20 +192,54 @@ public class Indi {
             t.consume();
         });
 
+//        final var dragStart = new LinkedList<Point2D>();
         this.plaque.setOnMousePressed(t -> {
+            final var pt = new Point2D(t.getX(), t.getY());
+            final var ptCanvas = plaque.localToParent(pt);
+//            dragStart.clear();
+//            dragStart.offer(ptCanvas);
+//            dumpPoint("pressed", ptCanvas, ptCanvas);
+
             plaque.setCursor(Cursor.MOVE);
             if (selected.get()) {
                 wasSelected = true;
             }
             selection.select(this, true, true);
-            selection.beginDrag(new Point2D(t.getX(), t.getY()));
+            selection.beginDrag(pt);
             t.consume();
         });
         this.plaque.setOnMouseDragged(t -> {
-            selection.drag(new Point2D(t.getX(), t.getY()));
-            t.consume();
+            final var pt = new Point2D(t.getX(), t.getY());
+            final var ptCanvas = plaque.localToParent(pt);
+//            final var ptOrig = dragStart.peek();
+//            dumpPoint("dragged", ptOrig, ptCanvas);
+
+//            final var magnitude = Math.abs(ptCanvas.subtract(ptOrig).magnitude());
+            if (!inChart(ptCanvas)) {
+//                System.out.printf("out of bounds (%.1f,%.1f)-(%.1f,%.1f): (%.1f,%.1f)\n",
+//                    this.boundaryChart.minX(), this.boundaryChart.minY(),
+//                    this.boundaryChart.maxX(), this.boundaryChart.maxY(),
+//                    ptCanvas.getX(), ptCanvas.getY());
+                final var ptAdjusted = clampToCanvas(ptCanvas);
+//                dumpPoint("adjusted", ptOrig, ptAdjusted);
+                selection.drag(ptAdjusted);
+//                System.out.printf("does it change(%.1f,%.1f)-(%.1f,%.1f): (%.1f,%.1f)\n",  // Yes it does
+//                        this.boundaryChart.minX(), this.boundaryChart.minY(),
+//                        this.boundaryChart.maxX(), this.boundaryChart.maxY(),
+//                        ptCanvas.getX(), ptCanvas.getY());
+//                dumpPoint("?moved??", ptOrig, ptAdjusted);
+            } else {
+                selection.drag(pt);
+            }
+            // don't consume event, so status bar gets updated by scroller event handler
         });
         this.plaque.setOnMouseReleased(t -> {
+            // TODO push set of original positions of all individuals onto the "Undo" stack
+//            final var pt = new Point2D(t.getX(), t.getY());
+//            final var ptCanvas = plaque.localToParent(pt);
+//            final var ptOrig = dragStart.peek();
+//            dumpPoint("released", ptCanvas, ptOrig);
+//            dragStart.clear();
             plaque.setCursor(Cursor.HAND);
             if (wasSelected && t.isStillSincePress()) {
                 selection.select(this, false, true);
@@ -199,6 +249,26 @@ public class Indi {
         });
         this.plaque.setOnMouseClicked(Event::consume);
     }
+
+    private Point2D clampToCanvas(final Point2D ptCanvas) {
+        final var x = Math.clamp(ptCanvas.getX(), this.boundaryChart.minX(), this.boundaryChart.maxX());
+        final var y = Math.clamp(ptCanvas.getY(), this.boundaryChart.minY(), this.boundaryChart.maxY());
+        return new Point2D(x,y);
+    }
+
+    private boolean inChart(final Point2D ptCanvas) {
+        return
+            this.boundaryChart.minX() <= ptCanvas.getX() && ptCanvas.getX() <= this.boundaryChart.maxX() &&
+            this.boundaryChart.minY() <= ptCanvas.getY() && ptCanvas.getY() <= this.boundaryChart.maxY();
+    }
+
+//    private void dumpPoint(final String event, final Point2D ptOrig, final Point2D ptCurrent) {
+//        final var magnitude = Math.abs(ptCurrent.subtract(ptOrig).magnitude());
+//        final var tl = new Point2D(this.boundaryChart.minX(),this.boundaryChart.minY());
+//        final var v_tl = this.plaque.getParent().localToParent(tl); // convert from canvas to scroller (not including padding around chart)
+//        System.out.printf("selection: %8s (%7.1f,%7.1f)->(%7.1f,%7.1f) [%7.1f]     canvasTopLeftInWindowCoords=(%7.1f,%7.1f)\n",
+//            event, ptOrig.getX(), ptOrig.getY(), ptCurrent.getX(), ptCurrent.getY(), magnitude, v_tl.getX(), v_tl.getY());
+//    }
 
     public Point2D xyUser() {
         return this.coords.xyUser();
@@ -243,8 +313,13 @@ public class Indi {
         return this.id;
     }
 
-    public  void setSelection(FamilyChart.Selection selection) {
+    public void setSelectionAndBoundary(final FamilyChart.Selection selection, final ChartBoundary boundaryChart) {
         this.selection = selection;
+        this.boundaryChart = boundaryChart;
+    }
+
+    public void setWorkspace(final Scrollable workspace) {
+        this.workspace = workspace;
     }
 
     public boolean intersects(double x, double y, double w, double h) {
@@ -413,6 +488,14 @@ public class Indi {
         return this.coords.y();
     }
 
+    public DoubleBinding xForParent(final Fami fami) {
+        return x().add(this.rFamiChildTo.indexOf(fami)*PARENT_OFFSET_X);
+    }
+
+    public DoubleBinding yForParent(final Fami fami) {
+        return y().subtract(this.rFamiChildTo.indexOf(fami)*PARENT_OFFSET_Y);
+    }
+
     public void logDiscard() {
         final Point2D coords = coords();
         LOG.warn(String.format("discarding,\"%s\",\"_XY %.2f %.2f\"", this.name, coords.getX(), coords.getY()));
@@ -447,14 +530,13 @@ public class Indi {
         final var rindi = new ArrayList<Indi>();
 
         // parents and siblings
-        if (this.optFamiChildTo.isPresent()) {
-            final var fami = this.optFamiChildTo.get();
+        for (final var fami : this.rFamiChildTo) {
             rindi.addAll(fami.getParents());
             rindi.addAll(fami.getChildren());
         }
 
         // spouses and children
-        for (final var fami : this.rfamiSpouseTo) {
+        for (final var fami : this.rFamiSpouseTo) {
             rindi.addAll(fami.getParents());
             rindi.addAll(fami.getChildren());
         }
