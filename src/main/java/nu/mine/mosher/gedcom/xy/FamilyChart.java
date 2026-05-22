@@ -335,6 +335,21 @@ public class FamilyChart {
 
         if (k.startsWith("n")) {
             this.selection.nudge();
+        } else if (k.startsWith("r")) {
+            // reset scale to 1:1
+            this.paneWorkspace.scaleTo();
+        } else if (k.startsWith("c")) {
+            // scroll to chart center
+            final var boundsChart = calculateSize();
+            final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
+            this.paneWorkspace.scrollTo(ptChartCenter);
+        } else if (k.startsWith("f")) {
+            // fit chart to window
+            final var boundsChart = calculateSize();
+            this.paneWorkspace.scaleToFit(boundsChart);
+            // and center in window (same as "c", scroll to chart center)
+            final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
+            this.paneWorkspace.scrollTo(ptChartCenter);
         }
     }
 

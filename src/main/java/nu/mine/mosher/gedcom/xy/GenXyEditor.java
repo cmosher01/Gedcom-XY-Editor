@@ -4,13 +4,14 @@ import ch.qos.logback.classic.*;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.embed.swing.JFXPanel;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.*;
+import javafx.scene.input.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.Logger;
 import org.slf4j.*;
@@ -128,7 +129,12 @@ public final class GenXyEditor {
 
         final JFrame frame = new JFrame("FX");
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        frame.setSize(1920, 800);
+
+        final var screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        final int w = (int)Math.round(Math.rint(0.80D * screenSize.getWidth ()));
+        final int h = (int)Math.round(Math.rint(0.80D * screenSize.getHeight()));
+        frame.setSize(w, h);
+        frame.setLocationRelativeTo(null);
 
         final JFXPanel fxPanel = new JFXPanel(); // this also initializes JavaFX toolkit
         Platform.setImplicitExit(false);
@@ -165,6 +171,7 @@ public final class GenXyEditor {
         frame.setVisible(true);
 
 
+
         Platform.runLater(() -> {
             final var scene = new Scene(buildGui(chart.get()));
             scene.setOnKeyPressed(t -> {
@@ -172,6 +179,7 @@ public final class GenXyEditor {
                 t.consume();
             });
             fxPanel.setScene(scene);
+
             // TODO why can't I ever get any zoom events?
 //            scene.setOnRotate(t -> {
 //                System.out.println("Rotate!");
@@ -231,10 +239,10 @@ public final class GenXyEditor {
         }
 
         final Pane canvas = new Pane();
-
-//        canvas.setBackground(new Background(new BackgroundFill(chart.metrics().colors().bg(), CornerRadii.EMPTY, Insets.EMPTY)));
+//        final Pane canvas = new Pane();
+//        canvas.setBackground(new Background(new BackgroundFill(Color.DARKGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
 //        canvas.setBorder(new Border(new BorderStroke(
-//            Color.DARKSLATEBLUE,
+//            Color.GREEN,
 //            BorderStrokeStyle.DASHED,
 //            CornerRadii.EMPTY,
 //            new BorderWidths(3D)
@@ -243,11 +251,31 @@ public final class GenXyEditor {
         // This helps with the scrolling problem when dragging people out of bounds:
         canvas.setPrefSize(0D,0D);
 
+//        canvas.setMinSize(409D,409D);
+//        canvas.setPrefSize(50_000D,50_000D);
+//        canvas.setMaxSize(Double.MAX_VALUE,Double.MAX_VALUE);
         chart.addGraphicsTo(canvas.getChildren());
 
+//        canvas.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+//        canvas.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+//        canvas.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+
+//        final var canvaswrapper = new BorderPane(canvas);
+//        canvaswrapper.setCenter(canvas);
 
 //        final var workspace = new ZoomPane(canvas, chart.boundary());
         final var workspace = Scroller.create(canvas);
+        clipToChildren(workspace);
+//        workspace.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+//        workspace.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+//        workspace.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+//        workspace.setBackground(new Background(new BackgroundFill(Color.DARKRED, CornerRadii.EMPTY, Insets.EMPTY)));
+//        workspace.setBorder(new Border(new BorderStroke(
+//                Color.RED,
+//                BorderStrokeStyle.DASHED,
+//                CornerRadii.EMPTY,
+//                new BorderWidths(3D)
+//        )));
 //        workspace.setScrollBarPolicy(GesturePane.ScrollBarPolicy.ALWAYS);
 //        workspace.setFitMode(GesturePane.FitMode.FIT);
 //        workspace.setGestureEnabled(true);
@@ -261,6 +289,7 @@ public final class GenXyEditor {
 //        workspace.zoomTo(0.01D, Point2D.ZERO);
 
         chart.setWorkspace(workspace);
+
         workspace.setOnMouseClicked(t -> {
             if (t.isStillSincePress()) {
                 chart.clearSelection();
@@ -333,23 +362,33 @@ public final class GenXyEditor {
         });
 
 
+        final StatusBar sb = StatusBar.create(chart);
 
-        final StatusBar sb = buildStatusBar(chart);
-
-        final var viewport = new Pane(workspace);
+        final var viewport = new StackPane(workspace);
+//        viewport.setCenter(workspace);
         clipToChildren(viewport);
+//        viewport.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
         viewport.setMinSize(0,0);
+//        viewport.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+//        viewport.setBorder(new Border(new BorderStroke(
+//                Color.BLUE,
+//                BorderStrokeStyle.DASHED,
+//                CornerRadii.EMPTY,
+//                new BorderWidths(3D)
+//        )));
         viewport.setOnMouseMoved(e -> updateStatusBar(sb,workspace,canvas,e));
         viewport.setOnMouseDragged(e -> updateStatusBar(sb,workspace,canvas,e));
-
-
-
 
         final BorderPane root = new BorderPane();
         root.setCenter(viewport);
         root.setBottom(sb);
 
         return root;
+    }
+
+    private static void dumpBounds(final Region r) {
+        final var bounds = new BoundingBox(r.getLayoutX(), r.getLayoutY(), r.getWidth(), r.getHeight());
+        System.out.println("bounds: "+bounds);
     }
 
 //    private static void dumpPoint(final String name, final MouseEvent event) {
@@ -364,22 +403,6 @@ public final class GenXyEditor {
         final var c_p = canvas.parentToLocal(w_p);
         sb.updateViewPort(v_p);
         sb.updateVpToCv(c_p);
-    }
-
-    private static StatusBar buildStatusBar(FamilyChart chart) {
-        return new StatusBar();
-    }
-
-        // TODO
-    private static HBox buildStatusBarORIGINAL(FamilyChart chart) {
-        final Text statusName = new Text();
-        statusName.textProperty().bind(chart.selectedName());
-
-        final Text statusVersion = new Text(VERSION);
-
-        final Region ws = new Region();
-        HBox.setHgrow(ws, Priority.ALWAYS);
-        return new HBox(statusName, ws, statusVersion);
     }
 
     private static void clipToChildren(final Pane pane) {

@@ -531,6 +531,7 @@ public class Layout {
 
         TODO: When moving (any, or specific) people, should we prevent overlapping
         with other people in the tree? How would we determine where to move them to?
+        And/or detect overlapping people and flag with colors or something.
 
 
 

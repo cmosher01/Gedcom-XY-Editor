@@ -17,16 +17,16 @@
 
 package nu.mine.mosher.gedcom.xy.util;
 
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.input.*;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import nu.mine.mosher.gedcom.xy.Scrollable;
 
 import java.util.LinkedList;
 
 public class Scroller extends Pane implements Scrollable {
     private static final double SCALE_DELTA = 5.0e-3D;
-    private static final double MIN_SIZE_CANVAS = 20.0D;
+    private static final double MIN_SIZE_CANVAS = 200.0D;
     private static final double MAX_SCALE = 1.0e2D;
 
     private final CanvasWrapper canvas;
@@ -44,9 +44,13 @@ public class Scroller extends Pane implements Scrollable {
         ret.setOnMouseDragged(ret.translate::onMouseDragged);
         ret.setOnMouseReleased(ret.translate::onMouseReleased);
         ret.setOnScroll(ret.scale::onScroll);
+//        ret.setMinSize(409D, 409D);
+//        ret.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
+//        ret.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         return ret;
     }
 
+    // Empirically, I know this calculation comes up a little bit short.
     @Override
     public void scrollTo(final Point2D to) {
         // variable (x,y) naming convention:
@@ -76,6 +80,21 @@ public class Scroller extends Pane implements Scrollable {
         final var v_lp = this.canvas.canvasToViewport(c_lp);
 //        System.out.println("calculated layout: "+v_lp);
         this.canvas.layout(v_lp);
+    }
+
+    @Override
+    public void scaleTo(final double scale) {
+        this.canvas.scaleTo(scale);
+    }
+
+    @Override
+    public void scaleTo() {
+        scaleTo(1.0D);
+    }
+
+    @Override
+    public void scaleToFit(final Bounds boundsChart) {
+        this.canvas.scaleToFit(boundsChart, this);
     }
 
     private Point2D center() {
@@ -201,7 +220,10 @@ public class Scroller extends Pane implements Scrollable {
         }
 
         public void scaleBy(final double z) {
-            final var scale = z * this.canvas.getScaleX();
+            scaleTo(z * this.canvas.getScaleX());
+        }
+
+        public void scaleTo(final double scale) {
             this.canvas.setScaleX(scale);
             this.canvas.setScaleY(scale);
         }
@@ -214,6 +236,14 @@ public class Scroller extends Pane implements Scrollable {
         public Point2D viewportToCanvas(final Point2D v_local) {
             final var c_local = this.canvas.parentToLocal(v_local);
             return c_local;
+        }
+
+        public void scaleToFit(final Bounds c, final Scroller scroller) {
+            final var v = scroller.getBoundsInLocal();
+            final var w = v.getWidth ()/c.getWidth();
+            final var h = v.getHeight()/c.getHeight();
+            final var s = Math.min(w,h);
+            scaleTo(s);
         }
     }
 

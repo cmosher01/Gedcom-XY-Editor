@@ -14,6 +14,7 @@ public final class Metrics {
     private static final Logger LOG = LoggerFactory.getLogger(Metrics.class);
 
     public static final String FONT_FAMILY_NAME = "Noto Sans";
+    public static final String FONT_FAMILY_NAME_MONO = java.awt.Font.MONOSPACED;
     public static final double FONT_SIZE_NOMINAL = 8.0D;
     public static final double FONT_SIZE_RATIO = 25.0D;
     public static final double DX_DEFAULT = FONT_SIZE_NOMINAL * FONT_SIZE_RATIO;

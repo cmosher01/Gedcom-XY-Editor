@@ -2,6 +2,7 @@ package nu.mine.mosher.gedcom.xy;
 
 
 import javafx.application.Platform;
+import javafx.geometry.BoundingBox;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.exception.InvalidLevel;
 import nu.mine.mosher.gedcom.xy.util.LogbackConfigurator;
@@ -380,6 +381,8 @@ public class CommandHandler {
 
         chart.setFromOrig();
 
+        logChartInfo(chart);
+
         return chart;
     }
 
@@ -448,5 +451,23 @@ public class CommandHandler {
         }
         final String ft = matcher.group(1);
         return Objects.isNull(ft) ? "" : ft;
+    }
+
+
+
+
+    private static void logChartInfo(FamilyChart chart) {
+        if (chart.indis().isEmpty()) {
+            LOG.warn("No individuals found in file.");
+            return;
+        }
+        final var xMin = chart.indis().stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
+        final var yMin = chart.indis().stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
+        final var xMax = chart.indis().stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
+        final var yMax = chart.indis().stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
+        final var w = xMax-xMin;
+        final var h = yMax-yMin;
+        final var bounds = new BoundingBox(xMin, yMin, w, h);
+        LOG.info("Bounds of imported chart: "+bounds);
     }
 }

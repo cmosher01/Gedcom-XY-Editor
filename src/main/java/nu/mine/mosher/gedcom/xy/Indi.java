@@ -17,6 +17,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.regex.*;
 
+// TODO add Tooltips
 public class Indi {
     private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
 
@@ -39,7 +40,7 @@ public class Indi {
     private final String lifespan;
     private final String tagline;
 
-    private final StackPane plaque = new StackPane();
+    private final Pane plaque = new StackPane();
 
     private boolean wasSelected = false;
     private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
@@ -105,7 +106,7 @@ public class Indi {
     }
 
     public void addGraphicsTo(List<Node> addto) {
-        addto.add(this.plaque);
+        addto.add(new Group(this.plaque));
     }
 
     public void select(final boolean select) {

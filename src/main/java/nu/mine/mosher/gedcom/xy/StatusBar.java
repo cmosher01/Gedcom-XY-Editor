@@ -3,17 +3,38 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.geometry.*;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
-import javafx.scene.text.Font;
+import javafx.scene.text.*;
 
-public class StatusBar extends Pane {
-    private final Label labelMouseViewport = new Label("window=()");
-    private final Label labelMouseVpToCv = new Label("canvas=()");
+import java.util.Objects;
 
-    public StatusBar() {
+public class StatusBar extends StackPane {
+    private final Label statusName = new Label();
+    private final Label labelMouseViewport = new Label();
+    private final Label labelMouseVpToCv = new Label();
+    private final FamilyChart chart;
+
+    public static StatusBar create(final FamilyChart chart) {
+        final var ret = new StatusBar(chart);
+        ret.init();
+        return ret;
+    }
+
+    private StatusBar(final FamilyChart chart) {
+        this.chart = chart;
+    }
+
+    private void init() {
+        configureSelectionLabel(this.statusName);
+        final var selection = new HBox(this.statusName);
+
         configureCoordinateLabel(this.labelMouseViewport);
         configureCoordinateLabel(this.labelMouseVpToCv);
+        final var coords = new HBox(this.labelMouseViewport, this.labelMouseVpToCv);
 
-        final var layout = new HBox(this.labelMouseViewport, this.labelMouseVpToCv);
+        final var layout = new AnchorPane(selection, coords);
+        AnchorPane.setLeftAnchor(selection, 5D);
+        AnchorPane.setRightAnchor(coords, 5D);
+
         super.getChildren().add(layout);
     }
 
@@ -25,13 +46,21 @@ public class StatusBar extends Pane {
         this.labelMouseVpToCv.setText(displayCoords("canvas", coords));
     }
 
-
-    private static void configureCoordinateLabel(final Label label) {
+    private void configureSelectionLabel(final Label label) {
+        label.textProperty().bind(this.chart.selectedName());
         label.setPadding(new Insets(5.0D));
-        label.setFont(Font.font("monospace"));
+        label.setFont(Font.font(Metrics.FONT_FAMILY_NAME));
+    }
+
+    private void configureCoordinateLabel(final Label label) {
+        label.setPadding(new Insets(5.0D));
+        label.setFont(Font.font(Metrics.FONT_FAMILY_NAME_MONO));
     }
 
     private static String displayCoords(String name6chars, Point2D coords) {
-        return String.format("  %6s=(%7.1f,%7.1f)", name6chars, coords.getX(), coords.getY());
+        return String.format("  %6s=(%7.1f,%7.1f)",
+                name6chars,
+                Objects.isNull(coords) ? 0D : coords.getX(),
+                Objects.isNull(coords) ? 0D : coords.getY());
     }
 }

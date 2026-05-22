@@ -109,6 +109,21 @@ public final class ZoomPane extends ScrollPane implements Scrollable {
         dumpPoint(position, "autojump (after)");
     }
 
+    @Override
+    public void scaleTo(final double scale) {
+
+    }
+
+    @Override
+    public void scaleTo() {
+
+    }
+
+    @Override
+    public void scaleToFit(Bounds boundsChart) {
+
+    }
+
     private Position posScrollBarsFor(final Point2D p) {
         final var canvas = this.target.getBoundsInLocal();
         final var h = Math.clamp((p.getX()-canvas.getMinX()) / canvas.getWidth(), 0.0D, 1.0D);
