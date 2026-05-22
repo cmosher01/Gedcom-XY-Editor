@@ -24,7 +24,91 @@ import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 import java.util.prefs.Preferences;
+/*
+gedcom-xy-editor GUI user input/actions:
 
+keypresses
+	"command keys": as defined in menus
+	N: "nudge"
+		Moves the Selection nearer to the nearest non-selected parent,
+		silbling, spouse, or child, of anyone in the Selection)
+	R: "reset"
+		Sets scale 1:1
+	C: "center"
+		Scrolls to the center of the chart
+	F: "fit"
+		Zooms to fit the whole chart on the screen.
+	J: "jump" TODO
+		Scrolls back ("jumps") to the current selection
+		Subsequent jumps toggle between the current location and the selection.
+
+mouse in content area:
+	hover
+		over an individual:
+			hand pointing cursor
+		otherwise:
+			arrow cursor
+
+	click
+		if on an individual:
+			toggle that individual into, or out off, the Selection
+		otherwise:
+			clear the Selection
+
+	drag
+		an individual in the Selection:
+			moves all individuals in the Selection
+		an individual not in the Selection:
+			adds that individuals to the Selection and
+			moves all individuals in the Selection
+		not on an individual (i.e., the background of the canvas):
+			visually move the entire canvas around under the window
+
+	[SHIFT]drag:
+		select all and only the individuals that intersect the rectange
+		described by click-position and current-mouse-position
+
+
+	scroll:
+		visually zooms the canvas in or out
+			pivoting at the mouse position
+			within min/max limits
+
+
+
+
+
+
+GUI node hierarchy:
+
+frame:JFrame
+fxPanel:JFXPanel
+scene:Scene
+root:BorderPane
+viewport:Pane
+workspace:Scroller:Pane
+canvas:Pane
+plaque:StackPane
+
+
+
+custom event handling:
+
+keyPressed -> scene:Scene -> chart:FamilyChart
+
+[none for root:BorderPane]
+
+mouseMoved/Dragged -> viewport:StackPane -> (update status bar coordinates)
+
+mouseClicked -> workspace:Scroller -> chart.clearSelection
+mousePressed/Dragged[T]/Released,scroll -> workspace:Scroller (scale/translate)
+
+FILTER: [SHIFT]mousePressed/Dragged/Released -> canvas:Pane -> (rectangular select multiple)
+
+mouseEntered/Exited -> plaque:StackPane
+mouseClicked -> plaque:StackPane -> (just consumed)
+mousePressed/Dragged[T]/Released -> plaque:StackPane -> drag selection
+ */
 // TODO convert to javafx.application.Application
 public final class GenXyEditor {
     public static final String VERSION = GenXyEditor.class.getPackage().getImplementationVersion();
