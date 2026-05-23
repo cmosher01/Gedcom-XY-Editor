@@ -6,8 +6,6 @@ import javafx.beans.property.*;
 import javafx.embed.swing.JFXPanel;
 import javafx.geometry.*;
 import javafx.scene.*;
-import javafx.scene.input.*;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -24,11 +22,42 @@ import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 import java.util.prefs.Preferences;
+
 /*
-gedcom-xy-editor GUI user input/actions:
+
+_XY Data structure
+
+The only additional information, beyond the normal genealogical relationships
+(parent, child, spouse) used for chart layout, is the set of (x,y)
+coordinates for each person.
+
++---------------------------------+ <---[border]
+| [padding]                       |
+|  +---------------------------+  |
+|  |Given J. Name Surname de la|  |
+|  |       Word Wrapping       | <---[text bounding box (invisible)]
+|  |             *         <---------[*center point of plaque, (x,y) coordinates of FTM Person]
+|  |        (1599-1643)        |  |
+|  |     Fargo, Cass, North    |  |
+|  |           Dakota          |  |
+|  +---------------------------+  |
+|                                 |
++---------------------------------+
+
+These are stored in the GEDCOM using the tag "_XY".
+This is a "user-defined tag" (as per GEDCOM 5.5.1 Standard: "NEW_TAG").
+This program does not alter anything other than "_XY" lines in the GEDCOM file.
+
+The program uses the coordinates of all individuals, plus their family relationships,
+to calculate the placement of graphical elements (rectangles for individuals, and
+lines for family relationships) onto the drop-line chart.
+
+
+
+GUI user input/actions:
 
 keypresses
-	"command keys": as defined in menus
+	command keys: as defined in menus
 	N: "nudge"
 		Moves the Selection nearer to the nearest non-selected parent,
 		silbling, spouse, or child, of anyone in the Selection)
@@ -82,13 +111,21 @@ mouse in content area:
 GUI node hierarchy:
 
 frame:JFrame
+    Swing-based application window.
 fxPanel:JFXPanel
+    Panel containing JavaFX-based graphics. The "stage", in JavaFX terms.
 scene:Scene
+    The JavaFX "scene" for the graphical display of the main window.
 root:BorderPane
-viewport:Pane
-workspace:Scroller:Pane
+    Root of all graphics in the scene. A layout manager. Contains workspace pane and status bar.
+workspace:StackPane
+    Main area of the application for user interaction.
+scroller:Scroller:Pane
+    Allows panning and zooming of the canvas.
 canvas:Pane
+    The graphical display of the dro-line chart.
 plaque:StackPane
+    Each individual on the chart (contains name, dates, place).
 
 
 
@@ -98,10 +135,10 @@ keyPressed -> scene:Scene -> chart:FamilyChart
 
 [none for root:BorderPane]
 
-mouseMoved/Dragged -> viewport:StackPane -> (update status bar coordinates)
+mouseMoved/Dragged -> workspace:StackPane -> (update status bar coordinates)
 
-mouseClicked -> workspace:Scroller -> chart.clearSelection
-mousePressed/Dragged[T]/Released,scroll -> workspace:Scroller (scale/translate)
+mouseClicked -> scroller:Scroller -> chart.clearSelection
+mousePressed/Dragged[T]/Released,scroll -> scroller:Scroller (scale/translate)
 
 FILTER: [SHIFT]mousePressed/Dragged/Released -> canvas:Pane -> (rectangular select multiple)
 
@@ -198,6 +235,12 @@ public final class GenXyEditor {
         prefs().put("outDir", dir.getAbsolutePath());
     }
 
+
+
+
+
+
+
     private static void initGui() {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Not running on event dispatch thread.");
@@ -257,14 +300,14 @@ public final class GenXyEditor {
 
 
         Platform.runLater(() -> {
-            final var scene = new Scene(buildGui(chart.get()));
+            final var scene = new Scene(buildJavaFxGui(chart.get()));
             scene.setOnKeyPressed(t -> {
                 chart.get().onKey(t);
                 t.consume();
             });
             fxPanel.setScene(scene);
 
-            // TODO why can't I ever get any zoom events?
+            // TODO why can't I ever get any zoom gesture events?
 //            scene.setOnRotate(t -> {
 //                System.out.println("Rotate!");
 //                t.consume();
@@ -278,6 +321,7 @@ public final class GenXyEditor {
 
         });
     }
+
 
 
     private static final String CLASS_DRIVER_JDBC = "org.sqlite.JDBC";
@@ -317,13 +361,19 @@ public final class GenXyEditor {
         reallyBad.printStackTrace();
     }
 
-    private static Parent buildGui(final FamilyChart chart) {
+
+
+
+
+
+
+    private static Parent buildJavaFxGui(final FamilyChart chart) {
         if (!Platform.isFxApplicationThread()) {
             throw new IllegalStateException();
         }
 
         final Pane canvas = new Pane();
-//        final Pane canvas = new Pane();
+        // use for debugging layout managers:
 //        canvas.setBackground(new Background(new BackgroundFill(Color.DARKGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
 //        canvas.setBorder(new Border(new BorderStroke(
 //            Color.GREEN,
@@ -335,59 +385,60 @@ public final class GenXyEditor {
         // This helps with the scrolling problem when dragging people out of bounds:
         canvas.setPrefSize(0D,0D);
 
-//        canvas.setMinSize(409D,409D);
-//        canvas.setPrefSize(50_000D,50_000D);
-//        canvas.setMaxSize(Double.MAX_VALUE,Double.MAX_VALUE);
+        // have each element (individuals and families) in the chart
+        // put its graphics onto the canvas
         chart.addGraphicsTo(canvas.getChildren());
 
-//        canvas.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-//        canvas.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-//        canvas.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        configRectangularSelection(chart, canvas);
 
-//        final var canvaswrapper = new BorderPane(canvas);
-//        canvaswrapper.setCenter(canvas);
 
-//        final var workspace = new ZoomPane(canvas, chart.boundary());
-        final var workspace = Scroller.create(canvas);
-        clipToChildren(workspace);
-//        workspace.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-//        workspace.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-//        workspace.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-//        workspace.setBackground(new Background(new BackgroundFill(Color.DARKRED, CornerRadii.EMPTY, Insets.EMPTY)));
-//        workspace.setBorder(new Border(new BorderStroke(
-//                Color.RED,
-//                BorderStrokeStyle.DASHED,
-//                CornerRadii.EMPTY,
-//                new BorderWidths(3D)
-//        )));
-//        workspace.setScrollBarPolicy(GesturePane.ScrollBarPolicy.ALWAYS);
-//        workspace.setFitMode(GesturePane.FitMode.FIT);
-//        workspace.setGestureEnabled(true);
-//        workspace.setBindScale(true);
-//        workspace.setTranslateX(canvas.getBoundsInLocal().getMinX());
-//        workspace.setTranslateY(canvas.getBoundsInLocal().getMinY());
-//        workspace.setMaxSize(canvas.getBoundsInLocal().getWidth(),canvas.getBoundsInLocal().getHeight());
-//        workspace.setScrollMode(GesturePane.ScrollMode.PAN);
-//        workspace.setMinScale(1e-2D);
-//        workspace.setMaxScale(1e+2D);
-//        workspace.zoomTo(0.01D, Point2D.ZERO);
 
-        chart.setWorkspace(workspace);
+        final var scroller = Scroller.create(canvas);
+        clipToChildren(scroller);
 
-        workspace.setOnMouseClicked(t -> {
+        chart.setScroller(scroller);
+
+        scroller.setOnMouseClicked(t -> {
             if (t.isStillSincePress()) {
+//                System.out.println("clear selection");
                 chart.clearSelection();
                 t.consume();
             }
         });
 
+
+
+
+        final StatusBar sb = StatusBar.create(chart);
+
+        final var workspace = new StackPane(scroller);
+        // use for debugging layout managers:
+//        workspace.setBackground(new Background(new BackgroundFill(Color.DARKBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+//        workspace.setBorder(new Border(new BorderStroke(
+//                Color.BLUE,
+//                BorderStrokeStyle.DASHED,
+//                CornerRadii.EMPTY,
+//                new BorderWidths(3D)
+//        )));
+        clipToChildren(workspace);
+        workspace.setMinSize(0,0);
+        workspace.setOnMouseMoved(e -> updateStatusBar(sb,scroller,canvas,e));
+        workspace.setOnMouseDragged(e -> updateStatusBar(sb,scroller,canvas,e));
+
+        final BorderPane root = new BorderPane();
+        root.setCenter(workspace);
+        root.setBottom(sb);
+
+        return root;
+    }
+
+    private static void configRectangularSelection(FamilyChart chart, Pane canvas) {
         final ObjectProperty<Point2D> selectStart = new SimpleObjectProperty<>();
         final ObjectProperty<Rectangle> selector = new SimpleObjectProperty<>();
 
-
         canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, t -> {
             if (t.isShiftDown()) {
-//                dumpPoint("pressed", t);
+                dumpPoint("pressed", t);
                 selectStart.set(new Point2D(t.getX(), t.getY()));
                 final Rectangle sel = new Rectangle(t.getX(), t.getY(), 0D, 0D);
                 sel.setFill(Color.TRANSPARENT);
@@ -399,13 +450,13 @@ public final class GenXyEditor {
                 selector.set(sel);
                 t.consume();
             } else {
-//                dumpPoint("pressed [nop]", t);
+                dumpPoint("pressed [nop]", t);
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
             if (selector.isNotNull().get()) {
-//                dumpPoint("dragged", t);
+                dumpPoint("dragged", t);
                 final Rectangle sel = selector.get();
 
                 final double x = selectStart.get().getX();
@@ -430,56 +481,32 @@ public final class GenXyEditor {
 
                 t.consume();
             } else {
-//                dumpPoint("dragged [nop]", t);
+                dumpPoint("dragged [nop]", t);
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, t -> {
             if (selector.isNotNull().get()) {
-//                dumpPoint("released", t);
+                dumpPoint("released", t);
                 canvas.getChildren().remove(selector.get());
                 t.consume();
                 selector.set(null);
             } else {
-//                dumpPoint("released [nop]", t);
+                dumpPoint("released [nop]", t);
             }
         });
-
-
-        final StatusBar sb = StatusBar.create(chart);
-
-        final var viewport = new StackPane(workspace);
-//        viewport.setCenter(workspace);
-        clipToChildren(viewport);
-//        viewport.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        viewport.setMinSize(0,0);
-//        viewport.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-//        viewport.setBorder(new Border(new BorderStroke(
-//                Color.BLUE,
-//                BorderStrokeStyle.DASHED,
-//                CornerRadii.EMPTY,
-//                new BorderWidths(3D)
-//        )));
-        viewport.setOnMouseMoved(e -> updateStatusBar(sb,workspace,canvas,e));
-        viewport.setOnMouseDragged(e -> updateStatusBar(sb,workspace,canvas,e));
-
-        final BorderPane root = new BorderPane();
-        root.setCenter(viewport);
-        root.setBottom(sb);
-
-        return root;
     }
 
-    private static void dumpBounds(final Region r) {
-        final var bounds = new BoundingBox(r.getLayoutX(), r.getLayoutY(), r.getWidth(), r.getHeight());
-        System.out.println("bounds: "+bounds);
-    }
+//    private static void dumpBounds(final Region r) {
+//        final var bounds = new BoundingBox(r.getLayoutX(), r.getLayoutY(), r.getWidth(), r.getHeight());
+//        System.out.println("bounds: "+bounds);
+//    }
 
-//    private static void dumpPoint(final String name, final MouseEvent event) {
+    private static void dumpPoint(final String name, final MouseEvent event) {
 //        final var c_e = new Point2D(event.getSceneX(), event.getSceneY());
 //        System.out.printf("rctselect: %8s  c=(%7.1f,%7.1f)\n",
 //                name, c_e.getX(), c_e.getY());
-//    }
+    }
 
     private static void updateStatusBar(final StatusBar sb, final Pane workspace, final Pane canvas, final MouseEvent e) {
         final var v_p = new Point2D(e.getX(), e.getY());

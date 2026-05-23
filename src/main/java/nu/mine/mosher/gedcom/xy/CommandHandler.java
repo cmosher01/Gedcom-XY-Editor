@@ -79,7 +79,20 @@ public class CommandHandler {
 
         final Menu menuEdit = new Menu("Edit");
 
-//        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
+        final var cmdUndo = new MenuItem("Undo");
+        cmdUndo.setShortcut(new MenuShortcut(KeyEvent.VK_Z));
+        cmdUndo.addActionListener(e -> chart.undo());
+        // TODO cmdUndo.setEnabled(false);
+        cmdUndo.setEnabled(true);
+
+        final var cmdRedo = new MenuItem("Redo");
+        cmdRedo.setShortcut(new MenuShortcut(KeyEvent.VK_Z, true));
+        cmdRedo.addActionListener(e -> chart.redo());
+        // TODO cmdRedo.setEnabled(false);
+        cmdRedo.setEnabled(true);
+
+
+        //        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
 //        cmdNorm.addActionListener(e -> normalize(chart));
 
         final MenuItem cmdClean = new MenuItem("Lay out unplaced people");
@@ -90,6 +103,9 @@ public class CommandHandler {
 
 //        menuEdit.add(cmdNorm); // remove normalize (not really useful, and can ruin layouts already snapped-to-grid
 //        menuEdit.add(cmdClean); TODO partial clean doesn't (appear) to work... Is it a redraw issue?
+        menuEdit.add(cmdUndo);
+        menuEdit.add(cmdRedo);
+        menuEdit.addSeparator();
         menuEdit.add(cmdSnap);
 
 
@@ -129,7 +145,8 @@ public class CommandHandler {
     }
 
 
-//    private void normalize(final FamilyChart chart) {
+
+    //    private void normalize(final FamilyChart chart) {
 //        final int response = JOptionPane.showConfirmDialog(
 //            frame,
 //            "This will normalize the coordinates of ALL people.",

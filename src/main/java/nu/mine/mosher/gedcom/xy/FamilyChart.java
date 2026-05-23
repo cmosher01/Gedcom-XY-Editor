@@ -6,6 +6,7 @@ import javafx.scene.Node;
 import javafx.scene.input.KeyEvent;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
+import nu.mine.mosher.gedcom.xy.undo.ModificationTracker;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 import org.sqlite.SQLiteConfig;
@@ -30,9 +31,10 @@ public class FamilyChart {
     private final List<Fami> famis;
     private final OtherChartGraphics others = new OtherChartGraphics();
     private final Metrics metrics;
-    private final Selection selection = new Selection();
+    private final Selection selection = new Selection(this);
     private final StringProperty selectedNameProperty = new SimpleStringProperty();
-    private Scrollable paneWorkspace;
+    private Scrollable scrollable;
+    private final ModificationTracker modtrack = new ModificationTracker();
 
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics, final File fileOriginal) {
         this.fileOriginal = Optional.ofNullable(fileOriginal);
@@ -42,9 +44,8 @@ public class FamilyChart {
         this.metrics = metrics;
     }
 
-    public void setWorkspace(final Scrollable workspace) {
-        this.paneWorkspace = workspace;
-        this.indis.forEach(i -> i.setWorkspace(workspace));
+    public void setScroller(final Scrollable scroller) {
+        this.scrollable = scroller;
     }
 
     public void addGraphicsTo(final List<Node> addto) {
@@ -54,7 +55,7 @@ public class FamilyChart {
     }
 
     public void setFromOrig() {
-        this.indis.forEach(i -> i.setSelectionAndBoundary(this.selection, this.others));
+        this.indis.forEach(i -> i.setItemsFromChart(this.selection));
         calc();
         this.indis.forEach(Indi::startCoordTracking);
     }
@@ -75,7 +76,7 @@ public class FamilyChart {
         updateSelectStatus();
     }
 
-    private void updateSelectStatus() {
+    void updateSelectStatus() {
         final long cSel = this.indis.stream().filter(Indi::selected).count();
         if (cSel <= 0) {
             this.selectedNameProperty.setValue("[nothing selected]");
@@ -104,7 +105,15 @@ public class FamilyChart {
         }
     }
 
-    public Metrics metrics() {
+    ModificationTracker modificationTracker() {
+        return this.modtrack;
+    }
+
+    Scrollable scrollable() {
+        return this.scrollable;
+    }
+
+    Metrics metrics() {
         return this.metrics;
     }
 
@@ -337,119 +346,36 @@ public class FamilyChart {
             this.selection.nudge();
         } else if (k.startsWith("r")) {
             // reset scale to 1:1
-            this.paneWorkspace.scaleTo();
+            this.scrollable.scaleTo();
         } else if (k.startsWith("c")) {
             // scroll to chart center
             final var boundsChart = calculateSize();
             final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
-            this.paneWorkspace.scrollTo(ptChartCenter);
+            this.scrollable.scrollTo(ptChartCenter);
         } else if (k.startsWith("f")) {
             // fit chart to window
             final var boundsChart = calculateSize();
-            this.paneWorkspace.scaleToFit(boundsChart);
+            this.scrollable.scaleToFit(boundsChart);
             // and center in window (same as "c", scroll to chart center)
             final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
-            this.paneWorkspace.scrollTo(ptChartCenter);
+            this.scrollable.scrollTo(ptChartCenter);
         }
     }
 
+    public void undo() {
+        this.modtrack.undo();
+    }
 
-    public class Selection {
-        private final Set<Indi> indis = new HashSet<>();
-        private Point2D orig;
+    public void redo() {
+        this.modtrack.redo();
+    }
 
-        public Bounds bounds() {
-            Bounds bounds = null;
-            for (final var i : this.indis) {
-                if (Objects.isNull(bounds)) {
-                    bounds = i.bounds();
-                } else {
-                    bounds = addBounds(bounds, i.bounds());
-                }
-            }
-            return bounds;
-        }
+    public boolean canUndo() {
+        return this.modtrack.canUndo();
+    }
 
-        public void clear() {
-            this.indis.forEach(i -> i.select(false));
-            this.indis.clear();
-        }
-
-        public void select(final Indi indi, final boolean select, final boolean updateStatus) {
-            indi.select(select);
-            if (select) {
-                this.indis.add(indi);
-            } else {
-                this.indis.remove(indi);
-            }
-            if (updateStatus) {
-                updateSelectStatus();
-            }
-        }
-
-        public void beginDrag(final Point2D orig) {
-            this.orig = orig;
-            updateSelectStatus();
-        }
-
-        public void drag(final Point2D to) {
-            final var d = to.subtract(this.orig);
-            this.indis.forEach(i -> i.drag(d));
-            updateSelectStatus();
-        }
-
-        public void nudge() {
-            if (!this.indis.isEmpty()) {
-                //  Nudge:
-                //  move selection near to closest (graphically on the chart)
-                //  unselected relative (nearest, not recursively)
-
-                //  maxr = empty
-                //  maxd = -INF
-                //  for each indi S in the selection
-                //      for each related indi (parent, sibling, spouse, child) R of S
-                //          if R is not in the selection
-                //              find distance d from S to R
-                //              if (maxd < d)
-                //                  maxR = R
-                //                  maxd = d
-                //  if maxR is present
-                //      move selection to below maxR
-                //      scroll display to center upon maxR
-
-                var maxR = Optional.<Indi>empty();
-                var maxd = Double.NEGATIVE_INFINITY;
-                for (final var S : this.indis) {
-                    for (final var R : S.getRelatives()) {
-                        if (!R.selected()) {
-                            final var d = R.distanceFrom(S);
-                            if (maxd < d) {
-                                maxR = Optional.of(R);
-                                maxd = d;
-                            }
-                        }
-                    }
-                }
-                if (maxR.isPresent()) {
-                    final var R = maxR.get();
-                    final var rx = R.xyUser().getX();
-                    final var ry = R.xyUser().getY();
-
-                    final var sx = bounds().getCenterX();
-                    final var sy = bounds().getCenterY();
-
-                    final var dx = rx - sx;
-                    final var dy = (ry + metrics.getGenDistance()) - sy;
-                    final var d = new Point2D(dx, dy);
-                    this.indis.forEach(i -> i.drag(d));
-
-                    // scroll display to relative we just moved to
-                    // (not the group we just moved)
-                    final var to = R.xyUser();
-                    FamilyChart.this.paneWorkspace.scrollTo(to);
-                }
-            }
-        }
+    public boolean canRedo() {
+        return this.modtrack.canRedo();
     }
 
 

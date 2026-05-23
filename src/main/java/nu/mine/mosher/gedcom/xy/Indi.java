@@ -10,11 +10,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
+import nu.mine.mosher.gedcom.xy.undo.ModificationTracker;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 
 // TODO add Tooltips
@@ -25,6 +27,7 @@ public class Indi {
     private static final double PARENT_OFFSET_X = 8.0D;
     private static final double PARENT_OFFSET_Y = 8.0D;
     private static final BorderWidths borderWidthsSelected = BorderWidths.DEFAULT;// TODO after fix dynamic layout, new BorderWidths(3,3,3,3);
+    private static final Point2D NO_POINT = new Point2D(Double.NaN, Double.NaN);
 
     private final String name;
     private final String nameGiven;
@@ -44,12 +47,10 @@ public class Indi {
 
     private boolean wasSelected = false;
     private final BooleanProperty selected = new SimpleBooleanProperty(this, "selected", false);
-    private FamilyChart.Selection selection;
-    private ChartBoundary boundaryChart;
+    private Selection selection;
 
     private final List<Fami> rFamiSpouseTo = new ArrayList<>();
     private final List<Fami> rFamiChildTo = new ArrayList<>();
-    private Scrollable workspace;
 
 
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {
@@ -193,13 +194,18 @@ public class Indi {
             t.consume();
         });
 
-//        final var dragStart = new LinkedList<Point2D>();
+
+
+        // in canvas coordinates
+        final var dragOrig = new AtomicReference<>(NO_POINT); // for debug only
+
+        // note: mouse events sent to the plaque are
+        // in PLAQUE coordinates (not canvas coordinates)
         this.plaque.setOnMousePressed(t -> {
             final var pt = new Point2D(t.getX(), t.getY());
             final var ptCanvas = plaque.localToParent(pt);
-//            dragStart.clear();
-//            dragStart.offer(ptCanvas);
-//            dumpPoint("pressed", ptCanvas, ptCanvas);
+            dragOrig.set(ptCanvas);
+            dumpEvent("pressed", ptCanvas, ptCanvas);
 
             plaque.setCursor(Cursor.MOVE);
             if (selected.get()) {
@@ -207,76 +213,60 @@ public class Indi {
             }
             selection.select(this, true, true);
             selection.beginDrag(pt);
+
             t.consume();
         });
         this.plaque.setOnMouseDragged(t -> {
             final var pt = new Point2D(t.getX(), t.getY());
             final var ptCanvas = plaque.localToParent(pt);
-//            final var ptOrig = dragStart.peek();
-//            dumpPoint("dragged", ptOrig, ptCanvas);
+            final var ptOrig = dragOrig.get();
+            dumpEvent("dragged", ptOrig, ptCanvas);
 
-//            final var magnitude = Math.abs(ptCanvas.subtract(ptOrig).magnitude());
-            if (!inChart(ptCanvas)) {
-//                System.out.printf("out of bounds (%.1f,%.1f)-(%.1f,%.1f): (%.1f,%.1f)\n",
-//                    this.boundaryChart.minX(), this.boundaryChart.minY(),
-//                    this.boundaryChart.maxX(), this.boundaryChart.maxY(),
-//                    ptCanvas.getX(), ptCanvas.getY());
-                final var ptAdjusted = clampToCanvas(ptCanvas);
-//                dumpPoint("adjusted", ptOrig, ptAdjusted);
-                selection.drag(ptAdjusted);
-//                System.out.printf("does it change(%.1f,%.1f)-(%.1f,%.1f): (%.1f,%.1f)\n",  // Yes it does
-//                        this.boundaryChart.minX(), this.boundaryChart.minY(),
-//                        this.boundaryChart.maxX(), this.boundaryChart.maxY(),
-//                        ptCanvas.getX(), ptCanvas.getY());
-//                dumpPoint("?moved??", ptOrig, ptAdjusted);
-            } else {
-                selection.drag(pt);
-            }
+            selection.drag(pt);
             // don't consume event, so status bar gets updated by scroller event handler
         });
         this.plaque.setOnMouseReleased(t -> {
-            // TODO push set of original positions of all individuals onto the "Undo" stack
-//            final var pt = new Point2D(t.getX(), t.getY());
-//            final var ptCanvas = plaque.localToParent(pt);
-//            final var ptOrig = dragStart.peek();
-//            dumpPoint("released", ptCanvas, ptOrig);
-//            dragStart.clear();
+            final var pt = new Point2D(t.getX(), t.getY());
+            final var ptCanvas = plaque.localToParent(pt);
+            final var ptOrig = dragOrig.get();
+            dumpEvent("released", ptOrig, ptCanvas);
+
             plaque.setCursor(Cursor.HAND);
+
             if (wasSelected && t.isStillSincePress()) {
                 selection.select(this, false, true);
             }
             wasSelected = false;
+
+            selection.endDrag();
             t.consume();
         });
         this.plaque.setOnMouseClicked(Event::consume);
     }
 
-    private Point2D clampToCanvas(final Point2D ptCanvas) {
-        final var x = Math.clamp(ptCanvas.getX(), this.boundaryChart.minX(), this.boundaryChart.maxX());
-        final var y = Math.clamp(ptCanvas.getY(), this.boundaryChart.minY(), this.boundaryChart.maxY());
-        return new Point2D(x,y);
-    }
-
-    private boolean inChart(final Point2D ptCanvas) {
-        return
-            this.boundaryChart.minX() <= ptCanvas.getX() && ptCanvas.getX() <= this.boundaryChart.maxX() &&
-            this.boundaryChart.minY() <= ptCanvas.getY() && ptCanvas.getY() <= this.boundaryChart.maxY();
-    }
-
-//    private void dumpPoint(final String event, final Point2D ptOrig, final Point2D ptCurrent) {
+    private void dumpEvent(final String event, final Point2D ptOrig, final Point2D ptCurrent) {
 //        final var magnitude = Math.abs(ptCurrent.subtract(ptOrig).magnitude());
 //        final var tl = new Point2D(this.boundaryChart.minX(),this.boundaryChart.minY());
 //        final var v_tl = this.plaque.getParent().localToParent(tl); // convert from canvas to scroller (not including padding around chart)
 //        System.out.printf("selection: %8s (%7.1f,%7.1f)->(%7.1f,%7.1f) [%7.1f]     canvasTopLeftInWindowCoords=(%7.1f,%7.1f)\n",
 //            event, ptOrig.getX(), ptOrig.getY(), ptCurrent.getX(), ptCurrent.getY(), magnitude, v_tl.getX(), v_tl.getY());
-//    }
+    }
 
     public Point2D xyUser() {
         return this.coords.xyUser();
     }
 
-    public void drag(final Point2D delta) {
-        this.coords.dragTo(this.metrics.grid().snap(this.coords.xyUser().add(delta)));
+    public void dragWithSnap(final Point2D delta) {
+        final var xyUser = this.coords.xyUser();
+        final var xy = xyUser.add(delta);
+        final var snapped = this.metrics.grid().snap(xy);
+//        System.out.printf("dragWithSnap: delta=(%7.1f,%7.1f)  xyUser=(%7.1f,%7.1f)  xy=(%7.1f,%7.1f) snap=(%7.1f,%7.1f)\n",
+//                delta.getX(),delta.getY(),xyUser.getX(),xyUser.getY(),xy.getX(),xy.getY(),snapped.getX(),snapped.getY());
+        this.coords.dragTo(snapped);
+    }
+
+    public void moveTo(final Point2D pt) {
+        this.coords.dragTo(pt);
     }
 
     private String buildLabel() {
@@ -314,13 +304,8 @@ public class Indi {
         return this.id;
     }
 
-    public void setSelectionAndBoundary(final FamilyChart.Selection selection, final ChartBoundary boundaryChart) {
+    public void setItemsFromChart(final Selection selection) {
         this.selection = selection;
-        this.boundaryChart = boundaryChart;
-    }
-
-    public void setWorkspace(final Scrollable workspace) {
-        this.workspace = workspace;
     }
 
     public boolean intersects(double x, double y, double w, double h) {
@@ -425,8 +410,7 @@ public class Indi {
                 ? ""
                 : ("("+this.lifespan+")");
 
-        final Bounds bounds = this.plaque.getBoundsInParent();
-        builder.addPerson(bounds, this.nameGiven, this.nameSur, dates, this.tagline, this.id);
+        builder.addPerson(bounds(), this.nameGiven, this.nameSur, dates, this.tagline, this.id);
     }
 
     public void saveSvg(final SvgBuilder svg) {

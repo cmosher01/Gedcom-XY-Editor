@@ -17,7 +17,7 @@ public final class Coords {
     private static final Logger LOG = LoggerFactory.getLogger(Coords.class);
 
     private static final Point2D xyMISSING = new Point2D(37, 73);
-    private static final double SMALL = 0.51D;
+    private static final double SMALL = 1.0e-3D;
 
     private final String of;
     private Optional<Point2D> wxyOrig = empty();
