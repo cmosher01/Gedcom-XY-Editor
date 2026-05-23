@@ -373,6 +373,7 @@ public final class GenXyEditor {
         }
 
         final Pane canvas = new Pane();
+
         // use for debugging layout managers:
 //        canvas.setBackground(new Background(new BackgroundFill(Color.DARKGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
 //        canvas.setBorder(new Border(new BorderStroke(
@@ -428,6 +429,13 @@ public final class GenXyEditor {
         final BorderPane root = new BorderPane();
         root.setCenter(workspace);
         root.setBottom(sb);
+
+        // run Fit as first command, but need to wait for layout, then also do it in "runLater"
+        scroller.widthProperty().addListener((obs, w0, w1) -> {
+            if (26.1D < w1.doubleValue()) { // wait for layout finished
+                Platform.runLater(chart::cmdFit); // run "Fit" command later
+            }
+        });
 
         return root;
     }

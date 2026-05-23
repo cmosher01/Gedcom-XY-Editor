@@ -38,109 +38,141 @@ public class CommandHandler {
         }
 
         final Menu menuFile = new Menu("File");
-        if (chart.isGedcomFile()) {
-            final MenuItem cmdSaveAs = new MenuItem("Save As...");
-            cmdSaveAs.setShortcut(new MenuShortcut(KeyEvent.VK_S));
-            cmdSaveAs.addActionListener(e -> saveAs(chart));
+        {
+            if (chart.isGedcomFile()) {
+                final MenuItem cmdSaveAs = new MenuItem("Save As...");
+                cmdSaveAs.setShortcut(new MenuShortcut(KeyEvent.VK_S));
+                cmdSaveAs.addActionListener(e -> saveAs(chart));
 
-            final MenuItem cmdExportDirty = new MenuItem("Export Changed As Skeletons...");
-            cmdExportDirty.setShortcut(new MenuShortcut(KeyEvent.VK_K));
-            cmdExportDirty.addActionListener(e -> exportSkel(chart, false));
+                final MenuItem cmdExportDirty = new MenuItem("Export Changed As Skeletons...");
+                cmdExportDirty.setShortcut(new MenuShortcut(KeyEvent.VK_K));
+                cmdExportDirty.addActionListener(e -> exportSkel(chart, false));
 
-            final MenuItem cmdExportAll = new MenuItem("Export ALL As Skeletons...");
-            cmdExportAll.addActionListener(e -> exportSkel(chart, true));
+                final MenuItem cmdExportAll = new MenuItem("Export ALL As Skeletons...");
+                cmdExportAll.addActionListener(e -> exportSkel(chart, true));
 
-            menuFile.add(cmdExportDirty);
-            menuFile.add(cmdExportAll);
-            menuFile.add(cmdSaveAs);
-        } else {
-            final MenuItem cmdSave = new MenuItem("Save");
-            cmdSave.setShortcut(new MenuShortcut(KeyEvent.VK_S));
-            cmdSave.addActionListener(e -> chart.save());
+                menuFile.add(cmdExportDirty);
+                menuFile.add(cmdExportAll);
+                menuFile.add(cmdSaveAs);
+            } else {
+                final MenuItem cmdSave = new MenuItem("Save");
+                cmdSave.setShortcut(new MenuShortcut(KeyEvent.VK_S));
+                cmdSave.addActionListener(e -> chart.save());
 
-            menuFile.add(cmdSave);
+                menuFile.add(cmdSave);
+            }
+
+            menuFile.addSeparator();
+
+            final MenuItem cmdPdf = new MenuItem("Export as PDF");
+            cmdPdf.setShortcut(new MenuShortcut(KeyEvent.VK_P));
+            cmdPdf.addActionListener(e -> exportPdf(chart));
+            menuFile.add(cmdPdf);
+
+            final MenuItem cmdSvg = new MenuItem("Export as SVG");
+            cmdSvg.addActionListener(e -> exportSvg(chart));
+            menuFile.add(cmdSvg);
+
+            menuFile.addSeparator();
+
+            final MenuItem cmdQuit = new MenuItem("Exit");
+            cmdQuit.addActionListener(e -> quitIfSafe(chart));
+            menuFile.add(cmdQuit);
         }
-
-        final MenuItem cmdPdf = new MenuItem("Export as PDF");
-        cmdPdf.addActionListener(e -> exportPdf(chart));
-        menuFile.add(cmdPdf);
-
-        final MenuItem cmdSvg = new MenuItem("Export as SVG");
-        cmdSvg.addActionListener(e -> exportSvg(chart));
-        menuFile.add(cmdSvg);
-
-        menuFile.addSeparator();
-
-        final MenuItem cmdQuit = new MenuItem("Exit");
-        cmdQuit.addActionListener(e -> quitIfSafe(chart));
-        menuFile.add(cmdQuit);
 
 
 
         final Menu menuEdit = new Menu("Edit");
+        {
+            final var cmdUndo = new MenuItem("Undo");
+            cmdUndo.setShortcut(new MenuShortcut(KeyEvent.VK_Z));
+            cmdUndo.addActionListener(e -> Platform.runLater(chart::undo));
+            // TODO cmdUndo.setEnabled(false);
 
-        final var cmdUndo = new MenuItem("Undo");
-        cmdUndo.setShortcut(new MenuShortcut(KeyEvent.VK_Z));
-        cmdUndo.addActionListener(e -> chart.undo());
-        // TODO cmdUndo.setEnabled(false);
-        cmdUndo.setEnabled(true);
+            final var cmdRedo = new MenuItem("Redo");
+            cmdRedo.setShortcut(new MenuShortcut(KeyEvent.VK_Z, true));
+            cmdRedo.addActionListener(e -> Platform.runLater(chart::redo));
+            // TODO cmdRedo.setEnabled(false);
 
-        final var cmdRedo = new MenuItem("Redo");
-        cmdRedo.setShortcut(new MenuShortcut(KeyEvent.VK_Z, true));
-        cmdRedo.addActionListener(e -> chart.redo());
-        // TODO cmdRedo.setEnabled(false);
-        cmdRedo.setEnabled(true);
+            final var cmdNudge = new MenuItem("Nudge");
+            cmdNudge.addActionListener(e -> Platform.runLater(chart::cmdNudge));
 
 
-        //        final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
-//        cmdNorm.addActionListener(e -> normalize(chart));
+//            final MenuItem cmdNorm = new MenuItem("Normalize ALL Coordinates");
+//            cmdNorm.addActionListener(e -> normalize(chart));
 
-        final MenuItem cmdClean = new MenuItem("Lay out unplaced people");
-        cmdClean.addActionListener(e -> clean(chart));
+            // TODO partial clean doesn't (appear) to work... Is it a redraw issue?
+//            final MenuItem cmdClean = new MenuItem("Lay out unplaced people");
+//            cmdClean.addActionListener(e -> Platform.runLater(() -> clean(chart)));
 
-        final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
-        cmdSnap.addActionListener(e -> snapToGrid(chart));
+            final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
+            cmdSnap.addActionListener(e -> Platform.runLater(() -> snapToGrid(chart)));
 
-//        menuEdit.add(cmdNorm); // remove normalize (not really useful, and can ruin layouts already snapped-to-grid
-//        menuEdit.add(cmdClean); TODO partial clean doesn't (appear) to work... Is it a redraw issue?
-        menuEdit.add(cmdUndo);
-        menuEdit.add(cmdRedo);
-        menuEdit.addSeparator();
-        menuEdit.add(cmdSnap);
+//            menuEdit.add(cmdNorm); // remove normalize (not really useful, and can ruin layouts already snapped-to-grid
+//            menuEdit.add(cmdClean);
+            menuEdit.add(cmdUndo);
+            menuEdit.add(cmdRedo);
+            menuEdit.addSeparator();
+            menuEdit.add(cmdNudge);
+            menuEdit.addSeparator();
+            menuEdit.add(cmdSnap);
+        }
 
 
 
         final Menu menuView = new Menu("View");
+        {
+            final var cmdFit = new MenuItem("Fit");
+            cmdFit.addActionListener(e -> Platform.runLater(chart::cmdFit));
 
-        final CheckboxMenuItem cmdBold = new CheckboxMenuItem("High Contrast");
-        cmdBold.setState(true);
-        cmdBold.addItemListener(e -> boldView(chart, cmdBold.getState()));
+            final var cmdCenter = new MenuItem("Center");
+            cmdCenter.addActionListener(e -> Platform.runLater(chart::cmdCenter));
 
-        menuView.add(cmdBold);
+            final var cmdJump = new MenuItem("Jump To Selection");
+            cmdJump.addActionListener(e -> Platform.runLater(chart::cmdJump));
 
+            final var cmdReset = new MenuItem("Reset Scale 1:1");
+            cmdReset.addActionListener(e -> Platform.runLater(chart::cmdReset));
+
+            // TODO: need to BIND colors, example here:
+            // https://stackoverflow.com/questions/63082242/javafx-scenebuilder-binding-objectproperty
+//            final CheckboxMenuItem cmdBold = new CheckboxMenuItem("High Contrast");
+//            cmdBold.setState(true);
+//            cmdBold.addItemListener(e -> boldView(chart, cmdBold.getState()));
+
+            menuView.add(cmdFit);
+            menuView.add(cmdCenter);
+            menuView.add(cmdJump);
+            menuView.add(cmdReset);
+//            menuView.add(cmdBold);
+        }
 
 
 
         final Menu menuHelp = new Menu("Help");
+        {
+//            final MenuItem cmdHelp = new MenuItem("Help with GenXYEditor");
+//            cmdHelp.setShortcut(new MenuShortcut(KeyEvent.VK_HELP));
 
-//        final MenuItem cmdHelp = new MenuItem("Help with GenXYEditor");
-//        cmdHelp.setShortcut(new MenuShortcut(KeyEvent.VK_HELP));
+            final MenuItem cmdAbout = new MenuItem("About GenXYEditor");
+            cmdAbout.addActionListener(e -> showAboutBox());
 
-        final MenuItem cmdAbout = new MenuItem("About GenXYEditor");
-        cmdAbout.addActionListener(e -> showAboutBox());
-
-//        menuHelp.add(cmdHelp);
-//        menuHelp.addSeparator();
-        menuHelp.add(cmdAbout);
+//            menuHelp.add(cmdHelp);
+//            menuHelp.addSeparator();
+            menuHelp.add(cmdAbout);
+        }
 
 
 
         final MenuBar mbar = new MenuBar();
-        mbar.add(menuFile);
-        mbar.add(menuEdit);
-//        mbar.add(menuView); // TODO: need to BIND colors, example here: https://stackoverflow.com/questions/63082242/javafx-scenebuilder-binding-objectproperty
+        {
+            mbar.add(menuFile);
+            mbar.add(menuEdit);
+            mbar.add(menuView);
 
-        mbar.setHelpMenu(menuHelp);
+            mbar.setHelpMenu(menuHelp);
+        }
+
         return mbar;
     }
 

@@ -9,4 +9,6 @@ public interface Scrollable {
     void scaleTo();
 
     void scaleToFit(Bounds boundsChart);
+
+    Point2D center();
 }

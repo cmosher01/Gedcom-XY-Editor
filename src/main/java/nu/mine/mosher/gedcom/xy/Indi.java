@@ -220,6 +220,7 @@ public class Indi {
             final var pt = new Point2D(t.getX(), t.getY());
             final var ptCanvas = plaque.localToParent(pt);
             final var ptOrig = dragOrig.get();
+            assert !ptOrig.equals(NO_POINT); // TODO?
             dumpEvent("dragged", ptOrig, ptCanvas);
 
             selection.drag(pt);
@@ -229,6 +230,7 @@ public class Indi {
             final var pt = new Point2D(t.getX(), t.getY());
             final var ptCanvas = plaque.localToParent(pt);
             final var ptOrig = dragOrig.get();
+            assert !ptOrig.equals(NO_POINT); // TODO?
             dumpEvent("released", ptOrig, ptCanvas);
 
             plaque.setCursor(Cursor.HAND);
@@ -238,6 +240,7 @@ public class Indi {
             }
             wasSelected = false;
 
+            dragOrig.set(NO_POINT);
             selection.endDrag();
             t.consume();
         });

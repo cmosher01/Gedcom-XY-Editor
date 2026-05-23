@@ -20,7 +20,7 @@ public class Selection {
 
 
     public Bounds bounds() {
-        // TODO refactor to use stream
+        // TODO refactor to use stream, and don't return null when selection is empty (use Optional)
         Bounds bounds = null;
         for (final var i : this.indisSelected.keySet()) {
             if (Objects.isNull(bounds)) {
@@ -148,6 +148,14 @@ public class Selection {
         }
     }
 
+    public Optional<Point2D> center() {
+        Optional<Point2D> ret = Optional.empty();
+        if (!this.indisSelected.isEmpty()) {
+            final var b = bounds();
+            ret = Optional.of(new Point2D(b.getCenterX(), b.getCenterY()));
+        }
+        return ret;
+    }
 
     public record IndiMovement(Point2D ptOrig, Point2D ptDest) {
         public static IndiMovement orig(final Point2D ptOrig) {

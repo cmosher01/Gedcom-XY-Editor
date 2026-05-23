@@ -35,6 +35,7 @@ public class FamilyChart {
     private final StringProperty selectedNameProperty = new SimpleStringProperty();
     private Scrollable scrollable;
     private final ModificationTracker modtrack = new ModificationTracker();
+    private final Jumper jumper = new Jumper();
 
     public FamilyChart(final GedcomTree tree, final List<Indi> indis, final List<Fami> famis, final Metrics metrics, final File fileOriginal) {
         this.fileOriginal = Optional.ofNullable(fileOriginal);
@@ -343,23 +344,51 @@ public class FamilyChart {
         final String k = t.getText();
 
         if (k.startsWith("n")) {
-            this.selection.nudge();
+            cmdNudge();
         } else if (k.startsWith("r")) {
-            // reset scale to 1:1
-            this.scrollable.scaleTo();
+            cmdReset();
         } else if (k.startsWith("c")) {
-            // scroll to chart center
-            final var boundsChart = calculateSize();
-            final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
-            this.scrollable.scrollTo(ptChartCenter);
+            cmdCenter();
         } else if (k.startsWith("f")) {
-            // fit chart to window
-            final var boundsChart = calculateSize();
-            this.scrollable.scaleToFit(boundsChart);
-            // and center in window (same as "c", scroll to chart center)
-            final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
-            this.scrollable.scrollTo(ptChartCenter);
+            cmdFit();
+        } else if (k.startsWith("j")) {
+            cmdJump();
         }
+    }
+
+    public void cmdNudge() {
+        this.selection.nudge();
+    }
+
+    public void cmdReset() {
+        // reset scale to 1:1
+        this.scrollable.scaleTo();
+        // TODO scaleTo seems to scroll to an arbitrary point,
+        // so (for now) just center the chart:
+        this.cmdCenter();
+    }
+
+    public void cmdCenter() {
+        // scroll to chart center
+        final var boundsChart = calculateSize();
+        final var ptChartCenter = new Point2D(boundsChart.getCenterX(), boundsChart.getCenterY());
+        this.scrollable.scrollTo(ptChartCenter);
+    }
+
+    public void cmdFit() {
+        // resize chart to window
+        final var boundsChart = calculateSize();
+        this.scrollable.scaleToFit(boundsChart);
+        // center chart
+        cmdCenter();
+    }
+
+    public void cmdJump() {
+        // checks if user changed the selection since last time
+        this.jumper.selectionDelta(this.selection.center());
+
+        final var jumpTo = this.jumper.userPressedJ(this.scrollable.center());
+        jumpTo.ifPresent(to -> this.scrollable.scrollTo(to));
     }
 
     public void undo() {

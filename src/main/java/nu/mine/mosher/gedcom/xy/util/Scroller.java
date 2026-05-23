@@ -19,10 +19,10 @@ package nu.mine.mosher.gedcom.xy.util;
 
 import javafx.geometry.*;
 import javafx.scene.input.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Pane;
 import nu.mine.mosher.gedcom.xy.Scrollable;
 
-import java.util.LinkedList;
+import java.util.*;
 
 public class Scroller extends Pane implements Scrollable {
     private static final double SCALE_DELTA = 5.0e-3D;
@@ -44,9 +44,6 @@ public class Scroller extends Pane implements Scrollable {
         ret.setOnMouseDragged(ret.translate::onMouseDragged);
         ret.setOnMouseReleased(ret.translate::onMouseReleased);
         ret.setOnScroll(ret.scale::onScroll);
-//        ret.setMinSize(409D, 409D);
-//        ret.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
-//        ret.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         return ret;
     }
 
@@ -71,8 +68,7 @@ public class Scroller extends Pane implements Scrollable {
         //      "d" is the delta vector to move "p" by
         //
         final var c_p  = to;
-        final var v_c  = this.center();
-        final var c_c  = this.canvas.viewportToCanvas(v_c);
+        final var c_c  = this.center();
         final var v_l  = this.canvas.layout();
         final var c_l  = this.canvas.viewportToCanvas(v_l);
         final var c_d  = c_c.subtract(c_p);
@@ -97,16 +93,21 @@ public class Scroller extends Pane implements Scrollable {
         this.canvas.scaleToFit(boundsChart, this);
     }
 
-    private Point2D center() {
-        return pt(getWidth()/2D, getHeight()/2D);
+    @Override
+    // canvas coordinates
+    public Point2D center() {
+        final var v_center = pt(getWidth()/2D, getHeight()/2D);
+        return this.canvas.viewportToCanvas(v_center);
     }
+
+
 
     private class TranslateHandler {
         private final LinkedList<Point2D> offset = new LinkedList<>();
 
         public void onMousePressed(final MouseEvent t) {
             t.consume();
-//            dumpPoint("pressed", t);
+            dumpEvent("pressed", t);
             final var ptMouse = pt(t.getSceneX(), t.getSceneY());
             final var ptCanvas = canvas.layout();
             final var dptOffset = ptMouse.subtract(ptCanvas);
@@ -117,10 +118,10 @@ public class Scroller extends Pane implements Scrollable {
         public void onMouseDragged(final MouseEvent t) {
             if (this.offset.isEmpty()) {
                 // not for us, just passing through
-//                dumpPoint(" [nop]  ", t);
+                dumpEvent(" [nop]  ", t);
                 return;
             }
-//            dumpPoint("dragged", t);
+            dumpEvent("dragged", t);
             final var ptMouse = pt(t.getSceneX(), t.getSceneY());
             final var dptOffset = this.offset.peek();
             final var delta = ptMouse.subtract(dptOffset);
@@ -130,17 +131,17 @@ public class Scroller extends Pane implements Scrollable {
 
         public void onMouseReleased(final MouseEvent t) {
             t.consume();
-//            dumpPoint("released", t);
+            dumpEvent("released", t);
             this.offset.clear();;
         }
     }
 
-//    private void dumpPoint(final String name, final MouseEvent event) {
+    private void dumpEvent(final String name, final MouseEvent event) {
 //        final var v_e = pt(event.getSceneX(), event.getSceneY());
 //        final var c_e = Scroller.this.canvas.viewportToCanvas(v_e);
 //        System.out.printf("translate: %8s  v=(%7.1f,%7.1f) c=(%7.1f,%7.1f)\n",
 //            name, v_e.getX(), v_e.getY(), c_e.getX(), c_e.getY());
-//    }
+    }
 
 
     private class ScaleHandler {
@@ -235,6 +236,10 @@ public class Scroller extends Pane implements Scrollable {
 
         public Point2D viewportToCanvas(final Point2D v_local) {
             final var c_local = this.canvas.parentToLocal(v_local);
+            if (Objects.isNull(c_local)) {
+                // this happens if called before layout is complete
+                throw new IllegalStateException();
+            }
             return c_local;
         }
 
