@@ -32,7 +32,7 @@ Select multiple people to drag them as a group:
 * Shift-click (on the background) and drag to select multiple people at once.
 * Click on the background to clear the current selection.
 
-Drag the background to pan the chart; scroll to zoom in out out.
+Drag the background to pan the chart; scroll to zoom in or out.
 
 ### keyboard
 
