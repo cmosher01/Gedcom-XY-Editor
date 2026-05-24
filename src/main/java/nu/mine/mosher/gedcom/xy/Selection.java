@@ -1,3 +1,20 @@
+/*
+    Copyright © 2018-2026, Christopher Alan Mosher, New York, New York, USA, <cmosher01@gmail.com>.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.*;
@@ -69,14 +86,14 @@ public class Selection {
 
     public void endDrag() {
         dumpEvent("  endDrag: beg:");
-        flip();
+        moveAndSaveForUndo();
         dumpEvent("  endDrag: end:");
     }
 
-    public void flip() {
+    public void moveAndSaveForUndo() {
         this.indisSelected.replaceAll((indi, move) -> move.moveTo(indi.xyUser()));
         copyToModTracker();
-        this.indisSelected.replaceAll((indi, move) -> move.flip());
+        this.indisSelected.replaceAll((indi, move) -> move.anchor());
     }
 
     private void copyToModTracker() {
@@ -144,7 +161,7 @@ public class Selection {
                 final var to = R.xyUser();
                 this.familyChart.scrollable().scrollTo(to);
             }
-            flip();
+            moveAndSaveForUndo();
         }
     }
 
@@ -164,7 +181,7 @@ public class Selection {
         public IndiMovement moveTo(final Point2D ptDest) {
             return new IndiMovement(ptOrig(), ptDest);
         }
-        public IndiMovement flip() {
+        public IndiMovement anchor() {
             return orig(ptDest());
         }
         public boolean unmoved() {

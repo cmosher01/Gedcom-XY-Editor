@@ -10,13 +10,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.GedcomLine;
-import nu.mine.mosher.gedcom.xy.undo.ModificationTracker;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.*;
 
 // TODO add Tooltips
@@ -313,10 +312,6 @@ public class Indi {
 
     public boolean intersects(double x, double y, double w, double h) {
         return this.plaque.getBoundsInParent().intersects(x,y,w,h);
-    }
-
-    private boolean near(double a, double b) {
-        return Math.abs(b-a) < .01D;
     }
 
     public String name() {
