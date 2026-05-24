@@ -88,12 +88,12 @@ public class Grid {
 
 
 
-    public void setFromUserEnteredString(final Optional<String> s) {
-        if (Objects.isNull(s) || s.isEmpty()) {
+    public void setFromUserEnteredString(final String usersEntry) {
+        if (Objects.isNull(usersEntry) || usersEntry.isBlank()) {
             return;
         }
 
-        final int g = Math.clamp(parseIntSafe(s.get()), NO_GRID, MAX_GRID);
+        final int g = Math.clamp(parseIntSafe(usersEntry), NO_GRID, MAX_GRID);
         this.grid = g;
         this.offset = DEFAULT_OFFSET; // TODO allow user to enter grid offset?
         setPref(g);

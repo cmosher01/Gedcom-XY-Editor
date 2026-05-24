@@ -71,24 +71,7 @@ lines for family relationships) onto the drop-line chart.
 
 
 
-GUI user input/actions:
-
-keypresses
-	command keys: as defined in menus
-	N: "nudge"
-		Moves the Selection nearer to the nearest non-selected parent,
-		silbling, spouse, or child, of anyone in the Selection)
-	R: "reset"
-		Sets scale 1:1
-	C: "center"
-		Scrolls to the center of the chart
-	F: "fit"
-		Zooms to fit the whole chart on the screen.
-	J: "jump" TODO
-		Scrolls back ("jumps") to the current selection
-		Subsequent jumps toggle between the current location and the selection.
-
-mouse in content area:
+GUI mouse input/actions in content area:
 	hover
 		over an individual:
 			hand pointing cursor
@@ -316,27 +299,7 @@ public final class GenXyEditor {
 
 
 
-        Platform.runLater(() -> {
-            final var scene = new Scene(buildJavaFxGui(chart.get()));
-            scene.setOnKeyPressed(t -> {
-                chart.get().onKey(t);
-                t.consume();
-            });
-            fxPanel.setScene(scene);
-
-            // TODO why can't I ever get any zoom gesture events?
-//            scene.setOnRotate(t -> {
-//                System.out.println("Rotate!");
-//                t.consume();
-//            });
-//            scene.setOnZoom(t -> {
-//                //workspace.zoomTowards(Math.exp(/*ZOOM_INTENSITY **/ t.getZoomFactor()), new Point2D(t.getSceneX(), t.getSceneY()));
-//                System.out.println("ZOOM!");
-//                t.consume();
-//            });
-//            scene.addEventFilter(ZoomEvent.ANY, t -> System.out.println("ZOOM FILTER"));
-
-        });
+        Platform.runLater(() -> fxPanel.setScene(new Scene(buildJavaFxGui(chart.get()))));
     }
 
 

@@ -104,14 +104,13 @@ public class CommandHandler {
             final var cmdUndo = new MenuItem("Undo");
             cmdUndo.setShortcut(new MenuShortcut(KeyEvent.VK_Z));
             cmdUndo.addActionListener(e -> Platform.runLater(chart::undo));
-            // TODO cmdUndo.setEnabled(false);
 
             final var cmdRedo = new MenuItem("Redo");
             cmdRedo.setShortcut(new MenuShortcut(KeyEvent.VK_Z, true));
             cmdRedo.addActionListener(e -> Platform.runLater(chart::redo));
-            // TODO cmdRedo.setEnabled(false);
 
             final var cmdNudge = new MenuItem("Nudge");
+            cmdNudge.setShortcut(new MenuShortcut(KeyEvent.VK_N));
             cmdNudge.addActionListener(e -> Platform.runLater(chart::cmdNudge));
 
 
@@ -122,7 +121,8 @@ public class CommandHandler {
 //            final MenuItem cmdClean = new MenuItem("Lay out unplaced people");
 //            cmdClean.addActionListener(e -> Platform.runLater(() -> clean(chart)));
 
-            final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
+            final MenuItem cmdSnap = new MenuItem("Preferences");
+            cmdSnap.setShortcut(new MenuShortcut(KeyEvent.VK_COMMA));
             cmdSnap.addActionListener(e -> snapToGrid(chart));
 
 //            menuEdit.add(cmdNorm); // remove normalize (not really useful, and can ruin layouts already snapped-to-grid
@@ -140,15 +140,19 @@ public class CommandHandler {
         final Menu menuView = new Menu("View");
         {
             final var cmdFit = new MenuItem("Fit");
+            cmdFit.setShortcut(new MenuShortcut(KeyEvent.VK_T));
             cmdFit.addActionListener(e -> Platform.runLater(chart::cmdFit));
 
             final var cmdCenter = new MenuItem("Center");
+            cmdCenter.setShortcut(new MenuShortcut(KeyEvent.VK_PERIOD));
             cmdCenter.addActionListener(e -> Platform.runLater(chart::cmdCenter));
 
             final var cmdJump = new MenuItem("Jump To Selection");
+            cmdJump.setShortcut(new MenuShortcut(KeyEvent.VK_J));
             cmdJump.addActionListener(e -> Platform.runLater(chart::cmdJump));
 
             final var cmdReset = new MenuItem("Reset Scale 1:1");
+            cmdReset.setShortcut(new MenuShortcut(KeyEvent.VK_R));
             cmdReset.addActionListener(e -> Platform.runLater(chart::cmdReset));
 
             // TODO: need to BIND colors, example here:
@@ -223,11 +227,12 @@ public class CommandHandler {
         final var grid = chart.metrics().grid();
         final var sGrid = grid.display();
         final var msg = "Snap-to-grid current size is " + sGrid + ". Change to:";
-        final var init = "";
-
-        final var result = Optional.ofNullable(JOptionPane.showInputDialog(frame, msg, init));
-
-        grid.setFromUserEnteredString(result);
+        final var resIcon = getClass().getResource("preferences.png");
+        final var icon = new ImageIcon(resIcon);
+        final var result = Optional.ofNullable(JOptionPane.showInputDialog(frame, msg, "Preferences", JOptionPane.QUESTION_MESSAGE, icon, null, null));
+        if (result.isPresent()) {
+            grid.setFromUserEnteredString(result.get().toString());
+        }
     }
 
     private void boldView(final FamilyChart chart, final boolean checked) {

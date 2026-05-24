@@ -446,11 +446,4 @@ public class FamilyChart {
     }
 
 
-    public static Bounds addBounds(final Bounds b1, final Bounds b2) {
-        final var minX = Math.min(b1.getMinX(), b2.getMinX());
-        final var minY = Math.min(b1.getMinY(), b2.getMinY());
-        final var maxX = Math.max(b1.getMaxX(), b2.getMaxX());
-        final var maxY = Math.max(b1.getMaxY(), b2.getMaxY());
-        return new BoundingBox(minX, minY, maxX - minX, maxY - minY);
-    }
 }

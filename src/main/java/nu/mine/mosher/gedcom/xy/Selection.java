@@ -18,6 +18,7 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.*;
+import nu.mine.mosher.gedcom.xy.shape.ShapeUtils;
 
 import java.util.*;
 
@@ -36,17 +37,9 @@ public class Selection {
 
 
 
-    public Bounds bounds() {
-        // TODO refactor to use stream, and don't return null when selection is empty (use Optional)
-        Bounds bounds = null;
-        for (final var i : this.indisSelected.keySet()) {
-            if (Objects.isNull(bounds)) {
-                bounds = i.bounds();
-            } else {
-                bounds = FamilyChart.addBounds(bounds, i.bounds());
-            }
-        }
-        return bounds;
+    public Optional<Bounds> bounds() {
+        return this.indisSelected
+            .keySet().stream().map(Indi::bounds).reduce(ShapeUtils::addBounds);
     }
 
     public void clear() {
@@ -147,8 +140,8 @@ public class Selection {
                 final var rx = R.xyUser().getX();
                 final var ry = R.xyUser().getY();
 
-                final var sx = bounds().getCenterX();
-                final var sy = bounds().getCenterY();
+                final var sx = bounds().get().getCenterX();
+                final var sy = bounds().get().getCenterY();
 
                 final var dx = rx - sx;
                 final var dy = (ry + familyChart.metrics().getGenDistance()) - sy;
@@ -167,9 +160,9 @@ public class Selection {
 
     public Optional<Point2D> center() {
         Optional<Point2D> ret = Optional.empty();
-        if (!this.indisSelected.isEmpty()) {
-            final var b = bounds();
-            ret = Optional.of(new Point2D(b.getCenterX(), b.getCenterY()));
+        final var b = bounds();
+        if (b.isPresent()) {
+            ret = Optional.of(new Point2D(b.get().getCenterX(), b.get().getCenterY()));
         }
         return ret;
     }
