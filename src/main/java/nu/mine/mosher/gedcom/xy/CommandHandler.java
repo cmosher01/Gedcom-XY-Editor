@@ -123,7 +123,7 @@ public class CommandHandler {
 //            cmdClean.addActionListener(e -> Platform.runLater(() -> clean(chart)));
 
             final MenuItem cmdSnap = new MenuItem("Snap To Grid Size...");
-            cmdSnap.addActionListener(e -> Platform.runLater(() -> snapToGrid(chart)));
+            cmdSnap.addActionListener(e -> snapToGrid(chart));
 
 //            menuEdit.add(cmdNorm); // remove normalize (not really useful, and can ruin layouts already snapped-to-grid
 //            menuEdit.add(cmdClean);
