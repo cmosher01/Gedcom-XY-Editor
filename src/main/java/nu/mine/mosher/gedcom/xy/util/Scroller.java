@@ -149,6 +149,8 @@ public class Scroller extends Pane implements Scrollable {
             t.consume();
 
             /*
+                ScrollEvent.getDeltaY()
+
                 How far the user scrolled (dragged with center mouse
                 button, dragged two fingers on touchpad, turned mouse
                 wheel, etc.).
@@ -178,14 +180,9 @@ public class Scroller extends Pane implements Scrollable {
             // translate canvas so zoom pivots around
             // mouse instead of center of scroller pane
             final var p = pt(t.getSceneX(), t.getSceneY());
-            final var l = canvas.layout();
-            final var f = canvas.size().multiply(-1D/2D);
-            final var m = p.add(f);
-            final var lp = m.subtract(m.subtract(l).multiply(z));
+            final var m = p.add(canvas.size().multiply(-1D/2D));
+            final var lp = m.subtract(m.subtract(canvas.layout()).multiply(z));
             canvas.layout(lp);
-
-//            System.out.printf("zooming  z=%11.7f  l=(%9.3f,%9.3f)  lp=(%9.3f,%9.3f)  p=(%9.3f,%9.3f)\n",
-//                z, l.getX(), l.getY(), lp.getX(), lp.getY(), p.getX(), p.getY());
         }
     }
 

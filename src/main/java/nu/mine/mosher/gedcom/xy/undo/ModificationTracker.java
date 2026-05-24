@@ -25,6 +25,60 @@ import java.util.*;
  * "make" means to make the modification.
  * "undo" means to undo (i.e., reverse) the modification.
  * "redo" means to re-make a previously undone modification.
+ * 
+S = state
+M = modification
+
+
+Make n modifications, leaving current state at S[n]
+Modifications are pushed onto the undo stack. Redo stack is empty.
+
+S[0]      S[1]      S[2] ... S[i-1]         S[i]          S[i+1] ... S[n-2]        S[n-1]          S[n]
+                                                                                                     ^
+     M[0]      M[1]                 M[i-1]        M[i]                      M[n-2]        M[n-1]<-+  |  +-> [empty]
+                                                                                                  |  |  |
+                                                                                               undo  |  redo
+                                                                                                     |
+                                                                                                  current
+                                                                                                   state
+
+Undo.
+The last modification is un-done, leaving current state at S[n-1], at pushed onto the redo stack.
+
+
+S[0]      S[1]      S[2] ... S[i-1]         S[i]          S[i+1] ... S[n-2]           S[n-1]         S[n]
+                                                                                        ^
+     M[0]      M[1]                 M[i-1]        M[i]                      M[n-2] <-+  |  +-> M[n-1]
+                                                                                     |  |  |
+                                                                                  undo  |  redo
+                                                                                        |
+                                                                                     current
+                                                                                      state
+
+More undos.
+
+S[0]      S[1]      S[2] ... S[i-1]            S[i]        S[i+1]         S[i+2] ... S[n-1]        S[n]
+                                                ^
+     M[0]      M[1]                 M[i-1] <-+  |  +-> M[i]        M[i+1]                   M[n-1]
+                                             |  |  |
+                                          undo  |  redo
+                                                |
+                                             current
+                                              state
+
+Redo.
+Modification M[i] popped of redo statck, and is re-done leaving current state at S[i+1],
+M[i] is pushed onto undo stack.
+
+S[0]      S[1]      S[2] ... S[i-1]           S[i]         S[i+1]           S[i+2] ... S[n-1]        S[n]
+                                                             ^
+     M[0]      M[1]                 M[i-1]         M[i] <-+  |  +->  M[i+1]                   M[n-1]
+                                                          |  |  |
+                                                       undo  |  redo
+                                                             |
+                                                          current
+                                                           state
+
  */
 public class ModificationTracker {
     public interface Modification {
