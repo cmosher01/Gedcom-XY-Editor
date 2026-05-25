@@ -5,8 +5,8 @@ plugins {
     id 'com.coditory.manifest' version '1.1.0'
 }
 
-def versionMinor = '2.3'
-version = "${versionMinor}.4".toString()
+def versionMinor = '2.4'
+version = "${versionMinor}.0".toString()
 
 group = 'nu.mine.mosher.gedcom'
 
