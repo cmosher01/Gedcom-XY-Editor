@@ -42,14 +42,14 @@ public class Grid {
 
 
 
-    public static Grid createDefault() {
-        return new Grid();
-    }
-
     private Grid() {
     }
 
 
+
+    public static Grid createDefault() {
+        return new Grid();
+    }
 
     public static Grid createFromPoints(final List<Indi> individuals) {
         final var indis = Collections.unmodifiableList(individuals);
@@ -77,10 +77,6 @@ public class Grid {
     }
 
 
-
-    void setGrid(final int grid) {
-        this.grid = grid;
-    }
 
     void setOffset(final int offset) {
         this.offset = offset;
@@ -266,8 +262,8 @@ public class Grid {
 
         // and take min GCD between each of those GCDs
         BigInteger bigGcdFinal = null;
-        for (int i = 0; i < gcdsSorted.size(); ++i) {
-            final var gcd = BigInteger.valueOf(gcdsSorted.get(i));
+        for (final var i : gcdsSorted) {
+            final var gcd = BigInteger.valueOf(i);
             if (Objects.isNull(bigGcdFinal)) {
                 bigGcdFinal = gcd;
             } else {

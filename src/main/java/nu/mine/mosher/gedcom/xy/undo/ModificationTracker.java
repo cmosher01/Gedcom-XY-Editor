@@ -25,8 +25,10 @@ import java.util.*;
  * "make" means to make the modification.
  * "undo" means to undo (i.e., reverse) the modification.
  * "redo" means to re-make a previously undone modification.
- * 
-S = state
+ */
+
+/*
+ S = state
 M = modification
 
 

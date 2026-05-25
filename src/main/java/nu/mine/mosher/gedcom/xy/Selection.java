@@ -22,14 +22,17 @@ import nu.mine.mosher.gedcom.xy.shape.ShapeUtils;
 
 import java.util.*;
 
+import static nu.mine.mosher.gedcom.xy.shape.ShapeUtils.NO_POINT;
+
 /*
 Note: drag() and nudge() are the two and only two actions
 in the entire program that change the state of the tree.
+(Except for the initial Layout process, which cannot be undone.)
 */
 public class Selection {
     private final FamilyChart familyChart;
     private final Map<Indi,IndiMovement> indisSelected = new IdentityHashMap<>();
-    private Point2D ptDraggedFrom;
+    private Point2D ptDraggedFrom = NO_POINT;
 
     public Selection(final FamilyChart familyChart) {
         this.familyChart = familyChart;
@@ -37,9 +40,8 @@ public class Selection {
 
 
 
-    public Optional<Bounds> bounds() {
-        return this.indisSelected
-            .keySet().stream().map(Indi::bounds).reduce(ShapeUtils::addBounds);
+    private Optional<Bounds> bounds() {
+        return this.indisSelected.keySet().stream().map(Indi::bounds).reduce(ShapeUtils::addBounds);
     }
 
     public void clear() {
@@ -57,29 +59,31 @@ public class Selection {
             this.indisSelected.remove(indi);
         }
         if (updateStatus) {
-            familyChart.updateSelectStatus();
+            this.familyChart.updateSelectStatus();
         }
     }
 
     public void beginDrag(final Point2D from) {
         dumpEvent("beginDrag: beg:");
         this.ptDraggedFrom = from;
-        familyChart.updateSelectStatus();
+        this.familyChart.updateSelectStatus();
         dumpEvent("beginDrag: end:");
     }
 
 
     public void drag(final Point2D to) {
         dumpEvent("     Drag: beg:");
+        assert !this.ptDraggedFrom.equals(NO_POINT);
         final var d = to.subtract(this.ptDraggedFrom);
         this.indisSelected.keySet().forEach(i -> i.dragWithSnap(d));
-        familyChart.updateSelectStatus();
+        this.familyChart.updateSelectStatus();
         dumpEvent("     Drag: end:");
     }
 
     public void endDrag() {
         dumpEvent("  endDrag: beg:");
         moveAndSaveForUndo();
+        this.ptDraggedFrom = NO_POINT;
         dumpEvent("  endDrag: end:");
     }
 
@@ -102,7 +106,7 @@ public class Selection {
     }
 
     public void nudge() {
-        if (!this.indisSelected.isEmpty()) {
+        if (!this.indisSelected.isEmpty() && bounds().isPresent()) {
             //  Nudge:
             //  Move selection near (graphically on the chart) to their
             //  "closest" (relationship-wise) unselected relative.
@@ -178,7 +182,7 @@ public class Selection {
             return orig(ptDest());
         }
         public boolean unmoved() {
-            return Math.abs(ptDest().magnitude()-ptOrig().magnitude()) < 1.0e-3D;
+            return Math.abs(ptDest().magnitude()-ptOrig().magnitude()) < 1.0e-2D;
         }
     }
 }

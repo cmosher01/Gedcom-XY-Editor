@@ -211,35 +211,36 @@ public class CommandHandler {
 //        }
 //    }
 //
-    private void clean(final FamilyChart chart) {
-        final int response = JOptionPane.showConfirmDialog(
-                frame,
-                "This will lay out any people that have not been laid out before.",
-                "Lay out unplaced people",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-        if (response == JOptionPane.OK_OPTION) {
-            chart.userClean();
-        }
-    }
+//    private void clean(final FamilyChart chart) {
+//        final int response = JOptionPane.showConfirmDialog(
+//                frame,
+//                "This will lay out any people that have not been laid out before.",
+//                "Lay out unplaced people",
+//                JOptionPane.OK_CANCEL_OPTION,
+//                JOptionPane.WARNING_MESSAGE);
+//        if (response == JOptionPane.OK_OPTION) {
+//            chart.userClean();
+//        }
+//    }
 
+    @SuppressWarnings("OptionalIsPresent")
     private void snapToGrid(final FamilyChart chart) {
         final var grid = chart.metrics().grid();
         final var sGrid = grid.display();
         final var msg = "Snap-to-grid current size is " + sGrid + ". Change to:";
-        final var resIcon = getClass().getResource("preferences.png");
-        final var icon = new ImageIcon(resIcon);
+        final var resIcon = Optional.ofNullable(getClass().getResource("preferences.png"));
+        final var icon = resIcon.map(ImageIcon::new).orElse(null);
         final var result = Optional.ofNullable(JOptionPane.showInputDialog(frame, msg, "Preferences", JOptionPane.QUESTION_MESSAGE, icon, null, null));
         if (result.isPresent()) {
             grid.setFromUserEnteredString(result.get().toString());
         }
     }
 
-    private void boldView(final FamilyChart chart, final boolean checked) {
-        if (chart.metrics().colors().bold() != checked) {
-            chart.metrics().setColors(checked ? new ColorSchemeBold() : new ColorSchemeSolarized());
-        }
-    }
+//    private void boldView(final FamilyChart chart, final boolean checked) {
+//        if (chart.metrics().colors().bold() != checked) {
+//            chart.metrics().setColors(checked ? new ColorSchemeBold() : new ColorSchemeSolarized());
+//        }
+//    }
 
     private void saveAs(final FamilyChart chart) {
         final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Save as new genealogy file", FileDialog.SAVE);

@@ -20,7 +20,7 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.geometry.*;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
-import javafx.scene.text.*;
+import javafx.scene.text.Font;
 
 import java.util.Objects;
 
@@ -76,8 +76,8 @@ public class StatusBar extends StackPane {
 
     private static String displayCoords(String name6chars, Point2D coords) {
         return String.format("  %6s=(%7.1f,%7.1f)",
-                name6chars,
-                Objects.isNull(coords) ? 0D : coords.getX(),
-                Objects.isNull(coords) ? 0D : coords.getY());
+            name6chars,
+            Objects.isNull(coords) ? 0D : coords.getX(),
+            Objects.isNull(coords) ? 0D : coords.getY());
     }
 }

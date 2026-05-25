@@ -123,7 +123,7 @@ public class Fami {
 
 
     public void calc() {
-        if (husb == null && wife == null && rChild.size() == 0) {
+        if (husb == null && wife == null && rChild.isEmpty()) {
             return;
         }
 
@@ -277,7 +277,7 @@ public class Fami {
         if (husb == null || wife == null) {
             return 0D;
         }
-        if (!husb.laidOut().isPresent() || !wife.laidOut().isPresent()) {
+        if (husb.laidOut().isEmpty() || wife.laidOut().isEmpty()) {
             return 0D;
         }
         return husb.laidOut().get().distance(wife.laidOut().get());

@@ -20,7 +20,6 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.beans.property.*;
 import javafx.geometry.*;
 import javafx.scene.Node;
-import javafx.scene.input.KeyEvent;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.undo.ModificationTracker;
@@ -254,7 +253,7 @@ public class FamilyChart {
     }
 
     public void saveAs(final File file) throws IOException {
-        if (!this.tree.isPresent()) {
+        if (this.tree.isEmpty()) {
             LOG.error("Cannot call \"saveAs\" without a GEDCOM file.");
             return;
         }
@@ -265,8 +264,6 @@ public class FamilyChart {
     }
 
     public void savePdf(final File fileToSaveAs) throws IOException {
-        final long fontsize = Math.round(Math.rint(this.metrics.getFontSize()));
-
         try (final PdfBuilder builder = new PdfBuilder(this.metrics, fileToSaveAs, calculateSize())) {
             this.famis.forEach(i -> i.savePdf(builder));
             this.indis.forEach(i -> i.savePdf(builder));
@@ -328,10 +325,10 @@ public class FamilyChart {
 //        this.indis.forEach(i -> i.userNormalize(coordsTopLeft));
 //        updateSelectStatus();
 //    }
-
-    public void userClean() {
-        new Layout(this.indis, this.famis).cleanUnplaced();
-    }
+//
+//    public void userClean() {
+//        new Layout(this.indis, this.famis).cleanUnplaced();
+//    }
 
     public List<Indi> indis() {
         return List.copyOf(this.indis);
@@ -355,22 +352,6 @@ public class FamilyChart {
             final double height = Math.abs(yMax-yMin);
             return new BoundingBox(xMin, yMin, width, height);
         }).get();
-    }
-
-    public void onKey(final KeyEvent t) {
-        final String k = t.getText();
-
-        if (k.startsWith("n")) {
-            cmdNudge();
-        } else if (k.startsWith("r")) {
-            cmdReset();
-        } else if (k.startsWith("c")) {
-            cmdCenter();
-        } else if (k.startsWith("f")) {
-            cmdFit();
-        } else if (k.startsWith("j")) {
-            cmdJump();
-        }
     }
 
     public void cmdNudge() {

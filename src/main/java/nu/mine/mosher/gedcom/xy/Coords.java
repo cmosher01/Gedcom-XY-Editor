@@ -37,48 +37,28 @@ public final class Coords {
     private static final double SMALL = 1.0e-3D;
 
     private final String of;
-    private Optional<Point2D> wxyOrig = empty();
-    private Optional<Point2D> wxyLayout = empty();
+    private Optional<Point2D> wxyOrig;
+    private Optional<Point2D> wxyLayout;
     private Point2D wxyStart;
     private Point2D xyStart;
     private final Circle xyLayoutUser = new Circle(0, TRANSPARENT); // TODO make this a Point2D property
     private boolean forceDirty;
     private final BooleanProperty propDirty = new SimpleBooleanProperty();
 
-    private void dumpToLog(final String label) {
-        LOG.debug("{}: {},{},{},{},{},{},{},{}", label,
-            toDump("wxyOrig", this.wxyOrig),
-            toDump("wxyLayout", this.wxyLayout),
-            toDump("wxyStart", this.wxyStart),
-            toDump("xyStart", this.xyStart),
-            toDump("xyLayoutUser", new Point2D(this.xyLayoutUser.getLayoutX(), this.xyLayoutUser.getLayoutY())),
-            String.format("mag=%.0f",userMoved().magnitude()),
-            (!dirty() ? "-" : this.forceDirty ? "F" : "D"),
-            this.of);
-    }
-
-    private String toDump(final String name, final Optional<Point2D> p) {
-        if (p.isPresent()) {
-            return toDump(name, p.get());
-        }
-        return String.format("%s=()", name);
-    }
-    private String toDump(final String name, final Point2D p) {
-        return String.format("%s=(%.2f,%.2f)", name, p.getX(), p.getY());
-    }
-
     /**
      * Initializes this set of coordinates with the original {@code _XY} value as
      * read in (and parsed into {@code double} values) from the GEDCOM file.
      * If there is no {@code _XY} record for the individual, then pass in {@link Optional#empty()}.
      * @param original {@code _XY} coordinates from GEDCOM file, cannot be {@code null}
-     * @param name
+     * @param name name of Indi
      */
     public Coords(final Optional<Point2D> original, final String name) {
         this.wxyOrig = Objects.requireNonNull(original);
         this.wxyLayout = this.wxyOrig;
         this.of = name;
     }
+
+
 
     /**
      * Sets the automatic (synthetic) layout coordinates for the individual.
@@ -210,12 +190,12 @@ public final class Coords {
     /**
      * Checks whether the user has indicated this individual should be moved
      * (or was automatically laid out), and has not yet been {@link Coords#save()}'d.
-     * @return
+     * @return true if dirty, false if unchanged
      */
     public boolean dirty() {
         return
             (SMALL < userMoved().magnitude()) ||
-            (!this.wxyOrig.isPresent() && this.wxyLayout.isPresent()) ||
+            (this.wxyOrig.isEmpty() && this.wxyLayout.isPresent()) ||
             (this.forceDirty);
     }
 
@@ -241,11 +221,31 @@ public final class Coords {
     }
 
 
+    private void dumpToLog(final String label) {
+        LOG.debug("{}: {},{},{},{},{},{},{},{}", label,
+                toDump("wxyOrig", this.wxyOrig),
+                toDump("wxyLayout", this.wxyLayout),
+                toDump("wxyStart", this.wxyStart),
+                toDump("xyStart", this.xyStart),
+                toDump("xyLayoutUser", new Point2D(this.xyLayoutUser.getLayoutX(), this.xyLayoutUser.getLayoutY())),
+                String.format("mag=%.0f",userMoved().magnitude()),
+                (!dirty() ? "-" : this.forceDirty ? "F" : "D"),
+                this.of);
+    }
+
+    private String toDump(final String name, final Optional<Point2D> p) {
+        return p.map(pt -> toDump(name, pt)).orElseGet(() -> String.format("%s=()", name));
+    }
+
+    private String toDump(final String name, final Point2D p) {
+        return String.format("%s=(%.2f,%.2f)", name, p.getX(), p.getY());
+    }
+
     /**
      * parse given value of _XY line.
      * If unrecognized format, treat as unknown tag (leave it alone), return empty
-     * @param xy
-     * @return
+     * @param xy value of _XY tag
+     * @return parsed point, or empty
      */
     public static Optional<Point2D> toCoord(final String xy) {
         if (Objects.isNull(xy) || xy.isEmpty()) {

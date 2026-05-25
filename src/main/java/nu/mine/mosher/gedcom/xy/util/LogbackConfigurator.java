@@ -23,7 +23,7 @@ import ch.qos.logback.classic.spi.*;
 import ch.qos.logback.core.*;
 import ch.qos.logback.core.pattern.color.*;
 import ch.qos.logback.core.spi.ContextAwareBase;
-import ch.qos.logback.core.util.*;
+import ch.qos.logback.core.util.StatusPrinter2;
 import nu.mine.mosher.gedcom.xy.GenXyEditor;
 import nu.mine.mosher.io.LogFiles;
 

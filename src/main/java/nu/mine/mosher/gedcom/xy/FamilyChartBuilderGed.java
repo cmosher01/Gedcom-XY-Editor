@@ -99,7 +99,7 @@ public final class FamilyChartBuilderGed {
         final int sex = toSex(getChildValue(nodeIndi, "SEX"));
         final String id = nodeIndi.getObject().getID();
 
-        if (!wxyOrig.isPresent()) {
+        if (wxyOrig.isEmpty()) {
             if (value_XY.isEmpty()) {
                 LOG.warn("Missing _XY value, name={}", name);
             } else {

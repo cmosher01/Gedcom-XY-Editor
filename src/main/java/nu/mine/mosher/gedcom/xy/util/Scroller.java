@@ -132,7 +132,7 @@ public class Scroller extends Pane implements Scrollable {
         public void onMouseReleased(final MouseEvent t) {
             t.consume();
             dumpEvent("released", t);
-            this.offset.clear();;
+            this.offset.clear();
         }
     }
 
@@ -227,8 +227,7 @@ public class Scroller extends Pane implements Scrollable {
         }
 
         public Point2D canvasToViewport(final Point2D c_local) {
-            final var v_local = this.canvas.localToParent(c_local);
-            return v_local;
+            return this.canvas.localToParent(c_local);
         }
 
         public Point2D viewportToCanvas(final Point2D v_local) {

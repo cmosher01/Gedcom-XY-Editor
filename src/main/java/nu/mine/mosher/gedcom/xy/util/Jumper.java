@@ -49,15 +49,17 @@ state transitions:
         s0: NOP; GOTO "sJ"
         s1: NOP; GOTO "SJ" (no transition)
         j : (get curr pos);
-            JUMP TO: if J = curr pos then S else J;
+            JUMP TO: if curr pos = S then J else S;
             set J to curr pos;
             GOTO "SJ" (no transition)
  */
 
 
+import javafx.geometry.Point2D;
+import nu.mine.mosher.gedcom.xy.shape.ShapeUtils;
+
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import javafx.geometry.Point2D;
 
 import static nu.mine.mosher.gedcom.xy.util.Jumper.State.*;
 
@@ -66,23 +68,21 @@ public class Jumper {
         sj, Sj, sJ, SJ
     }
 
-    private static final Point2D NO_POINT = new Point2D(Double.NaN, Double.NaN);
-    private static final double EPSILON = 0.06D;
-
-    private final AtomicReference<Point2D> J = new AtomicReference<>(NO_POINT);
-    private final AtomicReference<Point2D> S = new AtomicReference<>(NO_POINT);
+    private final AtomicReference<Point2D> J = new AtomicReference<>(ShapeUtils.NO_POINT);
+    private final AtomicReference<Point2D> S = new AtomicReference<>(ShapeUtils.NO_POINT);
 
     private State state = sj;
 
     // We don't get notified when the user changes the selection,
     // so we need to check the which action the user did to the
     // selection before pressing "J" key.
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public void selectionDelta(final Optional<Point2D> selection) {
         if (selection.isPresent()) {
             this.S.set(selection.get());
             userAddedToSelection();
         } else {
-            this.S.set(NO_POINT);
+            this.S.set(ShapeUtils.NO_POINT);
             userClearedSelection();
         }
     }
@@ -154,15 +154,11 @@ public class Jumper {
                 // JUMP TO: if curr pos = S then J else S;
                 // set J to curr pos;
                 // GOTO "SJ" (no transition)
-                final var to = (ptEqual(ptCurrPos,this.S.get())) ? this.J.get() : this.S.get();
+                final var to = ShapeUtils.ptEqual(ptCurrPos,this.S.get()) ? this.J.get() : this.S.get();
                 this.J.set(ptCurrPos);
                 ret = Optional.of(to);
             }
         }
         return ret;
-    }
-
-    private static boolean ptEqual(final Point2D a, final Point2D b) {
-        return Math.abs(a.getX()-b.getX()) < EPSILON && Math.abs(a.getY()-b.getY()) < EPSILON;
     }
 }

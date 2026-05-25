@@ -50,10 +50,9 @@ public class Place
 
     @Override
     public boolean equals(final Object object) {
-        if (!(object instanceof Place)) {
+        if (!(object instanceof Place that)) {
             return false;
         }
-        final Place that = (Place)object;
         return this.hierarchy.equals(that.hierarchy);
     }
 

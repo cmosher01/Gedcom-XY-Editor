@@ -19,7 +19,7 @@ package nu.mine.mosher.gedcom.xy.util;
 
 
 import com.itextpdf.io.font.*;
-import com.itextpdf.io.font.constants.*;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.*;
 import com.itextpdf.kernel.font.*;
 import com.itextpdf.kernel.geom.*;
@@ -31,7 +31,7 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
 import javafx.geometry.*;
 import javafx.scene.shape.Line;
-import nu.mine.mosher.gedcom.xy.*;
+import nu.mine.mosher.gedcom.xy.Metrics;
 import org.slf4j.*;
 
 import java.io.*;

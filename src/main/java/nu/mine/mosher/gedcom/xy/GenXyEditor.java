@@ -21,7 +21,7 @@ import ch.qos.logback.classic.*;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.embed.swing.JFXPanel;
-import javafx.geometry.*;
+import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -167,7 +167,7 @@ public final class GenXyEditor {
                 arg0 = args[0];
             }
 
-//            logFonts();
+            logFonts();
 
             initJdbc();
             SwingUtilities.invokeAndWait(GenXyEditor::initGui);
@@ -188,9 +188,9 @@ public final class GenXyEditor {
     }
 
     private static void logFonts() {
-        for (final Font font : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
-            LOG.info("Font: {}/{}/{}", font.getFontName(), font.getFamily(), font.getName());
-        }
+//        for (final Font font : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
+//            LOG.info("Font: {}/{}/{}", font.getFontName(), font.getFamily(), font.getName());
+//        }
     }
 
     private static void initLogging() {
@@ -363,7 +363,7 @@ public final class GenXyEditor {
 //            new BorderWidths(3D)
 //        )));
 
-        // This helps with the scrolling problem when dragging people out of bounds:
+        // This fixes the scrolling problem when dragging people out of bounds:
         canvas.setPrefSize(0D,0D);
 
         // have each element (individuals and families) in the chart
@@ -420,13 +420,13 @@ public final class GenXyEditor {
         return root;
     }
 
-    private static void configRectangularSelection(FamilyChart chart, Pane canvas) {
+    private static void configRectangularSelection(final FamilyChart chart, final Pane canvas) {
         final ObjectProperty<Point2D> selectStart = new SimpleObjectProperty<>();
         final ObjectProperty<Rectangle> selector = new SimpleObjectProperty<>();
 
         canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, t -> {
             if (t.isShiftDown()) {
-                dumpPoint("pressed", t);
+                dumpEvent("pressed", t);
                 selectStart.set(new Point2D(t.getX(), t.getY()));
                 final Rectangle sel = new Rectangle(t.getX(), t.getY(), 0D, 0D);
                 sel.setFill(Color.TRANSPARENT);
@@ -438,13 +438,13 @@ public final class GenXyEditor {
                 selector.set(sel);
                 t.consume();
             } else {
-                dumpPoint("pressed [nop]", t);
+                dumpEvent("pressed [nop]", t);
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, t -> {
             if (selector.isNotNull().get()) {
-                dumpPoint("dragged", t);
+                dumpEvent("dragged", t);
                 final Rectangle sel = selector.get();
 
                 final double x = selectStart.get().getX();
@@ -469,28 +469,23 @@ public final class GenXyEditor {
 
                 t.consume();
             } else {
-                dumpPoint("dragged [nop]", t);
+                dumpEvent("dragged [nop]", t);
             }
         });
 
         canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, t -> {
             if (selector.isNotNull().get()) {
-                dumpPoint("released", t);
+                dumpEvent("released", t);
                 canvas.getChildren().remove(selector.get());
                 t.consume();
                 selector.set(null);
             } else {
-                dumpPoint("released [nop]", t);
+                dumpEvent("released [nop]", t);
             }
         });
     }
 
-//    private static void dumpBounds(final Region r) {
-//        final var bounds = new BoundingBox(r.getLayoutX(), r.getLayoutY(), r.getWidth(), r.getHeight());
-//        System.out.println("bounds: "+bounds);
-//    }
-
-    private static void dumpPoint(final String name, final MouseEvent event) {
+    private static void dumpEvent(final String name, final MouseEvent event) {
 //        final var c_e = new Point2D(event.getSceneX(), event.getSceneY());
 //        System.out.printf("rctselect: %8s  c=(%7.1f,%7.1f)\n",
 //                name, c_e.getX(), c_e.getY());

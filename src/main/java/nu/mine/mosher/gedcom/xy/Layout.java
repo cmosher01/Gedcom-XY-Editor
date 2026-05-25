@@ -214,7 +214,7 @@ public class Layout {
                 return Optional.empty();
             }
 
-            return findIdvByIdx(riChild.get(0));
+            return findIdvByIdx(riChild.getFirst());
         }
     }
 
@@ -1078,7 +1078,7 @@ public class Layout {
             todo.add(psec);
             guard.add(psec);
             while (!todo.isEmpty()) {
-                final Individual pgmi = todo.remove(0);
+                final Individual pgmi = todo.removeFirst();
                 final List<Individual> cleannext = new ArrayList<>();
                 pgmi.setSeqWithSpouses(xForLevel, false, cleannext);
                 nexthouse.addAll(cleannext);
@@ -1176,9 +1176,7 @@ public class Layout {
         final double x = this.indis.stream().map(Individual::getLocationOrOriginal).mapToDouble(Point2D::getX).min().orElse(0D);
         final double y = this.indis.stream().map(Individual::getLocationOrOriginal).mapToDouble(Point2D::getY).min().orElse(0D);
         final Point2D coordsTopLeft = new Point2D(x, y);
-        this.indis.forEach(i -> {
-            i.location = i.getLocationOrOriginal().subtract(coordsTopLeft);
-        });
+        this.indis.forEach(i -> i.location = i.getLocationOrOriginal().subtract(coordsTopLeft));
     }
 
     private void resetMarks() {
@@ -1206,10 +1204,7 @@ public class Layout {
             return -1;
         }
         final var optIdv = Optional.ofNullable(mapIndis.get(spouse.get()));
-        if (optIdv.isEmpty()) {
-            return -1;
-        }
-        return optIdv.get().idx;
+        return optIdv.map(i -> i.idx).orElse(-1);
     }
 
     private static void addSpouse(Map<Indi, Individual> mapIndis, Family fami, Optional<Indi> indi, Optional<Indi> spouse) {

@@ -24,84 +24,64 @@ import javafx.scene.shape.*;
 
 import java.util.List;
 
-public class OtherChartGraphics implements ChartBoundary {
-    private Rectangle border = new Rectangle();
-    private Line axisX = new Line();
-    private Line axisY = new Line();
-    private DoubleBinding bindingMinX;
-    private DoubleBinding bindingMinY;
-    private DoubleBinding bindingMaxX;
-    private DoubleBinding bindingMaxY;
+public class OtherChartGraphics {
+    private static final double PADDING = 200.0D;
 
-
-
-    @Override
-    public double minX() {
-        return bindingMinX.get();
-    }
-
-    @Override
-    public double minY() {
-        return bindingMinY.get();
-    }
-
-    @Override
-    public double maxX() {
-        return bindingMaxX.get();
-    }
-
-    @Override
-    public double maxY() {
-        return bindingMaxY.get();
-    }
+    private final Rectangle border = new Rectangle();
+    private final Line axisXPos = new Line();
+    private final Line axisXNeg = new Line();
+    private final Line axisYPos = new Line();
+    private final Line axisYNeg = new Line();
 
 
 
     public void calc(final List<Indi> indis, final ColorScheme colors) {
         this.border.setStroke(colors.lines());
         this.border.setFill(colors.bg());
-        this.axisX.setStroke(Color.LIGHTGRAY);
-// TODO        this.axisX.getStrokeDashArray().addAll(2D, 8D);
-//        this.axisX.setStrokeDashOffset(1-(canvas.left%10+10)%10); ???bind to minx???
-//        this.axisX.setStrokeLineCap(StrokeLineCap.ROUND);
-        this.axisY.setStroke(Color.LIGHTGRAY);
-// TODO       this.axisY.getStrokeDashArray().addAll(2D, 8D);
-//        this.axisY.setStrokeLineCap(StrokeLineCap.ROUND);
-//        this.axisY.setStrokeDashOffset();
+        this.axisXPos.setStroke(Color.LIGHTGRAY);
+        this.axisXPos.getStrokeDashArray().addAll(2D, 8D);
+        this.axisXNeg.setStroke(Color.LIGHTGRAY);
+        this.axisXNeg.getStrokeDashArray().addAll(2D, 8D);
+        this.axisYPos.setStroke(Color.LIGHTGRAY);
+        this.axisYPos.getStrokeDashArray().addAll(2D, 8D);
+        this.axisYNeg.setStroke(Color.LIGHTGRAY);
+        this.axisYNeg.getStrokeDashArray().addAll(2D, 8D);
 
 
-
-        this.bindingMinX = new DoubleBinding() {
+        final var minX = new DoubleBinding() {
             {
                 indis.forEach(i -> super.bind(i.x()));
             }
+
             @Override
             protected double computeValue() {
                 return indis.stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
             }
         };
 
-        this.bindingMinY = new DoubleBinding() {
+        final var minY = new DoubleBinding() {
             {
                 indis.forEach(i -> super.bind(i.y()));
             }
+
             @Override
             protected double computeValue() {
                 return indis.stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
             }
         };
 
-        this.bindingMaxX = new DoubleBinding() {
+        final var maxX = new DoubleBinding() {
             {
                 indis.forEach(i -> super.bind(i.x()));
             }
+
             @Override
             protected double computeValue() {
                 return indis.stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
             }
         };
 
-        this.bindingMaxY = new DoubleBinding() {
+        final var maxY = new DoubleBinding() {
             {
                 indis.forEach(i -> super.bind(i.y()));
             }
@@ -113,27 +93,37 @@ public class OtherChartGraphics implements ChartBoundary {
 
 
 
-        this.border.xProperty().bind(bindingMinX.subtract(PADDING));
-        this.border.yProperty().bind(bindingMinY.subtract(PADDING));
-        this.border.widthProperty().bind(bindingMaxX.subtract(bindingMinX).add(2*PADDING));
-        this.border.heightProperty().bind(bindingMaxY.subtract(bindingMinY).add(2*PADDING));
+        this.border.xProperty().bind(minX.subtract(PADDING));
+        this.border.yProperty().bind(minY.subtract(PADDING));
+        this.border.widthProperty().bind(maxX.subtract(minX).add(2*PADDING));
+        this.border.heightProperty().bind(maxY.subtract(minY).add(2*PADDING));
 
 
 
-        this.axisX.startXProperty().bind(bindingMinX.subtract(PADDING));
-        this.axisX.endXProperty().bind(bindingMaxX.add(PADDING));
-        this.axisX.setStartY(0D);
-        this.axisX.setEndY(0D);
+        this.axisXPos.setStartX(0D);
+        this.axisXPos.endXProperty().bind(maxX.add(PADDING));
+        this.axisXPos.setStartY(0D);
+        this.axisXPos.setEndY(0D);
+        this.axisXNeg.setStartX(0D);
+        this.axisXNeg.endXProperty().bind(minX.subtract(PADDING));
+        this.axisXNeg.setStartY(0D);
+        this.axisXNeg.setEndY(0D);
 
-        this.axisY.startYProperty().bind(bindingMinY.subtract(PADDING));
-        this.axisY.endYProperty().bind(bindingMaxY.add(PADDING));
-        this.axisY.setStartX(0D);
-        this.axisY.setEndX(0D);
+        this.axisYPos.setStartY(0D);
+        this.axisYPos.endYProperty().bind(maxY.add(PADDING));
+        this.axisYPos.setStartX(0D);
+        this.axisYPos.setEndX(0D);
+        this.axisYNeg.setStartY(0D);
+        this.axisYNeg.endYProperty().bind(minY.subtract(PADDING));
+        this.axisYNeg.setStartX(0D);
+        this.axisYNeg.setEndX(0D);
     }
 
-    public void addGraphicsTo(List<Node> addto) {
+    public void addGraphicsTo(final List<Node> addto) {
         addto.add(this.border);
-        addto.add(this.axisX);
-        addto.add(this.axisY);
+        addto.add(this.axisXPos);
+        addto.add(this.axisXNeg);
+        addto.add(this.axisYPos);
+        addto.add(this.axisYNeg);
     }
 }

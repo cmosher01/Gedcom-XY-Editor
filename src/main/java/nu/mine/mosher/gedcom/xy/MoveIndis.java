@@ -19,7 +19,7 @@ package nu.mine.mosher.gedcom.xy;
 
 import nu.mine.mosher.gedcom.xy.undo.ModificationTracker;
 
-import java.util.*;
+import java.util.Map;
 
 
 

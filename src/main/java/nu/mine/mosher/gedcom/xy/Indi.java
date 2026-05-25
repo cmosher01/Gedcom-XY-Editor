@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.*;
 
 // TODO add Tooltips
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Indi {
     private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
 
@@ -122,7 +123,7 @@ public class Indi {
         this.metrics = metrics;
     }
 
-    public void addGraphicsTo(List<Node> addto) {
+    public void addGraphicsTo(final List<Node> addto) {
         addto.add(new Group(this.plaque));
     }
 

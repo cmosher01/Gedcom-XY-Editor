@@ -20,6 +20,10 @@ package nu.mine.mosher.gedcom.xy.shape;
 import javafx.geometry.*;
 
 public final class ShapeUtils {
+    private static final double EPSILON = 0.06D;
+
+    public static final Point2D NO_POINT = new Point2D(Double.NaN, Double.NaN);
+
     @Deprecated
     private ShapeUtils() {
         throw new UnsupportedOperationException();
@@ -31,5 +35,9 @@ public final class ShapeUtils {
         final var maxX = Math.max(b1.getMaxX(), b2.getMaxX());
         final var maxY = Math.max(b1.getMaxY(), b2.getMaxY());
         return new BoundingBox(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    public static boolean ptEqual(final Point2D a, final Point2D b) {
+        return Math.abs(a.getX()-b.getX()) < EPSILON && Math.abs(a.getY()-b.getY()) < EPSILON;
     }
 }

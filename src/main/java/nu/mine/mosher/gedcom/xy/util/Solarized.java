@@ -42,7 +42,8 @@ public final class Solarized {
     public static final Color CYAN = Color.web("#2AA198");
     public static final Color GREEN = Color.web("#859900");
 
+    @Deprecated
     private Solarized() {
-        throw new IllegalStateException();
+        throw new UnsupportedOperationException();
     }
 }
