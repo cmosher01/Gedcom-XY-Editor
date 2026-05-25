@@ -50,23 +50,24 @@ public class Scroller extends Pane implements Scrollable {
     // Empirically, I know this calculation comes up a little bit short.
     @Override
     public void scrollTo(final Point2D to) {
-        // variable (x,y) naming convention:
-        // "ct_name" where:
-        // c is coord system:
-        //      "v"=viewport/window  (i.e., this scroller)
-        //      "c"=canvas/chart/_XY (i.e., this scroller's canvas)
-        // t is type:
-        //      either empty, or
-        //      "p" for prime (')
-        //      Examples:
-        //          l is just plain l ("ell")
-        //          lp represents l' ("ell prime"), a translated l
-        // name is:
-        //      "p" pivot point (i.e., what the user wants to scroll into view)
-        //      "c" is the center of the viewport
-        //      "l" is the layout (i.e., top left corner) of canvas
-        //      "d" is the delta vector to move "p" by
-        //
+/*
+variable (x,y) naming convention:
+"ct_name" where:
+  c is coord system:
+      "v"=viewport/window  (i.e., this scroller)
+      "c"=canvas/chart/_XY (i.e., this scroller's canvas)
+  t is type:
+      either empty, or
+      "p" for prime (')
+      Examples:
+          l is just plain l ("ell")
+          lp represents l' ("ell prime"), a translated l
+  name is:
+      "p" pivot point (i.e., what the user wants to scroll into view)
+      "c" is the center of the viewport
+      "l" is the layout (i.e., top left corner) of canvas
+      "d" is the delta vector to move "p" by
+*/
         final var c_p  = to;
         final var c_c  = this.center();
         final var v_l  = this.canvas.layout();
@@ -177,11 +178,55 @@ public class Scroller extends Pane implements Scrollable {
             // scale to zoom in or out
             canvas.scaleBy(z);
 
-            // translate canvas so zoom pivots around
-            // mouse instead of center of scroller pane
+/*
+We want to translate canvas to lp, so pivot point p
+appears to stay in the same location visually.
+By default, scaling uses center C as pivot point.
+
+Math for one dimension (the other dimension is identical).
+Note: none of these calculations depend on the viewport
+size or postion, only canvas and mouse.
+
+p = pivot point (mouse position)
+l = canvas layout (min x or y)
+w = canvas width
+m = p-(w/2)
+lp= m-(z*(m-l))
+
+
+
+Initial state:
+
+m             l        p
+              |_________________C_________________| <--- canvas
+
+              |<-------------- (w) -------------->|
+              |<---- (w/2) ---->|
+|<-- (m-l) ---|
+
+
+
+After zooming (which by default is towards center C):
+
+                          p translated, so we need to translate
+m         l'   p' <------ the canvas to put p' back to p
+
+          |_____________________C_____________________| <--- canvas
+
+
+
+After translate adjustment:
+
+m                 lp   p <------ correctly adjusted position of p'
+                  |_____________________C_____________________| <--- canvas
+
+|<-- (z*(m-l)) ---|    p
+m                 lp <------ layout (min x) that causes p' to
+                             correctly be adjusted back to p
+*/
             final var p = pt(t.getSceneX(), t.getSceneY());
-            final var m = p.add(canvas.size().multiply(-1D/2D));
-            final var lp = m.subtract(m.subtract(canvas.layout()).multiply(z));
+            final var m = p.add(canvas.size().multiply(-1D/2D)); //m = p-(w/2)
+            final var lp = m.subtract(m.subtract(canvas.layout()).multiply(z)); // lp = m-(z*(m-l))
             canvas.layout(lp);
         }
     }
