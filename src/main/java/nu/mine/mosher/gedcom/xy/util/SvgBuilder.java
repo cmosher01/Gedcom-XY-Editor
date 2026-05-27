@@ -19,6 +19,7 @@ package nu.mine.mosher.gedcom.xy.util;
 
 import javafx.geometry.*;
 import javafx.scene.shape.Line;
+import nu.mine.mosher.gedcom.GedcomIndiName;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -107,7 +108,7 @@ public class SvgBuilder {
         this.svg.appendChild(e);
     }
 
-    public void addPerson(final Bounds bounds, String nameGiven, String nameSur, final String dates, final String tagLine, final String refn) {
+    public void addPerson(final Bounds bounds, GedcomIndiName name, final String dates, final String tagLine, final String refn) {
         final Element eRect = this.doc.createElementNS(W3C_SVG_NS_URI, "rect");
         eRect.setAttribute("x", Double.toString(bounds.getMinX()));
         eRect.setAttribute("y", Double.toString(bounds.getMinY()));
@@ -118,6 +119,9 @@ public class SvgBuilder {
         eRect.setAttribute("id", refn);
         this.svg.appendChild(eRect);
 
+        // TODO fix name!!!!!!!!
+        String nameGiven = name.given0();
+        String nameSur = name.sur();
         if (nameGiven.isBlank() && nameSur.isBlank()) {
             nameSur = "?";
         } else if (!nameGiven.isBlank() && !nameSur.isBlank()) {

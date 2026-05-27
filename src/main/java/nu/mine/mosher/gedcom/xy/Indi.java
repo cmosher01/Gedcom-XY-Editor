@@ -26,14 +26,13 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import nu.mine.mosher.collection.TreeNode;
-import nu.mine.mosher.gedcom.GedcomLine;
+import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.*;
 
 // TODO add Tooltips
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -43,14 +42,14 @@ public class Indi {
     public static final CornerRadii CORNERS = new CornerRadii(4.0D);
     private static final double PARENT_OFFSET_X = 8.0D;
     private static final double PARENT_OFFSET_Y = 8.0D;
-    private static final BorderWidths borderWidthsSelected = BorderWidths.DEFAULT;// TODO after fix dynamic layout, new BorderWidths(3,3,3,3);
+    private static final BorderWidths borderWidthsSelected = new BorderWidths(3,3,3,3);
     private static final Point2D NO_POINT = new Point2D(Double.NaN, Double.NaN);
 
-    private final String name;
-    private final String nameGiven;
-    private final String nameSur;
+    private final GedcomIndiName nameParsed;
 
     private Metrics metrics;
+    private ColorScheme colors;
+    private ObjectBinding<Color> fillBinding;
     private final TreeNode<GedcomLine> node;
     private final String id;
     private String idCoords;
@@ -77,50 +76,28 @@ public class Indi {
         this.idCoords = Objects.nonNull(idCoords) ? idCoords : "";
         this.coords = new Coords(wxyOriginal, n);
         this.sex = sex;
-        this.name = n;
-        this.lifespan = lifespan;
+        this.nameParsed = GedcomIndiName.create(n);
+        this.lifespan = lifespan.isBlank() ? "" : "("+lifespan+")";
+
         this.nBirthForSort = nBirthForSort;
-        this.nameGiven = parseNameGiven(n);
-        this.nameSur = parseNameSur(n);
         this.tagline = Optional.ofNullable(tagline).orElse("");
     }
 
-    private static final Pattern PAT_NAME = Pattern.compile("(.*)/([^/]*?)/([^/]*?)");
-
-    private static String parseNameSur(String name) {
-        final Matcher matcher = PAT_NAME.matcher(name);
-        if (!matcher.matches()) {
-            return "";
-        }
-
-        return matcher.group(2).trim();
-    }
-
-    private static String parseNameGiven(String name) {
-        final Matcher matcher = PAT_NAME.matcher(name);
-        if (!matcher.matches()) {
-            return name.trim();
-        }
-        final String n1 = matcher.group(1);
-        final String n2 = matcher.group(3);
-        if (n1.isBlank() && n2.isBlank()) {
-            return "";
-        }
-        if (!n1.isBlank() && n2.isBlank()) {
-            return n1.trim();
-        }
-        if (n1.isBlank() && !n2.isBlank()) {
-            return n2.trim();
-        }
-        return n1.trim()+" ~ "+n2.trim();
-    }
-
-    public int getSex() {
-        return this.sex;
+    public void setItemsFromChart(final Selection selection) {
+        this.selection = selection;
     }
 
     public void setMetrics(final Metrics metrics) {
         this.metrics = metrics;
+        this.colors = this.metrics.colors();
+        this.fillBinding = new ObjectBinding<>() {
+            { super.bind(selected); }
+            @Override protected Color computeValue()
+            {
+                return selected.get() ? colors.indiSelText() : colors.indiText();
+            }
+        };
+
     }
 
     public void addGraphicsTo(final List<Node> addto) {
@@ -146,33 +123,39 @@ public class Indi {
 
 
     public void calc() {
-        final ColorScheme colors = this.metrics.colors();
 
-        final Text textshape = new Text();
-        final ObjectBinding<Color> fillBinding = new ObjectBinding<>()
+        final var labelNameG0 = createTextNode(this.nameParsed.given0());
+        labelNameG0.setFont(this.metrics.getFontBold());
+        final var labelNameS = createTextNode(this.nameParsed.sur());
+        final var labelNameG1 = createTextNode(this.nameParsed.given1());
+
+        final var textFlow = new TextFlow();
+        addNamesToFlow(this.nameParsed.tokenized(), labelNameG0, labelNameS, labelNameG1, textFlow);
+
+        final var labelLifespan = new Text();
         {
-            {
-                super.bind(selected);
+            labelLifespan.fillProperty().bind(fillBinding);
+            if (!this.lifespan.isBlank()) {
+                labelLifespan.setText("\n" + this.lifespan);
             }
-
-            @Override
-            protected Color computeValue()
-            {
-                return selected.get() ? colors.indiSelText() : colors.indiText();
-            }
-        };
-        textshape.fillProperty().bind(fillBinding);
-        textshape.setFont(this.metrics.getFont());
-        textshape.setTextAlignment(TextAlignment.CENTER);
-        textshape.setText(buildLabel());
-        new Scene(new Group(textshape));
-        textshape.applyCss();
-        if (textshape.getLayoutBounds().getWidth() > this.metrics.getWidthMax()) {
-            textshape.setWrappingWidth(this.metrics.getWidthMax());
+            labelLifespan.setFont(this.metrics.getFontSmall());
         }
-        final double inset = this.metrics.getFontSize() / 2.0D;
-        final double w = textshape.getLayoutBounds().getWidth() + inset * 2.0D;
-        final double h = textshape.getLayoutBounds().getHeight() + inset * 2.0D;
+        final var labelTagline = new Text();
+        {
+            labelTagline.fillProperty().bind(fillBinding);
+            if (!this.tagline.isBlank()) {
+                labelTagline.setText("\n" + this.tagline);
+            }
+            labelTagline.setFont(this.metrics.getFontSmall());
+        }
+        textFlow.getChildren().addAll(labelLifespan, labelTagline);
+
+        textFlow.setMaxWidth(this.metrics.getWidthMax());
+        textFlow.setTextAlignment(TextAlignment.CENTER);
+        StackPane.setMargin(textFlow, new Insets(this.metrics.getFontSize() / 2.0D));
+
+
+
 
         final Background bgNormal = new Background(new BackgroundFill(colors.indiBg(), CORNERS, Insets.EMPTY));
         final Background bgSelected = new Background(new BackgroundFill(colors.indiSelBg(), CORNERS, Insets.EMPTY));
@@ -193,12 +176,11 @@ public class Indi {
                     .then(borderNormalSelected)
                     .otherwise(borderNormal)));
 
-        StackPane.setMargin(textshape, new Insets(inset));
-        this.plaque.getChildren().addAll(textshape);
+        this.plaque.layoutXProperty().bind(x().subtract(this.plaque.widthProperty().divide(2.0D)));
+        this.plaque.layoutYProperty().bind(y().subtract(this.plaque.heightProperty().divide(2.0D)));
 
-        // TODO bind these, to allow dynamic sizing if font, border width, etc. change
-        this.plaque.layoutXProperty().bind(x().subtract(w / 2.0D));
-        this.plaque.layoutYProperty().bind(y().subtract(h / 2.0D));
+        this.plaque.getChildren().addAll(textFlow);
+
 
 
 
@@ -264,6 +246,31 @@ public class Indi {
         this.plaque.setOnMouseClicked(Event::consume);
     }
 
+    private void addNamesToFlow(
+        final List<GedcomIndiName.Token> tokenized,
+        final Text labelNameG0, final Text labelNameS, final Text labelNameG1,
+        final TextFlow textFlow)
+    {
+        for (final var t : tokenized) {
+            switch (t) {
+                case NULL -> {}
+                case UNKNOWN -> textFlow.getChildren().add(createTextNode("?"));
+                case SPACE -> textFlow.getChildren().add(createTextNode(" "));
+                case GIVEN0 -> textFlow.getChildren().add(labelNameG0);
+                case SUR -> textFlow.getChildren().add(labelNameS);
+                case GIVEN1 -> textFlow.getChildren().add(labelNameG1);
+            }
+        }
+    }
+
+    private Text createTextNode(final String s) {
+        final var node = new Text();
+        node.fillProperty().bind(this.fillBinding);
+        node.setText(s);
+        node.setFont(this.metrics.getFont());
+        return node;
+    }
+
     private void dumpEvent(final String event, final Point2D ptOrig, final Point2D ptCurrent) {
 //        final var magnitude = Math.abs(ptCurrent.subtract(ptOrig).magnitude());
 //        final var tl = new Point2D(this.boundaryChart.minX(),this.boundaryChart.minY());
@@ -289,51 +296,20 @@ public class Indi {
         this.coords.dragTo(pt);
     }
 
-    private String buildLabel() {
-        final StringBuilder label = new StringBuilder(32);
-
-        label.append(buildNameForDisplay());
-
-        if (!this.lifespan.isBlank()) {
-            label.append("\n(");
-            label.append(this.lifespan);
-            label.append(")");
-        }
-
-        if (!this.tagline.isBlank()) {
-            label.append("\n");
-            label.append(this.tagline);
-        }
-        return label.toString();
-    }
-
-    private String buildNameForDisplay() {
-        if (this.nameGiven.isBlank() && this.nameSur.isBlank()) {
-            return "?";
-        }
-        if (this.nameGiven.isBlank()) {
-            return this.nameSur;
-        }
-        if (this.nameSur.isBlank()) {
-            return this.nameGiven;
-        }
-        return this.nameGiven+" "+this.nameSur;
-    }
-
     public String getId() {
         return this.id;
-    }
-
-    public void setItemsFromChart(final Selection selection) {
-        this.selection = selection;
     }
 
     public boolean intersects(double x, double y, double w, double h) {
         return this.plaque.getBoundsInParent().intersects(x,y,w,h);
     }
 
-    public String name() {
-        return this.name;
+    public int getSex() {
+        return this.sex;
+    }
+
+    public String nameSimple() {
+        return this.nameParsed.simple();
     }
 
     public long getBirthForSort() {
@@ -420,22 +396,12 @@ public class Indi {
         }
     }
 
-    public void savePdf(final PdfBuilder builder) {
-        final String dates =
-            this.lifespan.isBlank()
-                ? ""
-                : ("("+this.lifespan+")");
-
-        builder.addPerson(bounds(), this.nameGiven, this.nameSur, dates, this.tagline, this.id);
+    public void savePdf(final PdfBuilder pdf) {
+        pdf.addPerson(bounds(), this.nameParsed, this.lifespan, this.tagline, this.id);
     }
 
     public void saveSvg(final SvgBuilder svg) {
-        final String dates =
-            this.lifespan.isBlank()
-                ? ""
-                : ("("+this.lifespan+")");
-
-        svg.addPerson(bounds(), this.nameGiven, this.nameSur, dates, this.tagline, this.id);
+        svg.addPerson(bounds(), this.nameParsed, this.lifespan, this.tagline, this.id);
     }
 
     public void saveXyToTree() {
@@ -499,7 +465,7 @@ public class Indi {
 
     public void logDiscard() {
         final Point2D coords = coords();
-        LOG.warn(String.format("discarding,\"%s\",\"_XY %.2f %.2f\"", this.name, coords.getX(), coords.getY()));
+        LOG.warn(String.format("discarding,\"%s\",\"_XY %.2f %.2f\"", this.nameParsed.simple(), coords.getX(), coords.getY()));
     }
 
     public boolean selected() {
@@ -518,8 +484,7 @@ public class Indi {
         return this.plaque.getBoundsInParent();
     }
 
-    public String getTagline()
-    {
+    public String getTagline() {
         return this.tagline;
     }
 

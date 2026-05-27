@@ -1069,7 +1069,7 @@ public class Layout {
         while (!rptoclean2.isEmpty()) {
             final Individual psec = rptoclean2.remove();
             settoclean2.remove(psec);
-            LOG.debug("branch head: {}", psec.indi.name());
+            LOG.debug("branch head: {}", psec.indi.nameSimple());
 
             final List<Individual> nexthouse = new ArrayList<>();
 

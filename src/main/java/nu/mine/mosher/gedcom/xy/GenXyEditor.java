@@ -38,6 +38,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.prefs.Preferences;
 
 /*
@@ -162,7 +163,7 @@ public final class GenXyEditor {
 
             LOG.info("version: {}", VERSION);
 
-            // TODO: handle args better
+            // TODO: handle args better; allow input file and output pdf/svg files
             if (0 < args.length) {
                 arg0 = args[0];
             }
@@ -411,9 +412,14 @@ public final class GenXyEditor {
         root.setBottom(sb);
 
         // run Fit as first command, but need to wait for layout, then also do it in "runLater"
+        final var initializedFitOnLaunch = new AtomicBoolean();
         scroller.widthProperty().addListener((obs, w0, w1) -> {
+            if (initializedFitOnLaunch.get()) {
+                return;
+            }
             if (26.1D < w1.doubleValue()) { // wait for layout finished
                 Platform.runLater(chart::cmdFit); // run "Fit" command later
+                initializedFitOnLaunch.set(true);
             }
         });
 

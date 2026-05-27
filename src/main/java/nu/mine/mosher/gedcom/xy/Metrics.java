@@ -33,6 +33,7 @@ public final class Metrics {
     public static final String FONT_FAMILY_NAME = "Noto Sans";
     public static final String FONT_FAMILY_NAME_MONO = java.awt.Font.MONOSPACED;
     public static final double FONT_SIZE_NOMINAL = 8.0D;
+    public static final double FONT_SIZE_SMALL = 6.0D;
     public static final double FONT_SIZE_RATIO = 25.0D;
     public static final double DX_DEFAULT = FONT_SIZE_NOMINAL * FONT_SIZE_RATIO;
 
@@ -43,12 +44,16 @@ public final class Metrics {
     public static final double MARRIAGE_SPACING_FACTOR = 0.8D;
 
     private final double fontSize;
+    private final double fontSizeSmall;
     private final double dxPartner;
     private final double dyGeneration;
     private final double dxAvg;
     private final double widthMax;
     private final double heightNominal;
     private final Font font;
+    private final Font fontBold;
+    private final Font fontSmall;
+    private final Font fontSmallBold;
     private final Grid grid;
 
     // TODO: make more than just two color schemes
@@ -107,8 +112,13 @@ public final class Metrics {
         this.dyGeneration = nominalDistance(dyGeneration) ? dyGeneration : dxAvg * 2.0D;
 
         this.fontSize = Math.clamp(Double.valueOf(Math.rint(this.dxAvg / FONT_SIZE_RATIO)).intValue(), 6, 24);
+        this.fontSizeSmall = this.fontSize * 0.73D;
 
-        this.font = Font.font(FONT_FAMILY_NAME, FontWeight.BOLD, this.fontSize);
+        this.font = loadFont("util/NotoSans-Regular.ttf", this.fontSize);
+        this.fontSmall = loadFont("util/NotoSans-Regular.ttf", this.fontSizeSmall);
+        this.fontBold = loadFont("util/NotoSans-Bold.ttf", this.fontSize);
+        this.fontSmallBold = loadFont("util/NotoSans-Bold.ttf", this.fontSizeSmall);
+
         final Text text = new Text(PLAQUE_MAX);
         text.setFont(this.font);
         new Scene(new Group(text));
@@ -121,8 +131,25 @@ public final class Metrics {
         LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},widthMax={},heightNominal={}", this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.font.getSize(), this.widthMax, this.heightNominal);
     }
 
+    private Font loadFont(final String pathRes, final double size) {
+        final var res = Optional.ofNullable(getClass().getResource(pathRes));
+        if (res.isEmpty()) {
+            throw new IllegalStateException("Can't load resource: NotoSans-Regular.ttf");
+        }
+        final var loadedFont = Font.loadFont(res.get().toExternalForm(), size);
+        System.out.println("Loaded font: "+loadedFont.getName());
+        return loadedFont;
+    }
+
+    private static void logFont(Font font) {
+    }
+
     public double getFontSize() {
         return this.fontSize;
+    }
+
+    public double getFontSizeSmall() {
+        return this.fontSizeSmall;
     }
 
     public double getMarrDistance() {
@@ -151,6 +178,18 @@ public final class Metrics {
 
     public Font getFont() {
         return this.font;
+    }
+
+    public Font getFontBold() {
+        return this.fontBold;
+    }
+
+    public Font getFontSmall() {
+        return this.fontSmall;
+    }
+
+    public Font getFontSmallBold() {
+        return this.fontSmallBold;
     }
 
     public ColorScheme colors() {

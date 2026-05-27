@@ -115,7 +115,7 @@ public class FamilyChart {
                     from = "";
                 }
                 final String tagline = i.get().getTagline();
-                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f) [%.2fx%.2f] %s", i.get().name(), from, coords.getX(), coords.getY(), i.get().width(), i.get().height(), tagline));
+                this.selectedNameProperty.setValue(String.format("[%s selected] %s(%.2f,%.2f) [%.2fx%.2f] %s", i.get().nameSimple(), from, coords.getX(), coords.getY(), i.get().width(), i.get().height(), tagline));
             } else {
                 this.selectedNameProperty.setValue("[nothing selected]");
             }

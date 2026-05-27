@@ -98,6 +98,9 @@ public final class FamilyChartBuilderGed {
         final long birth = calcBirthForSort(getChildEventDate(nodeIndi, "BIRT"));
         final int sex = toSex(getChildValue(nodeIndi, "SEX"));
         final String id = nodeIndi.getObject().getID();
+        final String birthplace = getChildEventPlace(nodeIndi, "BIRT");
+        final String anyplace = getChildEventPlace(nodeIndi);
+        final String tagline = birthplace.isBlank() ? anyplace : birthplace;
 
         if (wxyOrig.isEmpty()) {
             if (value_XY.isEmpty()) {
@@ -107,7 +110,8 @@ public final class FamilyChartBuilderGed {
             }
         }
 
-        return new Indi(nodeIndi, wxyOrig, id, "", name, lifespan, birth, null, sex);
+
+        return new Indi(nodeIndi, wxyOrig, id, "", name, lifespan, birth, tagline, sex);
     }
 
     private static long calcBirthForSort(String birt) {
@@ -171,6 +175,25 @@ public final class FamilyChartBuilderGed {
         for (final TreeNode<GedcomLine> c : node) {
             if (c.getObject().getTagString().equals(tag)) {
                 return getChildValue(c, "DATE");
+            }
+        }
+        return "";
+    }
+
+    private static String getChildEventPlace(final TreeNode<GedcomLine> node, final String tag) {
+        for (final TreeNode<GedcomLine> c : node) {
+            if (c.getObject().getTagString().equals(tag)) {
+                return getChildValue(c, "PLAC");
+            }
+        }
+        return "";
+    }
+
+    private static String getChildEventPlace(final TreeNode<GedcomLine> node /* any event*/) {
+        for (final TreeNode<GedcomLine> c : node) {
+            final var p = getChildValue(c, "PLAC");
+            if (!p.isBlank()) {
+                return p;
             }
         }
         return "";

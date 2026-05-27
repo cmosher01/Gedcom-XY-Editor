@@ -27,10 +27,12 @@ import com.itextpdf.kernel.pdf.*;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.layout.Canvas;
+import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
 import javafx.geometry.*;
 import javafx.scene.shape.Line;
+import nu.mine.mosher.gedcom.GedcomIndiName;
 import nu.mine.mosher.gedcom.xy.Metrics;
 import org.slf4j.*;
 
@@ -47,7 +49,7 @@ public class PdfBuilder implements AutoCloseable {
     private static final Color COLOR_LINES = new DeviceRgb(
         (float)SOL_LINES.getRed(), (float)SOL_LINES.getGreen(), (float)SOL_LINES.getBlue());
 
-    private static final Insets MARGIN = new Insets(100.0d);
+    private static final Insets MARGIN = new Insets(200.0d);
 
     private static PdfFont FONT;
     private static PdfFont FONT_BOLD;
@@ -155,42 +157,40 @@ public class PdfBuilder implements AutoCloseable {
         drawText(bounds, new Text("\u00A0?\u00A0"));
     }
 
-    public void addPerson(final Bounds bounds, String nameGiven, String nameSur, String dates, String tagLine, final String refn) {
+    public void addPerson(final Bounds bounds, GedcomIndiName name, String dates, String tagLine, final String refn) {
         drawRect(bounds);
 
-        Text tG, tS;
-        if (nameGiven.isBlank() && nameSur.isBlank()) {
-            tG = new Text("?").setFont(FONT_BOLD);
-            tS = new Text("\n").setFont(FONT);
-        } else {
-            if (nameGiven.isBlank()) {
-                nameGiven = "?";
+        final var fsSmall = (float)this.metrics.getFontSizeSmall();
+
+        final var rText = new ArrayList<Text>();
+        final var tokens = name.tokenized();
+        for (final var token : tokens) {
+            switch (token) {
+                case NULL -> {}
+                case UNKNOWN -> rText.add(new Text("?").setFont(FONT));
+                case SPACE -> rText.add(new Text(" ").setFont(FONT));
+                case GIVEN0 -> rText.add(new Text(name.given0()).setFont(FONT_BOLD));
+                case SUR -> rText.add(new Text(name.sur()).setFont(FONT));
+                case GIVEN1 -> rText.add(new Text(name.given1()).setFont(FONT));
             }
-            tG = new Text(nameGiven).setFont(FONT_BOLD);
-            tS = new Text(" " + nameSur+"\n").setFont(FONT);
         }
-
         if (!dates.isBlank()) {
-            dates += "\n";
+            rText.add(new Text("\n"+dates).setFont(FONT).setFontSize(fsSmall));
         }
-        var tD = new Text(dates).setFont(FONT);
-
         if (!tagLine.isBlank()) {
-            tagLine += "\n";
+            rText.add(new Text("\n"+tagLine).setFont(FONT).setFontSize(fsSmall));
         }
-        var tT = new Text(tagLine).setFont(FONT);
 
-        drawText(bounds, tG, tS, tD, tT);
+        drawText(bounds, rText.toArray(new Text[0]));
     }
 
     private void drawRect(Bounds bounds) {
         this.canvas
             .saveState()
             .setStrokeColor(COLOR_LINES)
-            .setLineWidth(0.5f)
+            .setLineWidth(1.0f)
             .setFillColor(COLOR_PLAQUE_FILL)
-            .setExtGState(new PdfExtGState().setFillOpacity(0.7f))
-            .roundRectangle((float)x(bounds.getMinX()), (float)y(bounds.getMaxY()), (float)bounds.getWidth(), (float)bounds.getHeight(), 3.0f)
+            .roundRectangle((float)x(bounds.getMinX()), (float)y(bounds.getMaxY()), (float)bounds.getWidth(), (float)bounds.getHeight(), 4.0f)
             .fillStroke()
             .restoreState()
         ;
@@ -202,15 +202,17 @@ public class PdfBuilder implements AutoCloseable {
         final var p = new Paragraph()
             .setTextAlignment(TextAlignment.CENTER)
             .setFontKerning(FontKerning.YES)
-            .setFontSize(DY);
+            .setFontSize(DY)
+            .setMultipliedLeading(0.9f);
 
         Arrays.stream(rt).forEach(p::add);
 
+        final var ddy = 5*DY; // TODO why is this necessary?
         var rect = new Rectangle(
             (float)x(bounds.getMinX()),
-            (float)y(bounds.getMaxY())-DY,
+            (float)y(bounds.getMinY()+bounds.getHeight()+ddy),
             (float)bounds.getWidth(),
-            (float)bounds.getHeight()+DY);
+            (float)bounds.getHeight()+ddy);
 
         try (final var ch = new Canvas(this.canvas, rect)) {
             ch.add(p);
