@@ -73,7 +73,7 @@ Member variables represent: given0 "/" sur "/" given1
             return given0();
         }
         if (!given1().isBlank()) {
-            return given1();
+            return "~ "+given1();
         }
         return "";
     }
@@ -90,16 +90,19 @@ Member variables represent: given0 "/" sur "/" given1
     8 cases:
         0 s 1   items     result
         -----   -------   ------
-        f f f   [empty]   "?"
-        f f t   g1        "?" + " " + "?" + " " + g1
-        f t f   s         "?" + " " + s
-        f t t   s g1      "?" + " " + s   + " " + g1
+        f f f   [empty]   "?"                         [***]
+        f f t   // g1     "?" + " " + "?" + " " + g1  [***]
+        f t f   /s/       "?" + " " + s
+        f t t   /s/ g1    "?" + " " + s   + " " + g1
         t f f   g0        g0
-        t f t   g0 g1     g0  + " " + g1
-        t t f   g0 s      g0  + " " + s
-        t t t   g0 s g1   g0  + " " + s   + " " + g1
+        t f t   g0 // g1  g0  + " " + g1              [***]
+        t t f   g0 /s/    g0  + " " + s
+        t t t   g0 /s/ g1 g0  + " " + s   + " " + g1
 
-     */
+    *** These cases are not technically allowed by the GEDCOM standard.
+        (NAME_PERSONAL and NAME_TEXT each have a minimum length of one character.)
+        We allow them and handle them correctly, anyway.
+    */
     public enum Token {
         NULL,
         GIVEN0, SUR, GIVEN1,

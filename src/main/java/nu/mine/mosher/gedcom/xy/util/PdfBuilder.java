@@ -25,9 +25,7 @@ import com.itextpdf.kernel.font.*;
 import com.itextpdf.kernel.geom.*;
 import com.itextpdf.kernel.pdf.*;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.layout.Canvas;
-import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
 import javafx.geometry.*;
@@ -49,7 +47,6 @@ public class PdfBuilder implements AutoCloseable {
     private static final Color COLOR_LINES = new DeviceRgb(
         (float)SOL_LINES.getRed(), (float)SOL_LINES.getGreen(), (float)SOL_LINES.getBlue());
 
-    private static final Insets MARGIN = new Insets(200.0d);
 
     private static PdfFont FONT;
     private static PdfFont FONT_BOLD;
@@ -108,17 +105,21 @@ public class PdfBuilder implements AutoCloseable {
     public PdfBuilder(Metrics metrics, File fileToSaveAs, Bounds bounds) throws IOException {
         this.metrics = metrics;
 
+        final var margin = new Insets(this.metrics.margin());
+
         final var page = new BoundingBox(
-            bounds.getMinX() - MARGIN.getLeft(),
-            bounds.getMinY() - MARGIN.getTop(),
-            bounds.getWidth() + MARGIN.getLeft() + MARGIN.getRight(),
-            bounds.getHeight() + MARGIN.getTop() + MARGIN.getBottom());
+            bounds.getMinX() - margin.getLeft(),
+            bounds.getMinY() - margin.getTop(),
+            bounds.getWidth() + margin.getLeft() + margin.getRight(),
+            bounds.getHeight() + margin.getTop() + margin.getBottom());
         this.poffset = new Point(page.getMinX(), page.getMinY());
         this.psize = new PageSize((float)page.getWidth(), (float)page.getHeight());
 
         final var writer = new PdfWriter(fileToSaveAs);
         this.pdfdoc = new PdfDocument(writer);
         final var pdfPage = this.pdfdoc.addNewPage(psize);
+        // TODO large pages don't open in Acrobat Reader; this doesn't fix it:
+//        pdfPage.put(PdfName.UserUnit, new PdfNumber(1000f));
         this.canvas = new PdfCanvas(pdfPage);
     }
 

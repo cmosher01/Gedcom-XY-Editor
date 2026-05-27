@@ -24,6 +24,7 @@ import nu.mine.mosher.gedcom.xy.util.Grid;
 import org.slf4j.*;
 
 import java.util.*;
+import java.util.prefs.Preferences;
 
 import static java.util.stream.Collectors.*;
 
@@ -43,6 +44,8 @@ public final class Metrics {
     public static final String PLAQUE_MAX = "MMMMMMMMMMMMMMMM\nM\nM";
     public static final double MARRIAGE_SPACING_FACTOR = 0.8D;
 
+    public static final double MARGIN = 200.0D;
+
     private final double fontSize;
     private final double fontSizeSmall;
     private final double dxPartner;
@@ -50,6 +53,7 @@ public final class Metrics {
     private final double dxAvg;
     private final double widthMax;
     private final double heightNominal;
+    private final double margin = MARGIN;
     private final Font font;
     private final Font fontBold;
     private final Font fontSmall;
@@ -62,11 +66,11 @@ public final class Metrics {
     private ColorScheme colors = new ColorSchemeBold();
 
 
-    public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis) {
+    public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis, final Preferences prefs) {
         final double dxPartner = famis.stream().mapToDouble(Fami::getMarrDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dyGeneration = famis.stream().mapToDouble(Fami::getGenDistance).filter(Metrics::nominalDistance).average().orElse(0D);
         final double dxAvg = calculateAverageX(indis);
-        final Grid grid = Grid.createFromPoints(indis);
+        final Grid grid = Grid.createFromPoints(indis, prefs);
         return new Metrics(dxPartner * MARRIAGE_SPACING_FACTOR, dyGeneration, dxAvg, grid);
     }
 
@@ -111,8 +115,8 @@ public final class Metrics {
         this.dxPartner = nominalDistance(dxPartner) ? dxPartner : dxAvg;
         this.dyGeneration = nominalDistance(dyGeneration) ? dyGeneration : dxAvg * 2.0D;
 
-        this.fontSize = Math.clamp(Double.valueOf(Math.rint(this.dxAvg / FONT_SIZE_RATIO)).intValue(), 6, 24);
-        this.fontSizeSmall = this.fontSize * 0.73D;
+        this.fontSize = Math.clamp(this.dxAvg/FONT_SIZE_RATIO, 6.0D, 24.0D);
+        this.fontSizeSmall = this.fontSize * 0.75D;
 
         this.font = loadFont("util/NotoSans-Regular.ttf", this.fontSize);
         this.fontSmall = loadFont("util/NotoSans-Regular.ttf", this.fontSizeSmall);
@@ -128,7 +132,7 @@ public final class Metrics {
 
         this.grid = grid;
 
-        LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},widthMax={},heightNominal={}", this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.font.getSize(), this.widthMax, this.heightNominal);
+        LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},fontSizeSmall={},widthMax={},heightNominal={}", this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.fontSize, this.fontSizeSmall, this.widthMax, this.heightNominal);
     }
 
     private Font loadFont(final String pathRes, final double size) {
@@ -139,9 +143,6 @@ public final class Metrics {
         final var loadedFont = Font.loadFont(res.get().toExternalForm(), size);
         System.out.println("Loaded font: "+loadedFont.getName());
         return loadedFont;
-    }
-
-    private static void logFont(Font font) {
     }
 
     public double getFontSize() {
@@ -176,6 +177,10 @@ public final class Metrics {
         return this.heightNominal;
     }
 
+    public double margin() {
+        return this.margin;
+    }
+
     public Font getFont() {
         return this.font;
     }
@@ -192,6 +197,10 @@ public final class Metrics {
         return this.fontSmallBold;
     }
 
+    public Grid grid() {
+        return this.grid;
+    }
+
     public ColorScheme colors() {
         return this.colors;
     }
@@ -199,14 +208,7 @@ public final class Metrics {
 
 
 
-
     public void setColors(final ColorScheme newColorScheme) {
         this.colors = Objects.requireNonNull(newColorScheme);
-    }
-
-
-
-    public Grid grid() {
-        return this.grid;
     }
 }

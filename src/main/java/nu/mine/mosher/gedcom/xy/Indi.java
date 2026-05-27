@@ -123,7 +123,6 @@ public class Indi {
 
 
     public void calc() {
-
         final var labelNameG0 = createTextNode(this.nameParsed.given0());
         labelNameG0.setFont(this.metrics.getFontBold());
         final var labelNameS = createTextNode(this.nameParsed.sur());
@@ -219,7 +218,7 @@ public class Indi {
             final var pt = new Point2D(t.getX(), t.getY());
             final var ptCanvas = plaque.localToParent(pt);
             final var ptOrig = dragOrig.get();
-            assert !ptOrig.equals(NO_POINT); // TODO?
+            assert !ptOrig.equals(NO_POINT);
             dumpEvent("dragged", ptOrig, ptCanvas);
 
             selection.drag(pt);
@@ -229,7 +228,7 @@ public class Indi {
             final var pt = new Point2D(t.getX(), t.getY());
             final var ptCanvas = plaque.localToParent(pt);
             final var ptOrig = dragOrig.get();
-            assert !ptOrig.equals(NO_POINT); // TODO?
+            assert !ptOrig.equals(NO_POINT);
             dumpEvent("released", ptOrig, ptCanvas);
 
             plaque.setCursor(Cursor.HAND);

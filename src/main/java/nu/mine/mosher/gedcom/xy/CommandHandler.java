@@ -33,18 +33,22 @@ import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.prefs.Preferences;
 import java.util.regex.*;
 
 public class CommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(CommandHandler.class);
 
     private final Frame frame;
+    private final Preferences prefs;
 
-    public CommandHandler(final Frame frame) {
+    public CommandHandler(final Frame frame, final Preferences prefs) {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Not running on event dispatch thread.");
         }
         this.frame = frame;
+        this.prefs = prefs;
     }
 
 
@@ -230,9 +234,9 @@ public class CommandHandler {
         final var msg = "Snap-to-grid current size is " + sGrid + ". Change to:";
         final var resIcon = Optional.ofNullable(getClass().getResource("preferences.png"));
         final var icon = resIcon.map(ImageIcon::new).orElse(null);
-        final var result = Optional.ofNullable(JOptionPane.showInputDialog(frame, msg, "Preferences", JOptionPane.QUESTION_MESSAGE, icon, null, null));
+        final var result = Optional.ofNullable(JOptionPane.showInputDialog(this.frame, msg, "Preferences", JOptionPane.QUESTION_MESSAGE, icon, null, null));
         if (result.isPresent()) {
-            grid.setFromUserEnteredString(result.get().toString());
+            grid.setFromUserEnteredString(result.get().toString(), this.prefs);
         }
     }
 
@@ -243,7 +247,7 @@ public class CommandHandler {
 //    }
 
     private void saveAs(final FamilyChart chart) {
-        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Save as new genealogy file", FileDialog.SAVE);
+        final FileDialog fd = new FileDialog(this.frame, "Genealogy XY Editor - Save as new genealogy file", FileDialog.SAVE);
         fd.setDirectory(GenXyEditor.outDir().getPath());
         if (chart.originalFile().isPresent()) {
             fd.setFile(chart.originalFile().get().getName());
@@ -261,9 +265,10 @@ public class CommandHandler {
         GenXyEditor.outDir(fileToSaveAs.getParentFile());
         try {
             chart.saveAs(fileToSaveAs);
-        } catch (final IOException x) {
-            // TODO: this is not nice
-            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, x);
+        } catch (final Exception e) {
+            JOptionPane.showMessageDialog(this.frame,
+                "Error trying to save file. Please try again.\n"+e.getMessage());
+            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
         }
     }
 
@@ -286,7 +291,7 @@ public class CommandHandler {
         boolean safe = false;
         if (chart.dirty()) {
             final int response = JOptionPane.showConfirmDialog(
-                frame,
+                this.frame,
                 "Your unsaved changes will be DISCARDED.",
                 "DISCARD CHANGES",
                 JOptionPane.OK_CANCEL_OPTION,
@@ -306,12 +311,12 @@ public class CommandHandler {
     }
 
     public void quitApp() {
-        SwingUtilities.invokeLater(frame::dispose);
+        SwingUtilities.invokeLater(this.frame::dispose);
     }
 
 
     private void exportPdf(final FamilyChart chart) {
-        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Export PDF file", FileDialog.SAVE);
+        final FileDialog fd = new FileDialog(this.frame, "Genealogy XY Editor - Export PDF file", FileDialog.SAVE);
         fd.setDirectory(GenXyEditor.outDir().getPath());
         if (chart.originalFile().isPresent()) {
             fd.setFile(pdfNameOf(chart.originalFile().get().getName()));
@@ -333,12 +338,14 @@ public class CommandHandler {
         try {
             chart.savePdf(fileToSaveAs);
         } catch (final Exception e) {
-            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
+            JOptionPane.showMessageDialog(this.frame,
+                "Error trying to export PDF. Please try again.\n"+e.getMessage());
+            LOG.error("An error occurred while trying to export PDF, file={}", fileToSaveAs, e);
         }
     }
 
     private void exportSvg(final FamilyChart chart) {
-        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Export SVG file", FileDialog.SAVE);
+        final FileDialog fd = new FileDialog(this.frame, "Genealogy XY Editor - Export SVG file", FileDialog.SAVE);
         fd.setDirectory(GenXyEditor.outDir().getPath());
         if (chart.originalFile().isPresent()) {
             fd.setFile(svgNameOf(chart.originalFile().get().getName()));
@@ -360,7 +367,9 @@ public class CommandHandler {
         try {
             chart.saveSvg(fileToSaveAs);
         } catch (final Exception e) {
-            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
+            JOptionPane.showMessageDialog(this.frame,
+                "Error trying to export SVG. Please try again.\n"+e.getMessage());
+            LOG.error("An error occurred while trying to export SVG file, file={}", fileToSaveAs, e);
         }
     }
 
@@ -368,7 +377,7 @@ public class CommandHandler {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Not running on event dispatch thread.");
         }
-        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Export skeleton genealogy file", FileDialog.SAVE);
+        final FileDialog fd = new FileDialog(this.frame, "Genealogy XY Editor - Export skeleton genealogy file", FileDialog.SAVE);
         fd.setDirectory(GenXyEditor.outDir().getPath());
         if (chart.originalFile().isPresent()) {
             fd.setFile(skelNameOf(chart.originalFile().get().getName()));
@@ -389,8 +398,9 @@ public class CommandHandler {
         try {
             chart.saveSkeleton(exportAll, fileToSaveAs);
         } catch (final IOException e) {
-            // TODO: this is not nice
-            LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
+            JOptionPane.showMessageDialog(this.frame,
+                "Error trying to export skeleton GEDCOM. Please try again.\n"+e.getMessage());
+            LOG.error("An error occurred while trying to export skeleton GEDCOM, file={}", fileToSaveAs, e);
         }
     }
 
@@ -406,27 +416,29 @@ public class CommandHandler {
         return name.replaceFirst("(?i)\\.ged$", ".svg").replaceFirst("(?i)\\.ftm$", ".svg");
     }
 
-    public Optional<FamilyChart> openFile(final boolean destroy) {
+    public Optional<FamilyChart> openFile(final boolean destroy) throws IOException {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Not running on event dispatch thread.");
         }
         final Optional<File> fileToOpen = chooseFileToOpen();
         if (fileToOpen.isEmpty()) {
+            // user pressed "Cancel" on open-file dialog
             return Optional.empty();
         }
 
-        return readChartFromFile(fileToOpen.get(), destroy);
+        return Optional.of(readChartFromFile(fileToOpen.get(), destroy));
     }
 
-    private Optional<FamilyChart> readChartFromFile(final File fileToOpen, final boolean destroy) {
-        final FamilyChart[] chart = new FamilyChart[1];
-        final CountDownLatch latch = new CountDownLatch(1);
+    private FamilyChart readChartFromFile(final File fileToOpen, final boolean destroy) throws IOException {
+        final var chart = new AtomicReference<FamilyChart>();
+        final var thrown = new AtomicReference<Exception>();
+        final var latch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                chart[0] = tryReadChartFromFile(fileToOpen, destroy);
-            } catch (final Throwable e) {
+                chart.set(tryReadChartFromFile(fileToOpen, destroy, this.prefs));
+            } catch (final Exception e) {
+                thrown.set(e);
                 LOG.error("unexpected error while reading from file", e);
-                // TODO better error handling
             } finally {
                 latch.countDown();
             }
@@ -437,18 +449,23 @@ public class CommandHandler {
             Thread.currentThread().interrupt();
         }
 
-        return Optional.ofNullable(chart[0]);
+        final var error = Optional.ofNullable(thrown.get());
+        if (error.isPresent()) {
+            throw new IOException(error.get().getMessage(), error.get());
+        }
+
+        return chart.get();
     }
 
-    private static FamilyChart tryReadChartFromFile(final File fileToOpen, final boolean destroy) throws IOException, InvalidLevel, SQLException {
+    private static FamilyChart tryReadChartFromFile(final File fileToOpen, final boolean destroy, final Preferences prefs) throws IOException, InvalidLevel, SQLException {
         final FamilyChart chart;
 
         final String filetype = filetypeOf(fileToOpen);
         if (filetype.equalsIgnoreCase("GED")) {
             final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
-            chart = FamilyChartBuilderGed.create(tree, fileToOpen);
+            chart = FamilyChartBuilderGed.create(tree, fileToOpen, destroy, prefs);
         } else {
-            chart = FamilyChartBuilderFtm.create(fileToOpen, destroy);
+            chart = FamilyChartBuilderFtm.create(fileToOpen, destroy, prefs);
         }
 
         chart.setFromOrig();
@@ -463,7 +480,7 @@ public class CommandHandler {
             throw new IllegalStateException("Not running on event dispatch thread.");
         }
 
-        final FileDialog fd = new FileDialog(frame, "Genealogy XY Editor - Open genealogy file", FileDialog.LOAD);
+        final FileDialog fd = new FileDialog(this.frame, "Genealogy XY Editor - Open genealogy file", FileDialog.LOAD);
         fd.setDirectory(GenXyEditor.inDir().getPath());
         fd.setVisible(true);
 
@@ -504,11 +521,11 @@ public class CommandHandler {
     private void showAboutBox() {
         SwingUtilities.invokeLater(() ->
             JOptionPane.showMessageDialog(
-                frame,
+                    this.frame,
                 "Genealogy XY Editor\n\n" +
                     "Version " + GenXyEditor.VERSION + "\n" +
                     "Log file: "+ LogbackConfigurator.getFilePath() + "\n\n" +
-                    "Copyright © 2000–2020, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.",
+                    "Copyright © 2000–2026, Christopher Alan Mosher, New York, New York, USA, <cmosher01@gmail.com>.",
                 "Genealogy XY Editor",
                 JOptionPane.INFORMATION_MESSAGE));
     }

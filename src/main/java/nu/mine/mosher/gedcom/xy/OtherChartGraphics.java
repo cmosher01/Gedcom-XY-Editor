@@ -25,19 +25,19 @@ import javafx.scene.shape.*;
 import java.util.List;
 
 public class OtherChartGraphics {
-    private static final double PADDING = 200.0D;
-
     private final Rectangle border = new Rectangle();
     private final Line axisXPos = new Line();
     private final Line axisXNeg = new Line();
     private final Line axisYPos = new Line();
     private final Line axisYNeg = new Line();
+    private double margin;
 
 
 
-    public void calc(final List<Indi> indis, final ColorScheme colors) {
-        this.border.setStroke(colors.lines());
-        this.border.setFill(colors.bg());
+    public void calc(final List<Indi> indis, final Metrics metrics) {
+        this.margin = metrics.margin();
+        this.border.setStroke(metrics.colors().lines());
+        this.border.setFill(metrics.colors().bg());
         this.axisXPos.setStroke(Color.LIGHTGRAY);
         this.axisXPos.getStrokeDashArray().addAll(2D, 8D);
         this.axisXNeg.setStroke(Color.LIGHTGRAY);
@@ -93,28 +93,28 @@ public class OtherChartGraphics {
 
 
 
-        this.border.xProperty().bind(minX.subtract(PADDING));
-        this.border.yProperty().bind(minY.subtract(PADDING));
-        this.border.widthProperty().bind(maxX.subtract(minX).add(2*PADDING));
-        this.border.heightProperty().bind(maxY.subtract(minY).add(2*PADDING));
+        this.border.xProperty().bind(minX.subtract(margin));
+        this.border.yProperty().bind(minY.subtract(margin));
+        this.border.widthProperty().bind(maxX.subtract(minX).add(2* margin));
+        this.border.heightProperty().bind(maxY.subtract(minY).add(2* margin));
 
 
 
         this.axisXPos.setStartX(0D);
-        this.axisXPos.endXProperty().bind(maxX.add(PADDING));
+        this.axisXPos.endXProperty().bind(maxX.add(margin));
         this.axisXPos.setStartY(0D);
         this.axisXPos.setEndY(0D);
         this.axisXNeg.setStartX(0D);
-        this.axisXNeg.endXProperty().bind(minX.subtract(PADDING));
+        this.axisXNeg.endXProperty().bind(minX.subtract(margin));
         this.axisXNeg.setStartY(0D);
         this.axisXNeg.setEndY(0D);
 
         this.axisYPos.setStartY(0D);
-        this.axisYPos.endYProperty().bind(maxY.add(PADDING));
+        this.axisYPos.endYProperty().bind(maxY.add(margin));
         this.axisYPos.setStartX(0D);
         this.axisYPos.setEndX(0D);
         this.axisYNeg.setStartY(0D);
-        this.axisYNeg.endYProperty().bind(minY.subtract(PADDING));
+        this.axisYNeg.endYProperty().bind(minY.subtract(margin));
         this.axisYNeg.setStartX(0D);
         this.axisYNeg.setEndX(0D);
     }

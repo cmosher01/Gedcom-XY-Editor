@@ -24,6 +24,7 @@ import org.slf4j.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.prefs.Preferences;
 import java.util.stream.Stream;
 
 public class Grid {
@@ -51,7 +52,7 @@ public class Grid {
         return new Grid();
     }
 
-    public static Grid createFromPoints(final List<Indi> individuals) {
+    public static Grid createFromPoints(final List<Indi> individuals, final Preferences prefs) {
         final var indis = Collections.unmodifiableList(individuals);
         final var coords = getAllCoordsFrom(indis);
         int grid = calcGrid(coords);
@@ -61,7 +62,7 @@ public class Grid {
             offset = calcOffset(coords, grid);
         } else {
             // can't detect grid from file, so use user's pref
-            grid = getPref();
+            grid = getPref(prefs);
             // TODO read grid offset pref?
         }
         final var obj = new Grid(grid, offset);
@@ -84,7 +85,7 @@ public class Grid {
 
 
 
-    public void setFromUserEnteredString(final String usersEntry) {
+    public void setFromUserEnteredString(final String usersEntry, final Preferences prefs) {
         if (Objects.isNull(usersEntry) || usersEntry.isBlank()) {
             return;
         }
@@ -92,7 +93,7 @@ public class Grid {
         final int g = Math.clamp(parseIntSafe(usersEntry), NO_GRID, MAX_GRID);
         this.grid = g;
         this.offset = DEFAULT_OFFSET; // TODO allow user to enter grid offset?
-        setPref(g);
+        setPref(g, prefs);
     }
 
     public String display() {
@@ -414,14 +415,12 @@ public class Grid {
 
 
 
-    private static int getPref() {
-        // TODO remove dependency on GenXyEditor, make it just Preferences
-        return GenXyEditor.prefs().getInt("snapToGrid", DEFAULT_GRID);
+    private static int getPref(final Preferences prefs) {
+        return prefs.getInt("snapToGrid", DEFAULT_GRID);
     }
 
-    private static void setPref(final int grid) {
-        // TODO remove dependency on GenXyEditor, make it just Preferences
-        GenXyEditor.prefs().putInt("snapToGrid", grid);
+    private static void setPref(final int grid, final Preferences prefs) {
+        prefs.putInt("snapToGrid", grid);
     }
 
     private static int parseIntSafe(final String s) {

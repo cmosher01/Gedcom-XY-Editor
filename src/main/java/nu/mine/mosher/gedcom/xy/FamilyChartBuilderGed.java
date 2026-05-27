@@ -26,6 +26,7 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.prefs.Preferences;
 
 public final class FamilyChartBuilderGed {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilderGed.class);
@@ -34,21 +35,20 @@ public final class FamilyChartBuilderGed {
         throw new IllegalStateException("not intended to be instantiated");
     }
 
-    public static FamilyChart create(final GedcomTree tree, final File original) {
+    public static FamilyChart create(final GedcomTree tree, final File original, boolean destroy, final Preferences prefs) {
         final Map<String, Indi> mapIdToIndi = new HashMap<>();
 
         final List<Indi> indis = buildIndis(tree, mapIdToIndi);
         final List<Fami> famis = buildFamis(tree, Collections.unmodifiableMap(mapIdToIndi));
 
-        // TODO add destroy (like in FamilyChartBuilderFtm)
-//        if (indis.stream().noneMatch(Indi::hadOriginalXY)) {
-//            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
-            new Layout(indis, famis).clean();
-//        }
+        /*
+        TODO: how to handle destroy?
+         */
+        new Layout(indis, famis).clean();
 
         fillMissingCoords(indis);
 
-        final Metrics metrics = Metrics.buildMetricsFor(indis, famis);
+        final Metrics metrics = Metrics.buildMetricsFor(indis, famis, prefs);
         famis.forEach(f -> f.setMetrics(metrics));
         indis.forEach(i -> i.setMetrics(metrics));
 

@@ -1,0 +1,31 @@
+0 HEAD
+1 SUBM @SUBM1@
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+
+0 @SUBM1@ SUBM
+1 NAME Christopher Alan Mosher
+
+0 @I1@ INDI
+1 NAME Johann Gambolputty /de von Ausfern Schplenden Schlitter Crasscrenbon Fried/ of Ulm
+1 SEX M
+1 BIRT
+2 DATE 1 JAN 1920
+1 DEAT
+2 DATE 1 JAN 1970
+2 PLAC Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, Anglesey, Wales
+1 _XY 73 37
+
+0 @I2@ INDI
+1 NAME Johann Gambolputty /de von Ausfern Schplenden Schlitter Crasscrenbon Fried/ of Ulm
+1 SEX M
+1 BIRT
+2 DATE 1 JAN 1920
+1 DEAT
+2 DATE 1 JAN 1970
+2 PLAC Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, Anglesey, Wales
+1 _XY 273 237
+
+0 TRLR

@@ -65,6 +65,10 @@ public class FamilyChart {
         this.scrollable = scroller;
     }
 
+    public long countIndis() {
+        return this.indis.size();
+    }
+
     public void addGraphicsTo(final List<Node> addto) {
         this.others.addGraphicsTo(addto);
         this.famis.forEach(f -> f.addGraphicsTo(addto));
@@ -78,7 +82,7 @@ public class FamilyChart {
     }
 
     public void calc() {
-        this.others.calc(this.indis, this.metrics.colors());
+        this.others.calc(this.indis, this.metrics);
         this.indis.forEach(Indi::calc);
         this.famis.forEach(Fami::calc);
     }

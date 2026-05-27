@@ -267,13 +267,22 @@ public final class GenXyEditor {
         final JFXPanel fxPanel = new JFXPanel(); // this also initializes JavaFX toolkit
         Platform.setImplicitExit(false);
 
-        final CommandHandler cmd = new CommandHandler(frame);
+        final CommandHandler cmd = new CommandHandler(frame, prefs());
+
+        final boolean destroy = Objects.nonNull(GenXyEditor.arg0) && arg0.equals("--destroy-layout");
 
         // TODO allow multiple open documents
         // TODO remove specialized Open handling (just make it File/Open menu item)
-        final boolean destroy = Objects.nonNull(GenXyEditor.arg0) && arg0.equals("--destroy-layout");
-        final var chart = cmd.openFile(destroy);
+        final Optional<FamilyChart> chart = readFamilyChart(cmd, destroy);
+
         if (chart.isEmpty()) {
+            // we're done, so quit the app
+            cmd.quitApp();
+            return;
+        }
+
+        if (chart.get().countIndis() <= 0) {
+            JOptionPane.showMessageDialog(null, "The file has no people.\nGedcom-XY-Editor will exit.");
             cmd.quitApp();
             return;
         }
@@ -303,6 +312,18 @@ public final class GenXyEditor {
         Platform.runLater(() -> fxPanel.setScene(new Scene(buildJavaFxGui(chart.get()))));
     }
 
+    private static Optional<FamilyChart> readFamilyChart(CommandHandler cmd, boolean destroy) {
+        Optional<FamilyChart> chart;
+        try {
+            // either the file was opened and read successfully
+            // or the user pressed cancel (and chart is empty, and we're done)
+            chart = cmd.openFile(destroy);
+        } catch (final IOException e) {
+            chart = Optional.empty(); // we're done
+            JOptionPane.showMessageDialog(null, "Error trying to read file.\n" + e.getMessage());
+        }
+        return chart;
+    }
 
 
     private static final String CLASS_DRIVER_JDBC = "org.sqlite.JDBC";
@@ -376,7 +397,7 @@ public final class GenXyEditor {
 
 
         final var scroller = Scroller.create(canvas);
-        clipToChildren(scroller);
+        SceneUtil.clipToChildren(scroller);
 
         chart.setScroller(scroller);
 
@@ -402,7 +423,7 @@ public final class GenXyEditor {
 //                CornerRadii.EMPTY,
 //                new BorderWidths(3D)
 //        )));
-        clipToChildren(workspace);
+        SceneUtil.clipToChildren(workspace);
         workspace.setMinSize(0,0);
         workspace.setOnMouseMoved(e -> updateStatusBar(sb,scroller,canvas,e));
         workspace.setOnMouseDragged(e -> updateStatusBar(sb,scroller,canvas,e));
@@ -503,12 +524,5 @@ public final class GenXyEditor {
         final var c_p = canvas.parentToLocal(w_p);
         sb.updateViewPort(v_p);
         sb.updateVpToCv(c_p);
-    }
-
-    private static void clipToChildren(final Pane pane) {
-        final var clip = new Rectangle();
-        clip.widthProperty().bind(pane.widthProperty());
-        clip.heightProperty().bind(pane.heightProperty());
-        pane.setClip(clip);
     }
 }

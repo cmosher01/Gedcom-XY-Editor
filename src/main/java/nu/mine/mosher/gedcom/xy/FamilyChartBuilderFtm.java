@@ -25,31 +25,31 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
+import java.util.prefs.Preferences;
 
 public class FamilyChartBuilderFtm {
     private static final Logger LOG = LoggerFactory.getLogger(FamilyChartBuilderFtm.class);
 
-    public static FamilyChart create(final File fileFtm, final boolean destroy) throws IOException, SQLException {
+    public static FamilyChart create(final File fileFtm, final boolean destroy, Preferences prefs) throws IOException, SQLException {
         final List<Indi> indis;
         final List<Fami> famis;
         LOG.info("Opening SQLite FTM database file, read-only: {}", fileFtm.getCanonicalPath());
         final SQLiteConfig config = new SQLiteConfig();
         config.setReadOnly(true);
         try (final Connection conn = config.createConnection("jdbc:sqlite:"+ fileFtm.getCanonicalPath())) {
-
             final Map<String, Indi> mapIdToIndi = new HashMap<>();
             indis = buildIndis(conn, mapIdToIndi);
             famis = buildFamis(conn, Collections.unmodifiableMap(mapIdToIndi));
         }
 
-//        if (indis.stream().noneMatch(Indi::hadOriginalXY) || destroy) {
-//            LOG.info("No _XY coordinates found; laying out dropline chart automatically...");
-            new Layout(indis, famis).clean();
-//        }
+        /*
+        TODO: how to handle destroy?
+         */
+        new Layout(indis, famis).clean();
 
         fillMissingCoords(indis);
 
-        final Metrics metrics = Metrics.buildMetricsFor(indis, famis);
+        final Metrics metrics = Metrics.buildMetricsFor(indis, famis, prefs);
         famis.forEach(f -> f.setMetrics(metrics));
         indis.forEach(i -> i.setMetrics(metrics));
 

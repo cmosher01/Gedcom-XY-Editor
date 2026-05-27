@@ -24,6 +24,8 @@ import javafx.scene.text.Font;
 
 import java.util.Objects;
 
+import static nu.mine.mosher.gedcom.xy.util.SceneUtil.clipToChildren;
+
 public class StatusBar extends StackPane {
     private final Label statusName = new Label();
     private final Label labelMouseViewport = new Label();
@@ -47,10 +49,18 @@ public class StatusBar extends StackPane {
         configureCoordinateLabel(this.labelMouseViewport);
         configureCoordinateLabel(this.labelMouseVpToCv);
         final var coords = new HBox(this.labelMouseViewport, this.labelMouseVpToCv);
+        coords.setAlignment(Pos.CENTER_RIGHT);
 
         final var layout = new AnchorPane(selection, coords);
         AnchorPane.setLeftAnchor(selection, 5D);
         AnchorPane.setRightAnchor(coords, 5D);
+
+        selection.prefWidthProperty().bind(layout.widthProperty().divide(2.0D));
+        selection.setMaxWidth(Region.USE_PREF_SIZE);
+        selection.setMinWidth(Region.USE_PREF_SIZE);
+        coords.prefWidthProperty().bind(layout.widthProperty().divide(2.0D));
+        coords.setMaxWidth(Region.USE_PREF_SIZE);
+        coords.setMinWidth(Region.USE_PREF_SIZE);
 
         super.getChildren().add(layout);
     }
