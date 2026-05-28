@@ -47,7 +47,6 @@ public class Scroller extends Pane implements Scrollable {
         return ret;
     }
 
-    // Empirically, I know this calculation comes up a little bit short.
     @Override
     public void scrollTo(final Point2D to) {
 /*

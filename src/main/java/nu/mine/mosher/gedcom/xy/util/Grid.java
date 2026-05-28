@@ -18,7 +18,7 @@
 package nu.mine.mosher.gedcom.xy.util;
 
 import javafx.geometry.Point2D;
-import nu.mine.mosher.gedcom.xy.*;
+import nu.mine.mosher.gedcom.xy.Indi;
 import org.slf4j.*;
 
 import java.math.BigInteger;

@@ -28,17 +28,14 @@ import org.slf4j.*;
 import org.sqlite.SQLiteConfig;
 import org.w3c.dom.Document;
 
-import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.awt.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
-import java.util.List;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class FamilyChart {
@@ -367,10 +364,9 @@ public class FamilyChart {
 
     public void cmdReset() {
         // reset scale to 1:1
+        final var c_centerOfWindow = this.scrollable.center();
         this.scrollable.scaleTo();
-        // TODO scaleTo seems to scroll to an arbitrary point,
-        // so (for now) just center the chart:
-        this.cmdCenter();
+        this.scrollable.scrollTo(c_centerOfWindow);
     }
 
     public void cmdCenter() {

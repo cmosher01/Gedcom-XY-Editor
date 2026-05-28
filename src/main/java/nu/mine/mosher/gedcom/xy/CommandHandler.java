@@ -19,7 +19,6 @@ package nu.mine.mosher.gedcom.xy;
 
 
 import javafx.application.Platform;
-import javafx.geometry.BoundingBox;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.exception.InvalidLevel;
 import nu.mine.mosher.gedcom.xy.util.*;

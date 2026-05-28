@@ -24,8 +24,6 @@ import javafx.scene.text.Font;
 
 import java.util.Objects;
 
-import static nu.mine.mosher.gedcom.xy.util.SceneUtil.clipToChildren;
-
 public class StatusBar extends StackPane {
     private final Label statusName = new Label();
     private final Label labelMouseViewport = new Label();
