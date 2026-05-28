@@ -145,42 +145,23 @@ public class Fami {
 
         if (!rChild.isEmpty()) {
             childBar = createLine();
-            childBar.startXProperty().bind(new DoubleBinding() {
-                {
-                    for (final Indi child : rChild) {
-                        super.bind(child.x());
-                    }
-                }
 
-                @Override
-                protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).min().getAsDouble();
-                }
-            });
-            childBar.endXProperty().bind(new DoubleBinding() {
-                {
-                    for (final Indi child : rChild) {
-                        super.bind(child.x());
-                    }
-                }
+            final var obsChildrenX = rChild.stream().map(Indi::x).toList().toArray(new DoubleProperty[0]);
+            final var obsChildrenY = rChild.stream().map(Indi::y).toList().toArray(new DoubleProperty[0]);
 
-                @Override
-                protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).max().getAsDouble();
-                }
-            });
-            final DoubleBinding top = new DoubleBinding() {
-                {
-                    for (final Indi child : rChild) {
-                        super.bind(child.y());
-                    }
-                }
+            childBar.startXProperty().bind(Bindings.createDoubleBinding(
+                () -> rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).min().getAsDouble(),
+                obsChildrenX
+            ));
+            childBar.endXProperty().bind(Bindings.createDoubleBinding(
+                () -> rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).max().getAsDouble(),
+                obsChildrenX
+            ));
+            final DoubleBinding top = Bindings.createDoubleBinding(
+                () -> rChild.stream().mapToDouble(c -> c.yForParent(Fami.this).get()).min().getAsDouble() - childHeight(),
+                obsChildrenY
+            );
 
-                @Override
-                protected double computeValue() {
-                    return rChild.stream().mapToDouble(c -> c.yForParent(Fami.this).get()).min().getAsDouble() - childHeight();
-                }
-            };
             childBar.startYProperty().bind(top);
             childBar.endYProperty().bind(top);
 

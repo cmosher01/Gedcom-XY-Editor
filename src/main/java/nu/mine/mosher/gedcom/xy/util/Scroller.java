@@ -79,6 +79,14 @@ variable (x,y) naming convention:
     }
 
     @Override
+    public void autoScroll(final double dx, final double dy) {
+        final var l = this.canvas.layout();
+        final var x = l.getX() + dx;
+        final var y = l.getY() + dy;
+        this.canvas.layout(pt(x, y));
+    }
+
+    @Override
     public void scaleTo(final double scale) {
         this.canvas.scaleTo(scale);
     }
@@ -98,6 +106,22 @@ variable (x,y) naming convention:
     public Point2D center() {
         final var v_center = pt(getWidth()/2D, getHeight()/2D);
         return this.canvas.viewportToCanvas(v_center);
+    }
+
+    @Override
+    public Bounds viewportBoundsInCanvasCoords() {
+        final var v_b = getBoundsInLocal();
+        final var v_tl = new Point2D(v_b.getMinX(), v_b.getMinY());
+        final var c_tl = this.canvas.viewportToCanvas(v_tl);
+        final var v_br = new Point2D(v_b.getMaxX(), v_b.getMaxY());
+        final var c_br = this.canvas.viewportToCanvas(v_br);
+
+        final var c_x = c_tl.getX();
+        final var c_y = c_tl.getY();
+        final var c_w = c_br.getX() - c_tl.getX();
+        final var c_h = c_br.getY() - c_tl.getY();
+
+        return new BoundingBox(c_x, c_y, c_w, c_h);
     }
 
 

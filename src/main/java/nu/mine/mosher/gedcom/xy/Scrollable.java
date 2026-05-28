@@ -22,10 +22,13 @@ import javafx.geometry.*;
 public interface Scrollable {
     void scrollTo(Point2D hv);
 
+    void autoScroll(double dx, double dy);
+
     void scaleTo(double scale);
     void scaleTo();
 
     void scaleToFit(Bounds boundsChart);
 
     Point2D center();
+    Bounds viewportBoundsInCanvasCoords();
 }

@@ -33,6 +33,7 @@ public class Selection {
     private final FamilyChart familyChart;
     private final Map<Indi,IndiMovement> indisSelected = new IdentityHashMap<>();
     private Point2D ptDraggedFrom = NO_POINT;
+    private Bounds boundsChart;
 
     public Selection(final FamilyChart familyChart) {
         this.familyChart = familyChart;
@@ -65,17 +66,40 @@ public class Selection {
 
     public void beginDrag(final Point2D from) {
         dumpEvent("beginDrag: beg:");
+        this.boundsChart = this.familyChart.scrollable().viewportBoundsInCanvasCoords();
         this.ptDraggedFrom = from;
         this.familyChart.updateSelectStatus();
         dumpEvent("beginDrag: end:");
     }
 
 
-    public void drag(final Point2D to) {
+    public void drag(final Point2D to, final Point2D ptCanvas) {
         dumpEvent("     Drag: beg:");
         assert !this.ptDraggedFrom.equals(NO_POINT);
         final var d = to.subtract(this.ptDraggedFrom);
         this.indisSelected.keySet().forEach(i -> i.dragWithSnap(d));
+        if (!this.boundsChart.contains(ptCanvas)) {
+//            System.out.println("DRAGGING TO OUTSIDE WINDOW");
+            final var DELTA = 10D;
+
+            var dx = 0D;
+            if (ptCanvas.getX() <= this.boundsChart.getMinX()) {
+                dx = +DELTA;
+            } else if (this.boundsChart.getMaxX() <= ptCanvas.getX()) {
+                dx = -DELTA;
+            }
+            var dy = 0D;
+            if (ptCanvas.getY() <= this.boundsChart.getMinY()) {
+                dy = +DELTA;
+            } else if (this.boundsChart.getMaxY() <= ptCanvas.getY()) {
+                dy = -DELTA;
+            }
+
+            if (dx != 0D || dy != 0D){
+                this.familyChart.scrollable().autoScroll(dx, dy);
+                this.boundsChart = this.familyChart.scrollable().viewportBoundsInCanvasCoords();
+            }
+        }
         this.familyChart.updateSelectStatus();
         dumpEvent("     Drag: end:");
     }
@@ -170,6 +194,8 @@ public class Selection {
         }
         return ret;
     }
+
+
 
     public record IndiMovement(Point2D ptOrig, Point2D ptDest) {
         public static IndiMovement orig(final Point2D ptOrig) {

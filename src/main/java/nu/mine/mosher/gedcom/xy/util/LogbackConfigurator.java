@@ -103,7 +103,7 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         final String tsname = ts+"_"+f.getName();
 
         LogbackConfigurator.file = Paths.get(f.getParent()).resolve(tsname).toString();
-        System.err.println("Log file path: "+LogbackConfigurator.file);
+        System.err.println("Log file path:\n"+LogbackConfigurator.file);
     }
 
 

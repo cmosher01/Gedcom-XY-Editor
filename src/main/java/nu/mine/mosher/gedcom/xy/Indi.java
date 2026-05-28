@@ -90,13 +90,7 @@ public class Indi {
     public void setMetrics(final Metrics metrics) {
         this.metrics = metrics;
         this.colors = this.metrics.colors();
-        this.fillBinding = new ObjectBinding<>() {
-            { super.bind(selected); }
-            @Override protected Color computeValue()
-            {
-                return selected.get() ? colors.indiSelText() : colors.indiText();
-            }
-        };
+        this.fillBinding = Bindings.createObjectBinding(() -> selected.get() ? colors.indiSelText() : colors.indiText(), selected);
 
     }
 
@@ -221,7 +215,7 @@ public class Indi {
             assert !ptOrig.equals(NO_POINT);
             dumpEvent("dragged", ptOrig, ptCanvas);
 
-            selection.drag(pt);
+            selection.drag(pt, ptCanvas);
             // don't consume event, so status bar gets updated by scroller event handler
         });
         this.plaque.setOnMouseReleased(t -> {
@@ -272,10 +266,8 @@ public class Indi {
 
     private void dumpEvent(final String event, final Point2D ptOrig, final Point2D ptCurrent) {
 //        final var magnitude = Math.abs(ptCurrent.subtract(ptOrig).magnitude());
-//        final var tl = new Point2D(this.boundaryChart.minX(),this.boundaryChart.minY());
-//        final var v_tl = this.plaque.getParent().localToParent(tl); // convert from canvas to scroller (not including padding around chart)
-//        System.out.printf("selection: %8s (%7.1f,%7.1f)->(%7.1f,%7.1f) [%7.1f]     canvasTopLeftInWindowCoords=(%7.1f,%7.1f)\n",
-//            event, ptOrig.getX(), ptOrig.getY(), ptCurrent.getX(), ptCurrent.getY(), magnitude, v_tl.getX(), v_tl.getY());
+//        System.out.printf("selection: %8s (%7.1f,%7.1f)->(%7.1f,%7.1f) [%7.1f]\n",
+//            event, ptOrig.getX(), ptOrig.getY(), ptCurrent.getX(), ptCurrent.getY(), magnitude);
     }
 
     public Point2D xyUser() {

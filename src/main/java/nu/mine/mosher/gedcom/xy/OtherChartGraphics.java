@@ -17,12 +17,14 @@
 
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.beans.binding.DoubleBinding;
+import javafx.beans.binding.*;
+import javafx.beans.property.DoubleProperty;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class OtherChartGraphics {
     private final Rectangle border = new Rectangle();
@@ -48,50 +50,20 @@ public class OtherChartGraphics {
         this.axisYNeg.getStrokeDashArray().addAll(2D, 8D);
 
 
-        final var minX = new DoubleBinding() {
-            {
-                indis.forEach(i -> super.bind(i.x()));
-            }
-
-            @Override
-            protected double computeValue() {
-                return indis.stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
-            }
-        };
-
-        final var minY = new DoubleBinding() {
-            {
-                indis.forEach(i -> super.bind(i.y()));
-            }
-
-            @Override
-            protected double computeValue() {
-                return indis.stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
-            }
-        };
-
-        final var maxX = new DoubleBinding() {
-            {
-                indis.forEach(i -> super.bind(i.x()));
-            }
-
-            @Override
-            protected double computeValue() {
-                return indis.stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
-            }
-        };
-
-        final var maxY = new DoubleBinding() {
-            {
-                indis.forEach(i -> super.bind(i.y()));
-            }
-            @Override
-            protected double computeValue() {
-                return indis.stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
-            }
-        };
 
 
+
+        final var obsIndisX = indis.stream().map(Indi::x).toList().toArray(new DoubleProperty[0]);
+        final Callable<Double> clMinX = () -> indis.stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
+        final var minX = Bindings.createDoubleBinding(clMinX, obsIndisX);
+        final Callable<Double> clMaxX = () -> indis.stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
+        final var maxX = Bindings.createDoubleBinding(clMaxX, obsIndisX);
+
+        final var obsIndisY = indis.stream().map(Indi::y).toList().toArray(new DoubleProperty[0]);
+        final Callable<Double> clMinY = () -> indis.stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
+        final var minY = Bindings.createDoubleBinding(clMinY, obsIndisY);
+        final Callable<Double> clMaxY = () -> indis.stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
+        final var maxY = Bindings.createDoubleBinding(clMaxY, obsIndisY);
 
         this.border.xProperty().bind(minX.subtract(margin));
         this.border.yProperty().bind(minY.subtract(margin));
@@ -108,6 +80,8 @@ public class OtherChartGraphics {
         this.axisXNeg.endXProperty().bind(minX.subtract(margin));
         this.axisXNeg.setStartY(0D);
         this.axisXNeg.setEndY(0D);
+
+
 
         this.axisYPos.setStartY(0D);
         this.axisYPos.endYProperty().bind(maxY.add(margin));
