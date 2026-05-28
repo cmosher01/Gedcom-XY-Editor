@@ -440,6 +440,7 @@ public final class GenXyEditor {
             }
             if (26.1D < w1.doubleValue()) { // wait for layout finished
                 Platform.runLater(chart::cmdFit); // run "Fit" command later
+                chart.logAllOverlappingIndis();
                 initializedFitOnLaunch.set(true);
             }
         });

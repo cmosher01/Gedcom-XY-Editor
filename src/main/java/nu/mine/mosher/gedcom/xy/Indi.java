@@ -512,4 +512,8 @@ public class Indi {
     public double distanceFrom(final Indi other) {
         return this.coords.get().distance(other.coords.get());
     }
+
+    public String nameIdent() {
+        return this.nameSimple()+" "+this.lifespan;
+    }
 }

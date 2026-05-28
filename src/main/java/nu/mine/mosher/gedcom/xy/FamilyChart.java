@@ -28,14 +28,17 @@ import org.slf4j.*;
 import org.sqlite.SQLiteConfig;
 import org.w3c.dom.Document;
 
+import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.awt.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.*;
+import java.util.List;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class FamilyChart {
@@ -410,6 +413,7 @@ public class FamilyChart {
     }
 
 
+
     private static final Set<String> SKEL;
 
     static {
@@ -431,4 +435,21 @@ public class FamilyChart {
     }
 
 
+    public void logAllOverlappingIndis() {
+        for (int i = 0; i < this.indis.size()-1; ++i) {
+            for (int j = i+1; j < this.indis.size(); ++j) {
+                final var a = this.indis.get(i);
+                final var b = this.indis.get(j);
+                if (a.bounds().intersects(b.bounds())) {
+                    logOnePairOfOverlappingIndis(a, b);
+                }
+            }
+        }
+    }
+
+    private void logOnePairOfOverlappingIndis(final Indi a, final Indi b) {
+        LOG.warn("Overlapping people: {} & {}", a.nameIdent(), b.nameIdent());
+//        LOG.info("    Bounds of {}: {}", a.nameSimple(), a.bounds());
+//        LOG.info("    Bounds of {}: {}", b.nameSimple(), b.bounds());
+    }
 }

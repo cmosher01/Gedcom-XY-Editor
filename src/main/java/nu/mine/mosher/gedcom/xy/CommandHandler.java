@@ -22,7 +22,7 @@ import javafx.application.Platform;
 import javafx.geometry.BoundingBox;
 import nu.mine.mosher.gedcom.*;
 import nu.mine.mosher.gedcom.exception.InvalidLevel;
-import nu.mine.mosher.gedcom.xy.util.LogbackConfigurator;
+import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import javax.swing.*;
@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.prefs.Preferences;
 import java.util.regex.*;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class CommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(CommandHandler.class);
 
@@ -113,6 +114,18 @@ public class CommandHandler {
             cmdRedo.setShortcut(new MenuShortcut(KeyEvent.VK_Z, true));
             cmdRedo.addActionListener(e -> Platform.runLater(chart::redo));
 
+            final var cmdFind = new MenuItem("Find");
+            cmdFind.setShortcut(new MenuShortcut(KeyEvent.VK_F));
+            cmdFind.addActionListener(e -> find(chart));
+
+            final var cmdFindNext = new MenuItem("Find Next");
+            cmdFindNext.setShortcut(new MenuShortcut(KeyEvent.VK_G));
+            cmdFindNext.addActionListener(e -> findNext());
+
+            final var cmdFindPrev = new MenuItem("Find Previous");
+            cmdFindPrev.setShortcut(new MenuShortcut(KeyEvent.VK_G, true));
+            cmdFindPrev.addActionListener(e -> findPrev());
+
             final var cmdNudge = new MenuItem("Nudge");
             cmdNudge.setShortcut(new MenuShortcut(KeyEvent.VK_N));
             cmdNudge.addActionListener(e -> Platform.runLater(chart::cmdNudge));
@@ -133,6 +146,10 @@ public class CommandHandler {
 //            menuEdit.add(cmdClean);
             menuEdit.add(cmdUndo);
             menuEdit.add(cmdRedo);
+            menuEdit.addSeparator();
+            menuEdit.add(cmdFind);
+            menuEdit.add(cmdFindNext);
+            menuEdit.add(cmdFindPrev);
             menuEdit.addSeparator();
             menuEdit.add(cmdNudge);
             menuEdit.addSeparator();
@@ -201,7 +218,32 @@ public class CommandHandler {
         return mbar;
     }
 
+    private String lastFind = "";
+    private Optional<Finder> finder = Optional.empty();
 
+    private void find(final FamilyChart chart) {
+        final var result = Optional.ofNullable(JOptionPane.showInputDialog(this.frame,
+            "Enter name to search for:", "Find", JOptionPane.QUESTION_MESSAGE, null, null,
+            this.lastFind));
+        if (result.isPresent()) {
+            final var s = result.get().toString().strip();
+            if (!s.isBlank()) {
+                this.lastFind = s;
+                if (this.finder.isEmpty()) {
+                    this.finder = Optional.of(new Finder(chart.indis(), chart.scrollable()));
+                }
+                this.finder.get().find(s);
+            }
+        }
+    }
+
+    private void findNext() {
+        this.finder.ifPresent(Finder::next);
+    }
+
+    private void findPrev() {
+        this.finder.ifPresent(Finder::prev);
+    }
 
     //    private void normalize(final FamilyChart chart) {
 //        final int response = JOptionPane.showConfirmDialog(
@@ -546,17 +588,18 @@ public class CommandHandler {
 
 
     private static void logChartInfo(FamilyChart chart) {
-        if (chart.indis().isEmpty()) {
-            LOG.warn("No individuals found in file.");
-            return;
-        }
-        final var xMin = chart.indis().stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
-        final var yMin = chart.indis().stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
-        final var xMax = chart.indis().stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
-        final var yMax = chart.indis().stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
-        final var w = xMax-xMin;
-        final var h = yMax-yMin;
-        final var bounds = new BoundingBox(xMin, yMin, w, h);
-        LOG.info("Bounds of imported chart: "+bounds);
+        // TODO: this might run too early... maybe remove it, or put it where logOverlaps is
+//        if (chart.indis().isEmpty()) {
+//            LOG.warn("No individuals found in file.");
+//            return;
+//        }
+//        final var xMin = chart.indis().stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
+//        final var yMin = chart.indis().stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
+//        final var xMax = chart.indis().stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
+//        final var yMax = chart.indis().stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
+//        final var w = xMax-xMin;
+//        final var h = yMax-yMin;
+//        final var bounds = new BoundingBox(xMin, yMin, w, h);
+//        LOG.info("Bounds of imported chart: "+bounds);
     }
 }
