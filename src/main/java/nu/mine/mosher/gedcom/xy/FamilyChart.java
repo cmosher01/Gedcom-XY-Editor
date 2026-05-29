@@ -22,6 +22,7 @@ import javafx.geometry.*;
 import javafx.scene.Node;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
+import nu.mine.mosher.gedcom.xy.shape.ShapeUtils;
 import nu.mine.mosher.gedcom.xy.undo.ModificationTracker;
 import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
@@ -447,20 +448,43 @@ public class FamilyChart {
         LOG.info("Bounds (without margins) of imported chart: {}", bounds);
     }
 
+
+
+
+
+    private record Occlusion(Indi a, Indi b, int pct) implements Comparable<Occlusion> {
+        public static Occlusion create(final Indi a, final Indi b) {
+            final var occlusion = ShapeUtils.occlusion(a.bounds(), b.bounds());
+            final var pct = (int)Math.round(Math.rint(occlusion * 100D));
+            return new Occlusion(a, b, pct);
+        }
+
+        @Override
+        public int compareTo(final Occlusion that) {
+            // sort by occlusion amount, descending
+            return Integer.compare(that.pct, this.pct);
+        }
+    }
+
     public void logAllOverlappingIndis() {
+        final var occs = new ArrayList<Occlusion>(64);
         for (int i = 0; i < this.indis.size()-1; ++i) {
             for (int j = i+1; j < this.indis.size(); ++j) {
                 final var a = this.indis.get(i);
                 final var b = this.indis.get(j);
                 if (a.bounds().intersects(b.bounds())) {
-                    logOnePairOfOverlappingIndis(a, b);
+                    occs.add(Occlusion.create(a, b));
                 }
             }
         }
+        Collections.sort(occs);
+        for (final var occ : occs) {
+            logOneOcclusion(occ);
+        }
     }
 
-    private void logOnePairOfOverlappingIndis(final Indi a, final Indi b) {
-        LOG.warn("Overlapping people: {} & {}", a.nameIdent(), b.nameIdent());
+    private static void logOneOcclusion(final Occlusion occ) {
+        LOG.warn(String.format("Overlapping (%3d%%) people: %s & %s", occ.pct(), occ.a().nameSimple(), occ.b().nameSimple()));
 //        LOG.info("    Bounds of {}: {}", a.nameSimple(), a.bounds());
 //        LOG.info("    Bounds of {}: {}", b.nameSimple(), b.bounds());
     }

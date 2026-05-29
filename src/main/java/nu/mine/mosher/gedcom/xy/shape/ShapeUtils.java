@@ -29,7 +29,7 @@ public final class ShapeUtils {
         throw new UnsupportedOperationException();
     }
 
-    public static Bounds addBounds(final Bounds b1, final Bounds b2) {
+    public static Bounds add(final Bounds b1, final Bounds b2) {
         final var minX = Math.min(b1.getMinX(), b2.getMinX());
         final var minY = Math.min(b1.getMinY(), b2.getMinY());
         final var maxX = Math.max(b1.getMaxX(), b2.getMaxX());
@@ -39,5 +39,31 @@ public final class ShapeUtils {
 
     public static boolean ptEqual(final Point2D a, final Point2D b) {
         return Math.abs(a.getX()-b.getX()) < EPSILON && Math.abs(a.getY()-b.getY()) < EPSILON;
+    }
+
+    public static double area(final Bounds b) {
+        return b.getWidth() * b.getHeight();
+    }
+
+    public static Bounds intersect(final Bounds b1, final Bounds b2) {
+        final var minX = Math.max(b1.getMinX(), b2.getMinX());
+        final var minY = Math.max(b1.getMinY(), b2.getMinY());
+        final var maxX = Math.min(b1.getMaxX(), b2.getMaxX());
+        final var maxY = Math.min(b1.getMaxY(), b2.getMaxY());
+
+        final var width = maxX - minX;
+        final var height = maxY - minY;
+
+        return new BoundingBox(minX, minY, width, height);
+    }
+
+    public static double occlusion(final Bounds a, final Bounds b) {
+        final var areaA = area(a);
+        final var areaB = area(b);
+
+        final var i = intersect(a, b);
+        final var areaI = area(i);
+
+        return Math.max(areaI/areaA, areaI/areaB);
     }
 }

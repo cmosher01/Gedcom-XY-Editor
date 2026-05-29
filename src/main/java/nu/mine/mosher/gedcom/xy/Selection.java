@@ -42,7 +42,7 @@ public class Selection {
 
 
     private Optional<Bounds> bounds() {
-        return this.indisSelected.keySet().stream().map(Indi::bounds).reduce(ShapeUtils::addBounds);
+        return this.indisSelected.keySet().stream().map(Indi::bounds).reduce(ShapeUtils::add);
     }
 
     public void clear() {

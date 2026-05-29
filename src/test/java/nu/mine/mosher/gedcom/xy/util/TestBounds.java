@@ -32,7 +32,7 @@ public class TestBounds {
 
     @Test
     void fixtures() {
-        final var actual = ShapeUtils.addBounds(b_0011, b_5511);
+        final var actual = ShapeUtils.add(b_0011, b_5511);
         assertEquals(b_0066, actual);
     }
 
@@ -57,14 +57,14 @@ public class TestBounds {
             if (Objects.isNull(bounds)) {
                 bounds = i;
             } else {
-                bounds = ShapeUtils.addBounds(bounds, i);
+                bounds = ShapeUtils.add(bounds, i);
             }
         }
         return bounds;
     }
 
     public Bounds uutProposed(final Collection<Bounds> rb) {
-        return rb.stream().reduce(ShapeUtils::addBounds).get();
+        return rb.stream().reduce(ShapeUtils::add).get();
     }
 
     private static Bounds b(final double x, final double y, final double w, final double h) {
