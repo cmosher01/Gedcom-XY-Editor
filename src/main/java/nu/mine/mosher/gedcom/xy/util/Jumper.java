@@ -74,7 +74,7 @@ public class Jumper {
     private State state = sj;
 
     // We don't get notified when the user changes the selection,
-    // so we need to check the which action the user did to the
+    // so we need to check which action the user did to the
     // selection before pressing "J" key.
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public void selectionDelta(final Optional<Point2D> selection) {

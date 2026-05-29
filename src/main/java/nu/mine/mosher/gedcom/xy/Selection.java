@@ -79,7 +79,6 @@ public class Selection {
         final var d = to.subtract(this.ptDraggedFrom);
         this.indisSelected.keySet().forEach(i -> i.dragWithSnap(d));
         if (!this.boundsChart.contains(ptCanvas)) {
-//            System.out.println("DRAGGING TO OUTSIDE WINDOW");
             final var DELTA = 10D;
 
             var dx = 0D;

@@ -110,18 +110,7 @@ variable (x,y) naming convention:
 
     @Override
     public Bounds viewportBoundsInCanvasCoords() {
-        final var v_b = getBoundsInLocal();
-        final var v_tl = new Point2D(v_b.getMinX(), v_b.getMinY());
-        final var c_tl = this.canvas.viewportToCanvas(v_tl);
-        final var v_br = new Point2D(v_b.getMaxX(), v_b.getMaxY());
-        final var c_br = this.canvas.viewportToCanvas(v_br);
-
-        final var c_x = c_tl.getX();
-        final var c_y = c_tl.getY();
-        final var c_w = c_br.getX() - c_tl.getX();
-        final var c_h = c_br.getY() - c_tl.getY();
-
-        return new BoundingBox(c_x, c_y, c_w, c_h);
+        return this.canvas.viewportToCanvas(getBoundsInLocal());
     }
 
 
@@ -299,6 +288,15 @@ m                 lp <------ layout (min x) that causes p' to
         }
 
         public Point2D viewportToCanvas(final Point2D v_local) {
+            final var c_local = this.canvas.parentToLocal(v_local);
+            if (Objects.isNull(c_local)) {
+                // this happens if called before layout is complete
+                throw new IllegalStateException();
+            }
+            return c_local;
+        }
+
+        public Bounds viewportToCanvas(final Bounds v_local) {
             final var c_local = this.canvas.parentToLocal(v_local);
             if (Objects.isNull(c_local)) {
                 // this happens if called before layout is complete

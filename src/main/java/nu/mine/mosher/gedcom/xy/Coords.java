@@ -19,6 +19,7 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.property.*;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.shape.Circle;
 import org.slf4j.*;
 
@@ -30,9 +31,9 @@ import static javafx.scene.paint.Color.TRANSPARENT;
 
 @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "WeakerAccess"})
 public final class Coords {
-    public static final int XY_SCALE = 2;
     private static final Logger LOG = LoggerFactory.getLogger(Coords.class);
 
+    public static final int XY_SCALE = 2;
     private static final Point2D xyMISSING = new Point2D(37, 73);
     private static final double SMALL = 1.0e-3D;
 
@@ -41,7 +42,8 @@ public final class Coords {
     private Optional<Point2D> wxyLayout;
     private Point2D wxyStart;
     private Point2D xyStart;
-    private final Circle xyLayoutUser = new Circle(0, TRANSPARENT); // TODO make this a Point2D property
+    private final DoubleProperty xLayoutUser = new SimpleDoubleProperty();
+    private final DoubleProperty yLayoutUser = new SimpleDoubleProperty();
     private boolean forceDirty;
     private final BooleanProperty propDirty = new SimpleBooleanProperty();
 
@@ -103,7 +105,7 @@ public final class Coords {
      * @return bindable x
      */
     public DoubleProperty x() {
-        return this.xyLayoutUser.layoutXProperty();
+        return this.xLayoutUser;
     }
 
     /**
@@ -111,7 +113,7 @@ public final class Coords {
      * @return bindable y
      */
     public DoubleProperty y() {
-        return this.xyLayoutUser.layoutYProperty();
+        return this.yLayoutUser;
     }
 
     /**
@@ -134,7 +136,8 @@ public final class Coords {
      */
     public void dragTo(final Point2D here) {
         Objects.requireNonNull(here);
-        this.xyLayoutUser.relocate(here.getX(), here.getY());
+        this.xLayoutUser.set(here.getX());
+        this.yLayoutUser.set(here.getY());
         update();
     }
 
@@ -227,7 +230,7 @@ public final class Coords {
                 toDump("wxyLayout", this.wxyLayout),
                 toDump("wxyStart", this.wxyStart),
                 toDump("xyStart", this.xyStart),
-                toDump("xyLayoutUser", new Point2D(this.xyLayoutUser.getLayoutX(), this.xyLayoutUser.getLayoutY())),
+                toDump("xyLayoutUser", new Point2D(this.xLayoutUser.get(), this.yLayoutUser.get())),
                 String.format("mag=%.0f",userMoved().magnitude()),
                 (!dirty() ? "-" : this.forceDirty ? "F" : "D"),
                 this.of);
@@ -279,10 +282,6 @@ public final class Coords {
     }
 
     public static String toValueXY(final Point2D xy) {
-        return formatCoord(xy.getX())+" "+ formatCoord(xy.getY());
-    }
-
-    private static String formatCoord(final double coord) {
-        return BigDecimal.valueOf(coord).setScale(XY_SCALE, RoundingMode.HALF_DOWN).toPlainString();
+        return String.format("%.2f %.2f", xy.getX(), xy.getY());
     }
 }

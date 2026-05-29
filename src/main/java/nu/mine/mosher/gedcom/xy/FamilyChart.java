@@ -430,6 +430,22 @@ public class FamilyChart {
         }
     }
 
+    public void logChartInfo() {
+        if (indis().isEmpty()) {
+            LOG.warn("No individuals found in file.");
+            return;
+        }
+        LOG.info("Total count of people in chart: {}", countIndis());
+
+        final var xMin = indis().stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
+        final var yMin = indis().stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
+        final var xMax = indis().stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
+        final var yMax = indis().stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
+        final var w = xMax-xMin;
+        final var h = yMax-yMin;
+        final var bounds = new BoundingBox(xMin, yMin, w, h);
+        LOG.info("Bounds (without margins) of imported chart: {}", bounds);
+    }
 
     public void logAllOverlappingIndis() {
         for (int i = 0; i < this.indis.size()-1; ++i) {

@@ -396,13 +396,13 @@ public class Indi {
     }
 
     public void saveXyToTree() {
-        final String value_XY = Coords.toValueXY(this.coords.get());
+        final String xy = Coords.toValueXY(this.coords.get());
         final Optional<TreeNode<GedcomLine>> existingXyNode = findChild(this.node, "_XY");
-        final TreeNode<GedcomLine> newNode = new TreeNode<>(this.node.getObject().createChild("_XY", value_XY));
+        final TreeNode<GedcomLine> newNode = new TreeNode<>(this.node.getObject().createChild("_XY", xy));
         if (existingXyNode.isPresent()) {
             final TreeNode<GedcomLine> oldNode = existingXyNode.get();
             if (this.coords.original().isPresent()) {
-                oldNode.setObject(oldNode.getObject().replaceValue(value_XY));
+                oldNode.setObject(oldNode.getObject().replaceValue(xy));
             } else {
                 // This is the case where there was an original _XY record in the GEDCOM
                 // file, but it had an invalid format.

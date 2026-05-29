@@ -20,7 +20,7 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.text.*;
-import nu.mine.mosher.gedcom.xy.util.Grid;
+import nu.mine.mosher.gedcom.xy.util.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -46,6 +46,8 @@ public final class Metrics {
 
     public static final double MARGIN = 200.0D;
 
+
+
     private final double fontSize;
     private final double fontSizeSmall;
     private final double dxPartner;
@@ -66,44 +68,27 @@ public final class Metrics {
     private ColorScheme colors = new ColorSchemeBold();
 
 
+
     public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis, final Preferences prefs) {
-        final double dxPartner = famis.stream().mapToDouble(Fami::getMarrDistance).filter(Metrics::nominalDistance).average().orElse(0D);
-        final double dyGeneration = famis.stream().mapToDouble(Fami::getGenDistance).filter(Metrics::nominalDistance).average().orElse(0D);
-        final double dxAvg = calculateAverageX(indis);
         final Grid grid = Grid.createFromPoints(indis, prefs);
+        final double dxAvg = nominal(grid.grid(), DX_DEFAULT);
+        final double dxPartner = nominal(calcDxPartner(famis), dxAvg);
+        final double dyGeneration = nominal(calcDyGeneration(famis), 2.0D*dxAvg);
         return new Metrics(dxPartner * MARRIAGE_SPACING_FACTOR, dyGeneration, dxAvg, grid);
     }
 
+    private static double calcDxPartner(final List<Fami> famis) {
+        final var rn = famis.stream().map(Fami::getMarrDistance).filter(Metrics::nominalDistance).toList();
+        return MathUtil.median(rn);
+    }
 
-    private static double calculateAverageX(final List<Indi> indis) {
-        final Map<Double, TreeSet<Double>> mapYtoXs = indis
-            .stream()
-            .map(Indi::laidOut)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(groupingBy(p -> Math.floor(p.getY() / YDIV), mapping(Point2D::getX, toCollection(TreeSet::new))));
+    private static double calcDyGeneration(final List<Fami> famis) {
+        final var rn = famis.stream().map(Fami::getGenDistance).filter(Metrics::nominalDistance).toList();
+        return MathUtil.median(rn);
+    }
 
-        double avg = 0.0D;
-        int c = 0;
-
-        for (final TreeSet<Double> setX : mapYtoXs.values()) {
-            final Double[] rX = setX.toArray(new Double[0]);
-            for (int i = 0; i < rX.length-1; ++i) {
-                final double dist =rX[i+1]-rX[i];
-                if (nominalDistance(dist)) {
-                    avg += dist;
-                    ++c;
-                }
-            }
-        }
-
-        if (c <= 0) {
-            LOG.warn("Could not find any valid distances between individuals.");
-        } else {
-            avg /= c;
-        }
-
-        return avg;
+    private static double nominal(final double n, final double nDefault) {
+        return nominalDistance(n) ? n : nDefault;
     }
 
     private static boolean nominalDistance(final double d) {
@@ -111,9 +96,9 @@ public final class Metrics {
     }
 
     private Metrics(final double dxPartner, final double dyGeneration, final double dxAvg, final Grid grid) {
-        this.dxAvg = nominalDistance(dxAvg) ? dxAvg : DX_DEFAULT;
-        this.dxPartner = nominalDistance(dxPartner) ? dxPartner : dxAvg;
-        this.dyGeneration = nominalDistance(dyGeneration) ? dyGeneration : dxAvg * 2.0D;
+        this.dxAvg = dxAvg;
+        this.dxPartner = dxPartner;
+        this.dyGeneration = dyGeneration;
 
         this.fontSize = Math.clamp(this.dxAvg/FONT_SIZE_RATIO, 6.0D, 24.0D);
         this.fontSizeSmall = this.fontSize * 0.75D;
@@ -132,18 +117,21 @@ public final class Metrics {
 
         this.grid = grid;
 
-        LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},fontSizeSmall={},widthMax={},heightNominal={}", this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.fontSize, this.fontSizeSmall, this.widthMax, this.heightNominal);
+        LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},fontSizeSmall={},widthMax={},heightNominal={}",
+            this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.fontSize, this.fontSizeSmall, this.widthMax, this.heightNominal);
     }
 
     private Font loadFont(final String pathRes, final double size) {
         final var res = Optional.ofNullable(getClass().getResource(pathRes));
         if (res.isEmpty()) {
-            throw new IllegalStateException("Can't load resource: NotoSans-Regular.ttf");
+            throw new IllegalStateException("Can't load resource: "+pathRes);
         }
         final var loadedFont = Font.loadFont(res.get().toExternalForm(), size);
-        System.out.println("Loaded font: "+loadedFont.getName());
+        LOG.info("Loaded font: {}", loadedFont.getName());
         return loadedFont;
     }
+
+
 
     public double getFontSize() {
         return this.fontSize;

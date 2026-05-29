@@ -34,7 +34,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.prefs.Preferences;
-import java.util.regex.*;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class CommandHandler {
@@ -308,7 +307,7 @@ public class CommandHandler {
             chart.saveAs(fileToSaveAs);
         } catch (final Exception e) {
             JOptionPane.showMessageDialog(this.frame,
-                "Error trying to save file. Please try again.\n"+e.getMessage());
+                "Error trying to save file. Please try again.\n"+e);
             LOG.error("An error occurred while trying to save file, file={}", fileToSaveAs, e);
         }
     }
@@ -380,7 +379,7 @@ public class CommandHandler {
             chart.savePdf(fileToSaveAs);
         } catch (final Exception e) {
             JOptionPane.showMessageDialog(this.frame,
-                "Error trying to export PDF. Please try again.\n"+e.getMessage());
+                "Error trying to export PDF. Please try again.\n"+e);
             LOG.error("An error occurred while trying to export PDF, file={}", fileToSaveAs, e);
         }
     }
@@ -409,7 +408,7 @@ public class CommandHandler {
             chart.saveSvg(fileToSaveAs);
         } catch (final Exception e) {
             JOptionPane.showMessageDialog(this.frame,
-                "Error trying to export SVG. Please try again.\n"+e.getMessage());
+                "Error trying to export SVG. Please try again.\n"+e);
             LOG.error("An error occurred while trying to export SVG file, file={}", fileToSaveAs, e);
         }
     }
@@ -440,7 +439,7 @@ public class CommandHandler {
             chart.saveSkeleton(exportAll, fileToSaveAs);
         } catch (final IOException e) {
             JOptionPane.showMessageDialog(this.frame,
-                "Error trying to export skeleton GEDCOM. Please try again.\n"+e.getMessage());
+                "Error trying to export skeleton GEDCOM. Please try again.\n"+e);
             LOG.error("An error occurred while trying to export skeleton GEDCOM, file={}", fileToSaveAs, e);
         }
     }
@@ -492,7 +491,7 @@ public class CommandHandler {
 
         final var error = Optional.ofNullable(thrown.get());
         if (error.isPresent()) {
-            throw new IOException(error.get().getMessage(), error.get());
+            throw new IOException(error.get().toString(), error.get());
         }
 
         return chart.get();
@@ -501,7 +500,7 @@ public class CommandHandler {
     private static FamilyChart tryReadChartFromFile(final File fileToOpen, final boolean destroy, final Preferences prefs) throws IOException, InvalidLevel, SQLException {
         final FamilyChart chart;
 
-        final String filetype = filetypeOf(fileToOpen);
+        final String filetype = FileUtil.filetypeOf(fileToOpen);
         if (filetype.equalsIgnoreCase("GED")) {
             final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
             chart = FamilyChartBuilderGed.create(tree, fileToOpen, destroy, prefs);
@@ -510,8 +509,6 @@ public class CommandHandler {
         }
 
         chart.setFromOrig();
-
-        logChartInfo(chart);
 
         return chart;
     }
@@ -562,43 +559,12 @@ public class CommandHandler {
     private void showAboutBox() {
         SwingUtilities.invokeLater(() ->
             JOptionPane.showMessageDialog(
-                    this.frame,
+                this.frame,
                 "Genealogy XY Editor\n\n" +
                     "Version " + GenXyEditor.VERSION + "\n" +
                     "Log file: "+ LogbackConfigurator.getFilePath() + "\n\n" +
                     "Copyright © 2000–2026, Christopher Alan Mosher, New York, New York, USA, <cmosher01@gmail.com>.",
                 "Genealogy XY Editor",
                 JOptionPane.INFORMATION_MESSAGE));
-    }
-
-
-
-    private static final Pattern patFiletype = Pattern.compile("^.*\\.(.*)$");
-    private static String filetypeOf(final File file) {
-        final Matcher matcher = patFiletype.matcher(file.getName());
-        if (!matcher.matches()) {
-            return "";
-        }
-        final String ft = matcher.group(1);
-        return Objects.isNull(ft) ? "" : ft;
-    }
-
-
-
-
-    private static void logChartInfo(FamilyChart chart) {
-        // TODO: this might run too early... maybe remove it, or put it where logOverlaps is
-//        if (chart.indis().isEmpty()) {
-//            LOG.warn("No individuals found in file.");
-//            return;
-//        }
-//        final var xMin = chart.indis().stream().mapToDouble(i -> i.x().get()).min().getAsDouble();
-//        final var yMin = chart.indis().stream().mapToDouble(i -> i.y().get()).min().getAsDouble();
-//        final var xMax = chart.indis().stream().mapToDouble(i -> i.x().get()).max().getAsDouble();
-//        final var yMax = chart.indis().stream().mapToDouble(i -> i.y().get()).max().getAsDouble();
-//        final var w = xMax-xMin;
-//        final var h = yMax-yMin;
-//        final var bounds = new BoundingBox(xMin, yMin, w, h);
-//        LOG.info("Bounds of imported chart: "+bounds);
     }
 }

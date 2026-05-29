@@ -96,6 +96,14 @@ public class Grid {
         setPref(g, prefs);
     }
 
+    public int grid() {
+        return this.grid;
+    }
+
+    public int offset() {
+        return this.offset;
+    }
+
     public String display() {
         return ""+this.grid; // TODO include offset?
     }

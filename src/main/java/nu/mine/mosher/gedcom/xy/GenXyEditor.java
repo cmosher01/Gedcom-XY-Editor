@@ -439,13 +439,18 @@ public final class GenXyEditor {
                 return;
             }
             if (26.1D < w1.doubleValue()) { // wait for layout finished
-                Platform.runLater(chart::cmdFit); // run "Fit" command later
-                chart.logAllOverlappingIndis();
+                runLateOnStartup(chart);
                 initializedFitOnLaunch.set(true);
             }
         });
 
         return root;
+    }
+
+    private static void runLateOnStartup(final FamilyChart chart) {
+        Platform.runLater(chart::cmdFit); // run "Fit" command later
+        chart.logChartInfo();
+        chart.logAllOverlappingIndis();
     }
 
     private static void configRectangularSelection(final FamilyChart chart, final Pane canvas) {
