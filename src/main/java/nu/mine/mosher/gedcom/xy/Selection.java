@@ -33,7 +33,7 @@ public class Selection {
     private final FamilyChart familyChart;
     private final Map<Indi,IndiMovement> indisSelected = new IdentityHashMap<>();
     private Point2D ptDraggedFrom = NO_POINT;
-    private Bounds boundsChart;
+    private Optional<Bounds> boundsChart = Optional.empty();
 
     public Selection(final FamilyChart familyChart) {
         this.familyChart = familyChart;
@@ -66,31 +66,33 @@ public class Selection {
 
     public void beginDrag(final Point2D from) {
         dumpEvent("beginDrag: beg:");
-        this.boundsChart = this.familyChart.scrollable().viewportBoundsInCanvasCoords();
+        this.boundsChart = Optional.of(this.familyChart.scrollable().viewportBoundsInCanvasCoords());
         this.ptDraggedFrom = from;
         this.familyChart.updateSelectStatus();
         dumpEvent("beginDrag: end:");
     }
-
 
     public void drag(final Point2D to, final Point2D ptCanvas) {
         dumpEvent("     Drag: beg:");
         assert !this.ptDraggedFrom.equals(NO_POINT);
         final var d = to.subtract(this.ptDraggedFrom);
         this.indisSelected.keySet().forEach(i -> i.dragWithSnap(d));
-        if (!this.boundsChart.contains(ptCanvas)) {
+        if (this.boundsChart.isEmpty()) {
+            this.boundsChart = Optional.of(this.familyChart.scrollable().viewportBoundsInCanvasCoords());
+        }
+        if (!this.boundsChart.get().contains(ptCanvas)) {
             final var DELTA = 10D;
 
             var dx = 0D;
-            if (ptCanvas.getX() <= this.boundsChart.getMinX()) {
+            if (ptCanvas.getX() <= this.boundsChart.get().getMinX()) {
                 dx = +DELTA;
-            } else if (this.boundsChart.getMaxX() <= ptCanvas.getX()) {
+            } else if (this.boundsChart.get().getMaxX() <= ptCanvas.getX()) {
                 dx = -DELTA;
             }
             var dy = 0D;
-            if (ptCanvas.getY() <= this.boundsChart.getMinY()) {
+            if (ptCanvas.getY() <= this.boundsChart.get().getMinY()) {
                 dy = +DELTA;
-            } else if (this.boundsChart.getMaxY() <= ptCanvas.getY()) {
+            } else if (this.boundsChart.get().getMaxY() <= ptCanvas.getY()) {
                 dy = -DELTA;
             }
 
@@ -98,7 +100,7 @@ public class Selection {
 
             if (dx != 0D || dy != 0D){
                 this.familyChart.scrollable().autoScroll(translate);
-                this.boundsChart = this.familyChart.scrollable().viewportBoundsInCanvasCoords();
+                this.boundsChart = Optional.of(this.familyChart.scrollable().viewportBoundsInCanvasCoords());
             }
         }
         this.familyChart.updateSelectStatus();
@@ -109,6 +111,7 @@ public class Selection {
         dumpEvent("  endDrag: beg:");
         moveAndSaveForUndo();
         this.ptDraggedFrom = NO_POINT;
+        this.boundsChart = Optional.empty();
         dumpEvent("  endDrag: end:");
     }
 
