@@ -97,7 +97,6 @@ public class LogbackConfigurator extends ContextAwareBase implements Configurato
         fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
         final String ts = fmt.format(new Date());
 
-        System.err.println("App class: "+ofClass);
         final File f = LogFiles.getLogFileOf(ofClass);
 
         final String tsname = ts+"_"+f.getName();

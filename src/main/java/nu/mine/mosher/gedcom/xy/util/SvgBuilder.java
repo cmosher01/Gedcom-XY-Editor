@@ -73,15 +73,15 @@ public class SvgBuilder {
         final Element style = this.doc.createElementNS(W3C_SVG_NS_URI, "style");
         style.setTextContent(
             "\n" +
-                "svg { font-family: 'noto sans'; font-size: "+ this.fontsize +"pt; }\n" +
-                "text { font-size: 80%; }\n" +
-                "rect { stroke: skyblue; stroke-width: 0.5px; fill: beige; }\n" +
-                "line { stroke: skyblue; stroke-width: 0.5px; }\n" +
+            "svg { font-family: 'noto sans'; font-size: "+ this.fontsize +"pt; }\n" +
+            "text { font-size: 80%; }\n" +
+            "rect { stroke: skyblue; stroke-width: 0.5px; fill: beige; }\n" +
+            "line { stroke: skyblue; stroke-width: 0.5px; }\n" +
 
-                ".person { fill: dimgray; }\n" +
-                ".nameGiven { font-weight: bold; }\n" +
-                ".date { fill: darkgray; font-size: 65%; }\n" +
-                ".tagline { fill: darkgray; font-size: 65%; }\n"
+            ".person { fill: dimgray; }\n" +
+            ".nameGiven { font-weight: bold; }\n" +
+            ".date { fill: darkgray; font-size: 65%; }\n" +
+            ".tagline { fill: darkgray; font-size: 65%; }\n"
         );
         this.svg.appendChild(style);
     }

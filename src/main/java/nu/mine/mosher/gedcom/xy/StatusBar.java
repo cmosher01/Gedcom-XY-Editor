@@ -82,7 +82,7 @@ public class StatusBar extends StackPane {
         label.setFont(Font.font(Metrics.FONT_FAMILY_NAME_MONO));
     }
 
-    private static String displayCoords(String name6chars, Point2D coords) {
+    private static String displayCoords(final String name6chars, final Point2D coords) {
         return String.format("  %6s=(%7.1f,%7.1f)",
             name6chars,
             Objects.isNull(coords) ? 0D : coords.getX(),

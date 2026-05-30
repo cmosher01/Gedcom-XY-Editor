@@ -25,6 +25,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.prefs.Preferences;
 
+@SuppressWarnings("StringConcatenationArgumentToLogCall")
 public final class Metrics {
     private static final Logger LOG = LoggerFactory.getLogger(Metrics.class);
 
@@ -89,7 +90,7 @@ public final class Metrics {
     }
 
     private static boolean nominalDistance(final double d) {
-        return NOMINAL_DISTANCE_MIN < d && d < NOMINAL_DISTANCE_MAX;
+        return NOMINAL_DISTANCE_MIN <= d && d <= NOMINAL_DISTANCE_MAX;
     }
 
     private Metrics(final double dxPartner, final double dyGeneration, final double dxAvg, final Grid grid) {
@@ -105,7 +106,7 @@ public final class Metrics {
         this.fontBold = loadFont("util/NotoSans-Bold.ttf", this.fontSize);
         this.fontSmallBold = loadFont("util/NotoSans-Bold.ttf", this.fontSizeSmall);
 
-        final Text text = new Text(PLAQUE_MAX);
+        final var text = new Text(PLAQUE_MAX);
         text.setFont(this.font);
         new Scene(new Group(text));
         text.applyCss();
@@ -114,8 +115,10 @@ public final class Metrics {
 
         this.grid = grid;
 
-        LOG.info("metrics: dxAvg={},dxPartner={},dyGeneration={},fontSizeEst={},font=\"{}\",fontSize={},fontSizeSmall={},widthMax={},heightNominal={}",
-            this.dxAvg, this.dxPartner, this.dyGeneration, this.fontSize, this.font.getName(), this.fontSize, this.fontSizeSmall, this.widthMax, this.heightNominal);
+        LOG.info(String.format("metrics: dxAvg=%.1f, dxPartner=%.1f, dyGeneration=%.1f, widthMax=%.1f, heightNominal=%.1f",
+            this.dxAvg, this.dxPartner, this.dyGeneration, this.widthMax, this.heightNominal));
+        LOG.info(String.format("metrics: font=\"%s\", fontBold=\"%s\", fontSize=%.2f, fontSizeSmall=%.2f",
+            this.font.getName(), this.fontBold.getName(), this.fontSize, this.fontSizeSmall));
     }
 
     private Font loadFont(final String pathRes, final double size) {
@@ -123,9 +126,11 @@ public final class Metrics {
         if (res.isEmpty()) {
             throw new IllegalStateException("Can't load resource: "+pathRes);
         }
-        final var loadedFont = Font.loadFont(res.get().toExternalForm(), size);
-        LOG.info("Loaded font: {}", loadedFont.getName());
-        return loadedFont;
+        final var loadedFont = Optional.ofNullable(Font.loadFont(res.get().toExternalForm(), size));
+        if (loadedFont.isEmpty()) {
+            throw new IllegalStateException("Can't load "+size+" point font from: "+res.get().toExternalForm());
+        }
+        return loadedFont.get();
     }
 
 
