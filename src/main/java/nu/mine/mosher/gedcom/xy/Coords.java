@@ -19,15 +19,11 @@ package nu.mine.mosher.gedcom.xy;
 
 import javafx.beans.property.*;
 import javafx.geometry.Point2D;
-import javafx.scene.Node;
-import javafx.scene.shape.Circle;
 import org.slf4j.*;
 
-import java.math.*;
 import java.util.*;
 
 import static java.util.Optional.empty;
-import static javafx.scene.paint.Color.TRANSPARENT;
 
 @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "WeakerAccess"})
 public final class Coords {

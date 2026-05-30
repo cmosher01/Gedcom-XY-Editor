@@ -48,61 +48,26 @@ public class PdfBuilder implements AutoCloseable {
         (float)SOL_LINES.getRed(), (float)SOL_LINES.getGreen(), (float)SOL_LINES.getBlue());
 
 
-    private static PdfFont FONT;
-    private static PdfFont FONT_BOLD;
-    private static PdfFont FONT_ITALIC;
-    static {
-        initFonts();
-    }
-    private static void initFonts()
-    {
-        try {
-            FONT = PdfBuilder.getFontRes("NotoSans-Regular.ttf");
-            FONT_BOLD = PdfBuilder.getFontRes("NotoSans-Bold.ttf");
-            LOG.info("Successfully loaded NotoSans font resources.");
-            return;
-        } catch (Exception e) {
-            LOG.error("Error loading NotoSans font resource.", e);
-            // continue
-        }
-        try {
-            FONT = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf");
-            FONT_BOLD = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf");
-//            FONT_ITALIC = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf");
-            return;
-        } catch (Exception e) {
-            LOG.error("Error loading NotoSans fonts.", e);
-            // continue
-        }
-        try {
-            FONT = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-            FONT_BOLD = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-//            FONT_ITALIC = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
-            return;
-        } catch (Exception e) {
-            LOG.error("Error loading PDF-standard Helvetica fonts.", e);
-            // continue
-        }
-        try {
-            /* FONT_ITALIC = */ FONT_BOLD = FONT = PdfFontFactory.createFont();
-            return;
-        } catch (Exception e) {
-            LOG.error("Error loading PDF-standard default font.", e);
-            throw new RuntimeException(e);
-        }
-    }
+
 
 
 
     private final Metrics metrics;
-    private final Point poffset;
-    private final PageSize psize;
-    private final PdfDocument pdfdoc;
+    private final Point offset;
+    private final PageSize sizePage;
+    private final PdfDocument document;
     private final PdfCanvas canvas;
+    private PdfFont fontRegular;
+    private PdfFont fontBold;
 
 
 
-    public PdfBuilder(Metrics metrics, File fileToSaveAs, Bounds bounds) throws IOException {
+    public PdfBuilder(final Metrics metrics, final File fileToSaveAs, final Bounds bounds) throws IOException {
+        initFonts();
+        if (Objects.isNull(this.fontBold)) {
+            throw new IOException("Cannot create PDF files, because cannot load any fonts.");
+        }
+
         this.metrics = metrics;
 
         final var margin = new Insets(this.metrics.margin());
@@ -112,19 +77,63 @@ public class PdfBuilder implements AutoCloseable {
             bounds.getMinY() - margin.getTop(),
             bounds.getWidth() + margin.getLeft() + margin.getRight(),
             bounds.getHeight() + margin.getTop() + margin.getBottom());
-        this.poffset = new Point(page.getMinX(), page.getMinY());
-        this.psize = new PageSize((float)page.getWidth(), (float)page.getHeight());
+        this.offset = new Point(page.getMinX(), page.getMinY());
+        this.sizePage = new PageSize((float)page.getWidth(), (float)page.getHeight());
 
         final var writer = new PdfWriter(fileToSaveAs);
-        this.pdfdoc = new PdfDocument(writer);
-        final var pdfPage = this.pdfdoc.addNewPage(psize);
+        this.document = new PdfDocument(writer);
+        final var pdfPage = this.document.addNewPage(sizePage);
         // TODO large pages don't open in Acrobat Reader; this doesn't fix it:
 //        pdfPage.put(PdfName.UserUnit, new PdfNumber(1000f));
         this.canvas = new PdfCanvas(pdfPage);
     }
 
+    private void initFonts() {
+        try {
+            fontRegular = PdfBuilder.getFontRes("NotoSans-Regular.ttf");
+            fontBold = PdfBuilder.getFontRes("NotoSans-Bold.ttf");
+            LOG.info("Successfully loaded NotoSans font resources.");
+            return;
+        } catch (Exception e) {
+            LOG.error("Error loading NotoSans font resource.", e);
+            // continue
+        }
+
+        try {
+            fontRegular = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf");
+            fontBold = PdfFontFactory.createFont("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf");
+            LOG.info("Successfully loaded NotoSans fonts from file system.");
+            return;
+        } catch (Exception e) {
+            LOG.error("Error loading NotoSans fonts.", e);
+            // continue
+        }
+
+        try {
+            fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+            fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+            LOG.info("Successfully loaded PDF Helvetica fonts.");
+            return;
+        } catch (Exception e) {
+            LOG.error("Error loading PDF-standard Helvetica fonts.", e);
+            // continue
+        }
+
+        try {
+            fontRegular = PdfFontFactory.createFont();
+            fontBold = fontRegular;
+            LOG.info("Couldn't find any betters fonts, so using PDF default font.");
+            return;
+        } catch (Exception e) {
+            LOG.error("Error loading PDF-standard default font.", e);
+            //continue
+        }
+
+        LOG.error("CANNOT CREATE PDF FILES DUE TO ERROR FINDING ANY FONTS.");
+    }
+
     public void close() {
-        this.pdfdoc.close();
+        this.document.close();
     }
 
 
@@ -146,11 +155,11 @@ public class PdfBuilder implements AutoCloseable {
     }
 
     private double x(double x) {
-        return x-this.poffset.getX();
+        return x-this.offset.getX();
     }
 
     private double y(double y) {
-        return this.psize.getHeight()-(y-this.poffset.getY());
+        return this.sizePage.getHeight()-(y-this.offset.getY());
     }
 
     public void addPhantom(final Bounds bounds) {
@@ -168,18 +177,18 @@ public class PdfBuilder implements AutoCloseable {
         for (final var token : tokens) {
             switch (token) {
                 case NULL -> {}
-                case UNKNOWN -> rText.add(new Text("?").setFont(FONT));
-                case SPACE -> rText.add(new Text(" ").setFont(FONT));
-                case GIVEN0 -> rText.add(new Text(name.given0()).setFont(FONT_BOLD));
-                case SUR -> rText.add(new Text(name.sur()).setFont(FONT));
-                case GIVEN1 -> rText.add(new Text(name.given1()).setFont(FONT));
+                case UNKNOWN -> rText.add(new Text("?").setFont(fontRegular));
+                case SPACE -> rText.add(new Text(" ").setFont(fontRegular));
+                case GIVEN0 -> rText.add(new Text(name.given0()).setFont(fontBold));
+                case SUR -> rText.add(new Text(name.sur()).setFont(fontRegular));
+                case GIVEN1 -> rText.add(new Text(name.given1()).setFont(fontRegular));
             }
         }
         if (!dates.isBlank()) {
-            rText.add(new Text("\n"+dates).setFont(FONT).setFontSize(fsSmall));
+            rText.add(new Text("\n"+dates).setFont(fontRegular).setFontSize(fsSmall));
         }
         if (!tagLine.isBlank()) {
-            rText.add(new Text("\n"+tagLine).setFont(FONT).setFontSize(fsSmall));
+            rText.add(new Text("\n"+tagLine).setFont(fontRegular).setFontSize(fsSmall));
         }
 
         drawText(bounds, rText.toArray(new Text[0]));

@@ -17,7 +17,7 @@
 
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.beans.binding.*;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;

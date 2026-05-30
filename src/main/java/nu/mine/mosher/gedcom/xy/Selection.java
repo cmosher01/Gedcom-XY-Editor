@@ -18,7 +18,7 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.*;
-import nu.mine.mosher.gedcom.xy.shape.ShapeUtils;
+import nu.mine.mosher.gedcom.xy.shape.*;
 
 import java.util.*;
 
@@ -94,8 +94,10 @@ public class Selection {
                 dy = -DELTA;
             }
 
+            final var translate = new Translation(dx, dy);
+
             if (dx != 0D || dy != 0D){
-                this.familyChart.scrollable().autoScroll(dx, dy);
+                this.familyChart.scrollable().autoScroll(translate);
                 this.boundsChart = this.familyChart.scrollable().viewportBoundsInCanvasCoords();
             }
         }

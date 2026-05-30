@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.*;
 import java.util.prefs.Preferences;
 import java.util.stream.Stream;
 
+@SuppressWarnings("StringConcatenationArgumentToLogCall")
 public class Grid {
     private static final Logger LOG = LoggerFactory.getLogger(Grid.class);
 

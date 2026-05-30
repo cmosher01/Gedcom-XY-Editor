@@ -35,7 +35,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 // TODO add Tooltips
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "StringConcatenationArgumentToLogCall"})
 public class Indi {
     private static final Logger LOG = LoggerFactory.getLogger(Indi.class);
 
@@ -77,7 +77,7 @@ public class Indi {
         this.coords = new Coords(wxyOriginal, n);
         this.sex = sex;
         this.nameParsed = GedcomIndiName.create(n);
-        this.lifespan = lifespan.isBlank() ? "" : "("+lifespan+")";
+        this.lifespan = lifespan;
 
         this.nBirthForSort = nBirthForSort;
         this.tagline = Optional.ofNullable(tagline).orElse("");

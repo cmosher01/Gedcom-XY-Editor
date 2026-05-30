@@ -431,6 +431,8 @@ public class FamilyChart {
         }
     }
 
+
+
     public void logChartInfo() {
         if (indis().isEmpty()) {
             LOG.warn("No individuals found in file.");
@@ -479,13 +481,8 @@ public class FamilyChart {
         }
         Collections.sort(occs);
         for (final var occ : occs) {
-            logOneOcclusion(occ);
+            LOG.warn(String.format("Overlapping (%3d%%) people: %s & %s",
+                occ.pct(), occ.a().nameIdent(), occ.b().nameIdent()));
         }
-    }
-
-    private static void logOneOcclusion(final Occlusion occ) {
-        LOG.warn(String.format("Overlapping (%3d%%) people: %s & %s", occ.pct(), occ.a().nameSimple(), occ.b().nameSimple()));
-//        LOG.info("    Bounds of {}: {}", a.nameSimple(), a.bounds());
-//        LOG.info("    Bounds of {}: {}", b.nameSimple(), b.bounds());
     }
 }

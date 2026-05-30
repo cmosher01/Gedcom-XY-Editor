@@ -21,11 +21,12 @@ import javafx.geometry.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.Pane;
 import nu.mine.mosher.gedcom.xy.Scrollable;
+import nu.mine.mosher.gedcom.xy.shape.Translation;
 
 import java.util.*;
 
 public class Scroller extends Pane implements Scrollable {
-    private static final double SCALE_DELTA = 5.0e-3D;
+    private static final double SCALE_DELTA = 4.0e-3D;
     private static final double MIN_SIZE_CANVAS = 200.0D;
     private static final double MAX_SCALE = 1.0e2D;
 
@@ -79,11 +80,8 @@ variable (x,y) naming convention:
     }
 
     @Override
-    public void autoScroll(final double dx, final double dy) {
-        final var l = this.canvas.layout();
-        final var x = l.getX() + dx;
-        final var y = l.getY() + dy;
-        this.canvas.layout(pt(x, y));
+    public void autoScroll(final Translation translate) {
+        this.canvas.layout(translate.applyTo(this.canvas.layout()));
     }
 
     @Override

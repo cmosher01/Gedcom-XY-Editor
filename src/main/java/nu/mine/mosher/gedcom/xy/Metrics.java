@@ -17,7 +17,6 @@
 
 package nu.mine.mosher.gedcom.xy;
 
-import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.text.*;
 import nu.mine.mosher.gedcom.xy.util.*;
@@ -25,8 +24,6 @@ import org.slf4j.*;
 
 import java.util.*;
 import java.util.prefs.Preferences;
-
-import static java.util.stream.Collectors.*;
 
 public final class Metrics {
     private static final Logger LOG = LoggerFactory.getLogger(Metrics.class);

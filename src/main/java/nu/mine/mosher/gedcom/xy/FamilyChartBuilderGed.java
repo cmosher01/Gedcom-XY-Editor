@@ -20,8 +20,8 @@ package nu.mine.mosher.gedcom.xy;
 import javafx.geometry.Point2D;
 import nu.mine.mosher.collection.TreeNode;
 import nu.mine.mosher.gedcom.*;
-import nu.mine.mosher.gedcom.date.DatePeriod;
-import nu.mine.mosher.gedcom.date.parser.GedcomDateValueParser;
+import nu.mine.mosher.gedcom.date.*;
+import nu.mine.mosher.gedcom.date.parser.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -88,8 +88,8 @@ public final class FamilyChartBuilderGed {
     }
 
     private static Indi buildIndi(final TreeNode<GedcomLine> nodeIndi) {
-        final String value_XY = getChildValue(nodeIndi, "_XY");
-        final Optional<Point2D> wxyOrig = Coords.toCoord(value_XY);
+        final String xy = getChildValue(nodeIndi, "_XY");
+        final Optional<Point2D> wxyOrig = Coords.toCoord(xy);
         // wxyOrig empty indicates that _XY either was not present, or was present but had an invalid format
         // In either of these two cases, when we save the new GEDCOM file, we want to ADD a new _XY record
 
@@ -103,10 +103,10 @@ public final class FamilyChartBuilderGed {
         final String tagline = birthplace.isBlank() ? anyplace : birthplace;
 
         if (wxyOrig.isEmpty()) {
-            if (value_XY.isEmpty()) {
+            if (xy.isEmpty()) {
                 LOG.warn("Missing _XY value, name={}", name);
             } else {
-                LOG.warn("Invalid _XY value={},name={}", value_XY, name);
+                LOG.warn("Invalid _XY value={},name={}", xy, name);
             }
         }
 
@@ -114,8 +114,8 @@ public final class FamilyChartBuilderGed {
         return new Indi(nodeIndi, wxyOrig, id, "", name, lifespan, birth, tagline, sex);
     }
 
-    private static long calcBirthForSort(String birt) {
-        final DatePeriod db = toDate(birt);
+    private static long calcBirthForSort(final String birt) {
+        final DatePeriod db = toDateStrict(birt);
         final Date d = db.getStartDate().getApproxDay().asDate();
         if (d.getTime() == 0) {
             return 0L;
@@ -127,24 +127,80 @@ public final class FamilyChartBuilderGed {
         return year*100L+month;
     }
 
-    private static String getLifespan(String birt, String deat) {
-        final DatePeriod db = toDate(birt);
-        final DatePeriod dd = toDate(deat);
-        if (db.equals(DatePeriod.UNKNOWN) && dd.equals(DatePeriod.UNKNOWN)) {
+    private static String getLifespan(final String birt, final String deat) {
+        final var db = toDateLenient(birt);
+        final var dd = toDateLenient(deat);
+        if (db.equals("?") && dd.equals("?")) {
             return "";
         }
-        return dateString(db)+"\u2013"+dateString(dd);
+        return "("+db+"\u2013"+dd+")";
     }
 
-    private static String dateString(final DatePeriod date) {
-        final Date d = date.getStartDate().getApproxDay().asDate();
-        if (d.getTime() == 0) {
-            return "";
+    private static String toDateLenient(final String s) {
+        String ret = "?";
+        if (!s.isBlank()) {
+            LOG.info("Parsing GEDCOM date string: \"{}\"", s);
+            try {
+                final DatePeriod period = new GedcomDateValueParser(new StringReader(s)).parse();
+                if (period.equals(DatePeriod.UNKNOWN)) {
+                    ret = "?";
+                } else {
+                    ret = dateString(period);
+                }
+            } catch (final ParseException e) {
+                // use the date string, but make sure it's a reasonable size
+                if (s.isBlank()) {
+                    ret = "?";
+                } else if (s.length() <= 16) {
+                    ret = s;
+                } else {
+                    ret = s.substring(0, 16);
+                }
+                LOG.info("Invalid date. Cannot interpret, but will display as: \"{}\"", ret, e);
+            }
         }
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(d);
-        int year = cal.get(Calendar.YEAR);
-        return "" + year;
+        return ret;
+    }
+
+    private static String dateString(final DatePeriod period) {
+        // We are only interested in BIRTH and DEATH dates, which are not time periods
+        // (i.e., not "FROM start TO end"), so here we just choose the START date.
+        // (Not to be confused with "BET x AND y" or "AFT x" or "BEF y", which are acceptable.)
+        final var range = period.getStartDate();
+        final var yearEarliest = range.getEarliest().getYear();
+        final var yearLatest = range.getLatest().getYear();
+        final var yearApprox = (yearEarliest+yearLatest)/2;
+        final int year;
+        if (range.getEarliest().equals(YMD.getMinimum())) {
+            year = yearLatest;
+        } else if (range.getLatest().equals(YMD.getMaximum())) {
+            year = yearEarliest;
+        } else {
+            year = yearApprox;
+        }
+
+        final String circa;
+        if (range.isExact()) {
+            if (range.getEarliest().isCirca() || range.getLatest().isCirca()) {
+                circa = "c";
+            } else {
+                circa = "";
+            }
+        } else {
+            circa = "c";
+        }
+
+        final int absYear;
+        final String bce;
+        if (year < 0) {
+            absYear = -year;
+            bce = "bce";
+        } else {
+            absYear = year;
+            bce = "";
+        }
+
+        return String.format("%s%d%s", circa, absYear, bce);
     }
 
     private static int toSex(final String sex) {
@@ -160,12 +216,12 @@ public final class FamilyChartBuilderGed {
         return 0;
     }
 
-    private static DatePeriod toDate(final String date) {
+    private static DatePeriod toDateStrict(final String sDate) {
         try {
-            return new GedcomDateValueParser(new StringReader(date)).parse();
+            return new GedcomDateValueParser(new StringReader(sDate)).parse();
         } catch (final Exception e) {
-            if (!date.isEmpty()) {
-                LOG.warn("Error while parsing DATE={}", date, e);
+            if (!sDate.isEmpty()) {
+                LOG.warn("Error while parsing DATE={}", sDate, e);
             }
             return DatePeriod.UNKNOWN;
         }

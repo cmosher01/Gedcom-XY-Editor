@@ -71,7 +71,7 @@ public class Fami {
         } else if (this.wife != null && this.wife.selected()) {
             ret = false;
         } else {
-            for (final var c : rChild) {
+            for (final var c : this.rChild) {
                 if (c.selected()) {
                     ret = false;
                 }
@@ -85,7 +85,7 @@ public class Fami {
     }
 
     public void setHusb(final Indi indi) {
-        husb = indi;
+        this.husb = indi;
     }
 
     public Optional<Indi> getHusb() {
@@ -93,7 +93,7 @@ public class Fami {
     }
 
     public void setWife(final Indi indi) {
-        wife = indi;
+        this.wife = indi;
     }
 
     public Optional<Indi> getWife() {
@@ -102,7 +102,7 @@ public class Fami {
 
     public void addChild(final Indi indi) {
         if (Objects.nonNull(indi)) {
-            rChild.add(indi);
+            this.rChild.add(indi);
         }
     }
 
@@ -122,58 +122,59 @@ public class Fami {
     }
 
 
+
     public void calc() {
-        if (husb == null && wife == null && rChild.isEmpty()) {
+        if (this.husb == null && this.wife == null && this.rChild.isEmpty()) {
             return;
         }
 
-        final Couple couple = new Couple(husb, wife);
+        final Couple couple = new Couple(this.husb, this.wife);
 
         if (couple.exists) {
-            parentBar1 = createLine();
-            parentBar1.startXProperty().bind(couple.pt1x);
-            parentBar1.startYProperty().bind(couple.pt1y.subtract(barHeight()));
-            parentBar1.endXProperty().bind(couple.pt2x);
-            parentBar1.endYProperty().bind(couple.pt2y.subtract(barHeight()));
+            this.parentBar1 = createLine();
+            this.parentBar1.startXProperty().bind(couple.pt1x);
+            this.parentBar1.startYProperty().bind(couple.pt1y.subtract(barHeight()));
+            this.parentBar1.endXProperty().bind(couple.pt2x);
+            this.parentBar1.endYProperty().bind(couple.pt2y.subtract(barHeight()));
 
-            parentBar2 = createLine();
-            parentBar2.startXProperty().bind(couple.pt1x);
-            parentBar2.startYProperty().bind(couple.pt1y.add(barHeight()));
-            parentBar2.endXProperty().bind(couple.pt2x);
-            parentBar2.endYProperty().bind(couple.pt2y.add(barHeight()));
+            this.parentBar2 = createLine();
+            this.parentBar2.startXProperty().bind(couple.pt1x);
+            this.parentBar2.startYProperty().bind(couple.pt1y.add(barHeight()));
+            this.parentBar2.endXProperty().bind(couple.pt2x);
+            this.parentBar2.endYProperty().bind(couple.pt2y.add(barHeight()));
         }
 
-        if (!rChild.isEmpty()) {
-            childBar = createLine();
+        if (!this.rChild.isEmpty()) {
+            this.childBar = createLine();
 
-            final var obsChildrenX = rChild.stream().map(Indi::x).toList().toArray(new DoubleProperty[0]);
-            final var obsChildrenY = rChild.stream().map(Indi::y).toList().toArray(new DoubleProperty[0]);
+            final var obsChildrenX = this.rChild.stream().map(Indi::x).toList().toArray(new DoubleProperty[0]);
+            final var obsChildrenY = this.rChild.stream().map(Indi::y).toList().toArray(new DoubleProperty[0]);
 
-            childBar.startXProperty().bind(Bindings.createDoubleBinding(
-                () -> rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).min().getAsDouble(),
+            this.childBar.startXProperty().bind(Bindings.createDoubleBinding(
+                () -> this.rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).min().getAsDouble(),
                 obsChildrenX
             ));
-            childBar.endXProperty().bind(Bindings.createDoubleBinding(
-                () -> rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).max().getAsDouble(),
+            this.childBar.endXProperty().bind(Bindings.createDoubleBinding(
+                () -> this.rChild.stream().mapToDouble(c -> c.xForParent(Fami.this).get()).max().getAsDouble(),
                 obsChildrenX
             ));
             final DoubleBinding top = Bindings.createDoubleBinding(
-                () -> rChild.stream().mapToDouble(c -> c.yForParent(Fami.this).get()).min().getAsDouble() - childHeight(),
+                () -> this.rChild.stream().mapToDouble(c -> c.yForParent(Fami.this).get()).min().getAsDouble() - childHeight(),
                 obsChildrenY
             );
 
-            childBar.startYProperty().bind(top);
-            childBar.endYProperty().bind(top);
+            this.childBar.startYProperty().bind(top);
+            this.childBar.endYProperty().bind(top);
 
-            rChildBar = new Line[rChild.size()];
-            for (int i = 0; i < rChildBar.length; i++) {
-                final Indi c = rChild.get(i);
-                rChildBar[i] = createLine();
+            this.rChildBar = new Line[this.rChild.size()];
+            for (int i = 0; i < this.rChildBar.length; i++) {
+                final Indi c = this.rChild.get(i);
+                this.rChildBar[i] = createLine();
 
-                rChildBar[i].startXProperty().bind(c.xForParent(this));
-                rChildBar[i].startYProperty().bind(childBar.startYProperty());
-                rChildBar[i].endXProperty().bind(c.xForParent(this));
-                rChildBar[i].endYProperty().bind(c.yForParent(this));
+                this.rChildBar[i].startXProperty().bind(c.xForParent(this));
+                this.rChildBar[i].startYProperty().bind(this.childBar.startYProperty());
+                this.rChildBar[i].endXProperty().bind(c.xForParent(this));
+                this.rChildBar[i].endYProperty().bind(c.yForParent(this));
             }
 
 
@@ -232,40 +233,40 @@ public class Fami {
 
 
 
-                descentBar3 = createLine();
-                descentBar3.startXProperty().bind(descentLineStartChildrenX);
-                descentBar3.startYProperty().bind(childBar.startYProperty());
-                descentBar3.endXProperty().bind(descentBar3.startXProperty());
-                descentBar3.endYProperty().bind(descentBar3.startYProperty().subtract(rChild.size() == 1 ? 0.0D : childHeight() / 2.0D));
+                this.descentBar3 = createLine();
+                this.descentBar3.startXProperty().bind(descentLineStartChildrenX);
+                this.descentBar3.startYProperty().bind(this.childBar.startYProperty());
+                this.descentBar3.endXProperty().bind(this.descentBar3.startXProperty());
+                this.descentBar3.endYProperty().bind(this.descentBar3.startYProperty().subtract(this.rChild.size() == 1 ? 0.0D : childHeight() / 2.0D));
 
-                descentBar2 = createLine();
-                descentBar2.startXProperty().bind(descentBar3.endXProperty());
-                descentBar2.startYProperty().bind(descentBar3.endYProperty());
-                descentBar2.endXProperty().bind(descentLineEndParentX);
-                descentBar2.endYProperty().bind(descentBar2.startYProperty());
+                this.descentBar2 = createLine();
+                this.descentBar2.startXProperty().bind(this.descentBar3.endXProperty());
+                this.descentBar2.startYProperty().bind(this.descentBar3.endYProperty());
+                this.descentBar2.endXProperty().bind(descentLineEndParentX);
+                this.descentBar2.endYProperty().bind(this.descentBar2.startYProperty());
 
-                descentBar1 = createLine();
-                descentBar1.startXProperty().bind(descentBar2.endXProperty());
-                descentBar1.startYProperty().bind(descentBar2.endYProperty());
-                descentBar1.endXProperty().bind(descentBar1.startXProperty());
-                descentBar1.endYProperty().bind(descentLineEndParentY);
+                this.descentBar1 = createLine();
+                this.descentBar1.startXProperty().bind(this.descentBar2.endXProperty());
+                this.descentBar1.startYProperty().bind(this.descentBar2.endYProperty());
+                this.descentBar1.endXProperty().bind(this.descentBar1.startXProperty());
+                this.descentBar1.endYProperty().bind(descentLineEndParentY);
             }
         }
     }
 
 
     public double getMarrDistance() {
-        if (husb == null || wife == null) {
+        if (this.husb == null || this.wife == null) {
             return 0D;
         }
-        if (husb.laidOut().isEmpty() || wife.laidOut().isEmpty()) {
+        if (this.husb.laidOut().isEmpty() || this.wife.laidOut().isEmpty()) {
             return 0D;
         }
-        return husb.laidOut().get().distance(wife.laidOut().get());
+        return this.husb.laidOut().get().distance(this.wife.laidOut().get());
     }
 
     public double getGenDistance() {
-        if (husb == null || wife == null) {
+        if (this.husb == null || this.wife == null) {
             return 0D;
         }
         final double avgChildX = this.rChild.stream().map(Indi::laidOut).filter(Optional::isPresent).map(Optional::get).mapToDouble(Point2D::getX).average().orElse(0D);
@@ -274,14 +275,14 @@ public class Fami {
             return 0D;
         }
         final Point2D avgChild = new Point2D(avgChildX, avgChildY);
-        if (husb != null && husb.laidOut().isPresent() && wife != null && wife.laidOut().isPresent()) {
-            return Math.min(husb.laidOut().get().distance(avgChild), wife.laidOut().get().distance(avgChild));
+        if (this.husb != null && this.husb.laidOut().isPresent() && this.wife != null && this.wife.laidOut().isPresent()) {
+            return Math.min(this.husb.laidOut().get().distance(avgChild), this.wife.laidOut().get().distance(avgChild));
         }
-        if (husb != null && husb.laidOut().isPresent()) {
-            return husb.laidOut().get().distance(avgChild);
+        if (this.husb != null && this.husb.laidOut().isPresent()) {
+            return this.husb.laidOut().get().distance(avgChild);
         }
-        if (wife != null && wife.laidOut().isPresent()) {
-            return wife.laidOut().get().distance(avgChild);
+        if (this.wife != null && this.wife.laidOut().isPresent()) {
+            return this.wife.laidOut().get().distance(avgChild);
         }
         return 0D;
     }
@@ -307,7 +308,7 @@ public class Fami {
     }
 
     private Line createLine() {
-        return createLine(metrics.colors().lines(), metrics.colors().linesSel());
+        return createLine(this.metrics.colors().lines(), this.metrics.colors().linesSel());
     }
 
     private Line createLine(final Color color, final Color colorSel) {
@@ -382,7 +383,7 @@ public class Fami {
         }
     }
 
-    public void savePdf(PdfBuilder builder) {
+    public void savePdf(final PdfBuilder builder) {
         builder.addLine(this.parentBar1);
         builder.addLine(this.parentBar2);
         builder.addLine(this.descentBar1);
@@ -395,7 +396,7 @@ public class Fami {
         this.phantomPanes.stream().map(Node::getBoundsInParent).forEach(builder::addPhantom);
     }
 
-    public void saveSvg(SvgBuilder svg) {
+    public void saveSvg(final SvgBuilder svg) {
         svg.addLine(this.parentBar1);
         svg.addLine(this.parentBar2);
         svg.addLine(this.descentBar1);
@@ -407,7 +408,7 @@ public class Fami {
         }
     }
 
-    public void addGraphicsTo(List<Node> addto) {
+    public void addGraphicsTo(final List<Node> addto) {
         addGraphic(addto, this.parentBar1);
         addGraphic(addto, this.parentBar2);
         addGraphic(addto, this.descentBar1);
@@ -420,7 +421,7 @@ public class Fami {
         addto.addAll(this.phantomPanes);
     }
 
-    private static void addGraphic(List<Node> addto, Line p) {
+    private static void addGraphic(final List<Node> addto, final Line p) {
         if (Objects.nonNull(p)) {
             addto.add(p);
         }

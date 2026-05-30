@@ -18,15 +18,14 @@
 package nu.mine.mosher.gedcom.xy;
 
 import javafx.geometry.*;
+import nu.mine.mosher.gedcom.xy.shape.Translation;
 
 public interface Scrollable {
     void scrollTo(Point2D hv);
-
-    void autoScroll(double dx, double dy);
+    void autoScroll(Translation translate);
 
     void scaleTo(double scale);
     void scaleTo();
-
     void scaleToFit(Bounds boundsChart);
 
     Point2D center();

@@ -19,8 +19,6 @@ package nu.mine.mosher.gedcom.xy;
 
 
 
-import org.slf4j.*;
-
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.temporal.JulianFields;
@@ -30,8 +28,7 @@ import java.util.regex.*;
 
 
 public class FtmDate implements Comparable<FtmDate> {
-    private static final Logger LOG =  LoggerFactory.getLogger(FtmDate.class);
-    private static final FlaggedDate FD_UNKNOWN = new FlaggedDate(0x80000011);
+    private static final FlaggedDate FD_UNKNOWN = new FlaggedDate(0x8000_0011L);
 
     private final FlaggedDate earliest;
     private final FlaggedDate latest;
@@ -66,22 +63,22 @@ public class FtmDate implements Comparable<FtmDate> {
 
     @Override
     public String toString() {
+        final String ret;
         if (this.earliest.unknown() && this.latest.unknown()) {
-            return "?";
+            ret = "?";
+        } else if (this.earliest.unknown()) {
+            ret = String.format("?%d", this.latest.asSimpleYear());
+        } else if (this.latest.unknown()) {
+            ret = String.format("%d?", this.latest.asSimpleYear());
+        } else if (!this.earliest.equals(this.latest)) {
+            ret = String.format("c%d", (this.earliest.asSimpleYear()+this.latest.asSimpleYear())/2);
+        } else {
+            final var d = this.earliest; // either one, because they are equal
+            final var y = d.asSimpleYear();
+            final var a = d.about() ? "c" : "";
+            ret = String.format("%s%d", a, y);
         }
-
-        if (this.earliest.unknown()) {
-            return "?"+this.latest.asSimpleYear();
-        }
-        if (this.latest.unknown()) {
-            return this.earliest.asSimpleYear()+"?";
-        }
-
-        if (!this.earliest.equals(this.latest)) {
-            return ""+(this.earliest.asSimpleYear()+this.latest.asSimpleYear())/2+"?";
-        }
-
-        return ""+this.earliest.asSimpleYear()+(this.earliest.about() ? "?" : "");
+        return ret;
     }
 
     public long ym() {
@@ -203,10 +200,9 @@ public class FtmDate implements Comparable<FtmDate> {
 
         @Override
         public boolean equals(Object o) {
-            if (Objects.isNull(o) || !(o instanceof FlaggedDate)) {
+            if (Objects.isNull(o) || !(o instanceof FlaggedDate that)) {
                 return false;
             }
-            final FlaggedDate that = (FlaggedDate)o;
             return this.flags == that.flags && this.unknown == that.unknown && this.d == that.d;
         }
 
@@ -219,7 +215,7 @@ public class FtmDate implements Comparable<FtmDate> {
         // TODO implement privatization based on database columns in tables:
         // Person, Relationship, ChildRelationship, Fact, Note, MediaLink, MediaFile
         public boolean isRecent() {
-            return  !this.unknown && LocalDate.now().minusYears(110).compareTo(this.ld) < 0;
+            return  !this.unknown && LocalDate.now().minusYears(110).isBefore(this.ld);
         }
     }
 }

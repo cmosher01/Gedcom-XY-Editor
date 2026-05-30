@@ -88,18 +88,17 @@ public class FamilyChartBuilderFtm {
         return new Indi(null, wxyOrig, pkidPerson, pkidFact, name, lifespan, birth, tagline.toString(), sex);
     }
 
-    private static long calcBirthForSort(String birth) {
-        final FtmDate d = FtmDate.fromFtmFactDate(birth);
-        return d.ym();
+    private static long calcBirthForSort(String sDateBirth) {
+        return FtmDate.fromFtmFactDate(sDateBirth).ym();
     }
 
-    private static String getLifespan(final String dateBirth, final String dateDeath) {
-        final FtmDate db = FtmDate.fromFtmFactDate(dateBirth);
-        final FtmDate dd = FtmDate.fromFtmFactDate(dateDeath);
+    private static String getLifespan(final String sDateBirth, final String sDateDeath) {
+        final FtmDate db = FtmDate.fromFtmFactDate(sDateBirth);
+        final FtmDate dd = FtmDate.fromFtmFactDate(sDateDeath);
         if (db.unknown() && dd.unknown()) {
             return "";
         }
-        return db+"\u2013"+dd;
+        return "("+db+"\u2013"+dd+")";
     }
 
     private static List<Fami> buildFamis(final Connection conn, final Map<String, Indi> mapIdToIndi) throws SQLException {
