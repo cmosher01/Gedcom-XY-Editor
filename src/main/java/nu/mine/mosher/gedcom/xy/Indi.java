@@ -110,7 +110,7 @@ public class Indi {
         this.rFamiSpouseTo.add(famiSpouseTo);
     }
 
-    public void setAsChildTo(final Fami famiChildTo) {
+    public void addAsChildTo(final Fami famiChildTo) {
         this.rFamiChildTo.add(famiChildTo);
     }
 

@@ -86,6 +86,25 @@ public class FamilyChart {
         this.others.calc(this.indis, this.metrics);
         this.indis.forEach(Indi::calc);
         this.famis.forEach(Fami::calc);
+
+        // TODO Handle case where same couple has two different families (with different sets of children) (i.e., remarried each other)?
+        // Check for these cases here, and populate each such family with a list of the other found families.
+        for (int i = 0; i < this.famis.size()-1; ++i) {
+            for (int j = i+1; j < this.famis.size(); ++j) {
+                final var fi = this.famis.get(i);
+                final var fj = this.famis.get(j);
+                final var fih = fi.getHusb();
+                final var fiw = fi.getWife();
+                final var fjh = fj.getHusb();
+                final var fjw = fj.getWife();
+                if (fih.isPresent() && fiw.isPresent() && fjh.isPresent() && fjw.isPresent()) {
+                    if (fih.equals(fjh) && fiw.equals(fjw)) {
+                        LOG.warn("Found unusual case of a couple with two different families: {} & {}",
+                            fih.get().nameIdent(), fiw.get().nameIdent());
+                    }
+                }
+            }
+        }
     }
 
     public void clearSelection() {

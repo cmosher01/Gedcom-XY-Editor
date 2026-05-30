@@ -128,6 +128,11 @@ public class Fami {
             return;
         }
 
+        {
+            // TODO Handle case where husb or wife needs MULTIPLE phantoms,
+            // for multiple known-different missing spouses.
+        }
+
         final Couple couple = new Couple(this.husb, this.wife);
 
         if (couple.exists) {
@@ -329,7 +334,7 @@ public class Fami {
             exists = !(indi1 == null && indi2 == null);
 
             if (!exists) {
-                // don't create two phantom parents
+                // TODO "don't create two phantom parents" but... why not? Maybe only if there are two or more children.
                 pt1x = pt1y = pt2x = pt2y = null;
             } else if (indi1 == null) {
                 pt2x = indi2.x();

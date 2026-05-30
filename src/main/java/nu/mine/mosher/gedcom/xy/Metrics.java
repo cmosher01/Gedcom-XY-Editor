@@ -70,7 +70,7 @@ public final class Metrics {
     public static Metrics buildMetricsFor(final List<Indi> indis, final List<Fami> famis, final Preferences prefs) {
         final Grid grid = Grid.createFromPoints(indis, prefs);
         final double dxAvg = nominal(grid.grid(), DX_DEFAULT);
-        final double dxPartner = nominal(calcDxPartner(famis), dxAvg);
+        final double dxPartner = nominal(calcDxPartner(famis), 2.0D*dxAvg);
         final double dyGeneration = nominal(calcDyGeneration(famis), 2.0D*dxAvg);
         return new Metrics(dxPartner * MARRIAGE_SPACING_FACTOR, dyGeneration, dxAvg, grid);
     }

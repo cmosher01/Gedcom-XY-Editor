@@ -130,7 +130,7 @@ public class FamilyChartBuilderFtm {
                     indi = Optional.ofNullable(mapIdToIndi.get(rs.getString("PersonID")));
                     if (indi.isPresent()) {
                         fami.addChild(indi.get());
-                        indi.get().setAsChildTo(fami);
+                        indi.get().addAsChildTo(fami);
                     }
                 }
                 if (Objects.nonNull(fami)) {

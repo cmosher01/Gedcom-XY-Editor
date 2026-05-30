@@ -286,7 +286,7 @@ public final class FamilyChartBuilderGed {
                 case CHIL -> {
                     if (indi.isPresent()) {
                         fami.addChild(indi.get());
-                        indi.get().setAsChildTo(fami);
+                        indi.get().addAsChildTo(fami);
                     }
                 }
             }
