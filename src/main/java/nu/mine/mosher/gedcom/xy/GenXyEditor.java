@@ -159,6 +159,9 @@ public final class GenXyEditor {
 
     public static void main(final String... args) {
         try {
+            System.setProperty("sun.java2d.opengl", "true");
+            System.setProperty("sun.java2d.metal", "false");
+
             initLogging();
 
             LOG.info("version: {}", VERSION);

@@ -28,7 +28,7 @@ import java.util.*;
  */
 
 /*
- S = state
+S = state
 M = modification
 
 
@@ -45,7 +45,8 @@ S[0]      S[1]      S[2] ... S[i-1]         S[i]          S[i+1] ... S[n-2]     
                                                                                                    state
 
 Undo.
-The last modification is un-done, leaving current state at S[n-1], at pushed onto the redo stack.
+The last modification (M[n-1]) is un-done, leaving current state at S[n-1].
+Then M[n-1] is pushed onto the redo stack.
 
 
 S[0]      S[1]      S[2] ... S[i-1]         S[i]          S[i+1] ... S[n-2]           S[n-1]         S[n]
@@ -69,8 +70,8 @@ S[0]      S[1]      S[2] ... S[i-1]            S[i]        S[i+1]         S[i+2]
                                               state
 
 Redo.
-Modification M[i] popped of redo statck, and is re-done leaving current state at S[i+1],
-M[i] is pushed onto undo stack.
+Modification M[i] popped of redo stack, and is re-done, leaving current state at S[i+1],
+Then M[i] is pushed onto the undo stack.
 
 S[0]      S[1]      S[2] ... S[i-1]           S[i]         S[i+1]           S[i+2] ... S[n-1]        S[n]
                                                              ^

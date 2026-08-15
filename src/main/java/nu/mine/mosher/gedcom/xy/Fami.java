@@ -129,8 +129,20 @@ public class Fami {
         }
 
         {
-            // TODO Handle case where husb or wife needs MULTIPLE phantoms,
-            // for multiple known-different missing spouses.
+            // TODO handle the case of a SINGLE parent in an adoption relationship
+            /*
+            Do we really need a phantom at all??? ever???
+            An alternative would be to show a single (known) parent as:
+            +-----+
+            |  P  |
+            +--+--+
+               |
+               |
+            +--+--+
+            |  C  |
+            +-----+
+            which also works for the actual single adoptive parent situation.
+             */
         }
 
         final Couple couple = new Couple(this.husb, this.wife);

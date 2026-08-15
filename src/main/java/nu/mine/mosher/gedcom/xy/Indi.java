@@ -66,7 +66,7 @@ public class Indi {
     private Selection selection;
 
     private final List<Fami> rFamiSpouseTo = new ArrayList<>();
-    private final List<Fami> rFamiChildTo = new ArrayList<>();
+    private final List<Fami> rFamiChildTo = new ArrayList<>(); // TODO handle CHILD_LINKAGE_STATUS & PEDIGREE_LINKAGE_TYPE (different line styles?)
 
 
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {

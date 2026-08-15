@@ -195,8 +195,9 @@ By default, scaling uses center C as pivot point.
 
 Math for one dimension (the other dimension is identical).
 Note: none of these calculations depend on the viewport
-size or postion, only canvas and mouse.
+size or position, only canvas and mouse.
 
+z = "zoom", the scale factor
 p = pivot point (mouse position)
 l = canvas layout (min x or y)
 w = canvas width
