@@ -503,6 +503,7 @@ public class CommandHandler {
         final String filetype = FileUtil.filetypeOf(fileToOpen);
         if (filetype.equalsIgnoreCase("GED")) {
             final GedcomTree tree = Gedcom.readFile(new BufferedInputStream(Files.newInputStream(fileToOpen.toPath())));
+            new GedcomConcatenator(tree).concatenate();
             chart = FamilyChartBuilderGed.create(tree, fileToOpen, destroy, prefs);
         } else {
             chart = FamilyChartBuilderFtm.create(fileToOpen, destroy, prefs);

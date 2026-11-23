@@ -29,7 +29,6 @@ import static java.util.Optional.empty;
 public final class Coords {
     private static final Logger LOG = LoggerFactory.getLogger(Coords.class);
 
-    public static final int XY_SCALE = 2;
     private static final Point2D xyMISSING = new Point2D(37, 73);
     private static final double SMALL = 1.0e-3D;
 
@@ -228,7 +227,7 @@ public final class Coords {
                 toDump("xyStart", this.xyStart),
                 toDump("xyLayoutUser", new Point2D(this.xLayoutUser.get(), this.yLayoutUser.get())),
                 String.format("mag=%.0f",userMoved().magnitude()),
-                (!dirty() ? "-" : this.forceDirty ? "F" : "D"),
+                (!dirty() ? "-" : (this.forceDirty ? "F" : "D")),
                 this.of);
     }
 

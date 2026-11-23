@@ -1,0 +1,40 @@
+0 HEAD
+1 SUBM @SUBM1@
+1 SOUR Ancestry.com Family Trees
+2 NAME Ancestry.com Member Trees
+2 VERS 2025.08
+2 _TREE TestId
+3 RIN 213190772
+3 _ENV prd
+2 CORP Ancestry.com
+3 PHON 801-705-7000
+3 WWW www.ancestry.com
+3 ADDR 1300 West Traverse Parkway
+4 CONT Lehi, UT  84043
+4 CONT USA
+1 DATE 31 Oct 2026
+2 TIME 18:48:30
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @SUBM1@ SUBM
+1 NAME Ancestry.com Member Trees Submitter
+0 @I382825053104@ INDI
+1 NAME Test /Person/
+2 GIVN Test
+2 SURN Person
+1 SEX M
+1 FAMC @F1@
+1 EVEN
+2 TYPE _ID
+2 NOTE cec3b82f-533b-4a38-822b-69daa1a34f0e
+0 @I382825053105@ INDI
+1 NAME /Person/
+2 SURN Person
+1 SEX M
+1 FAMS @F1@
+0 @F1@ FAM
+1 HUSB @I382825053105@
+1 CHIL @I382825053104@
+0 TRLR

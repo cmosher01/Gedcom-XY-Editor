@@ -347,7 +347,10 @@ public class Fami {
 
             if (!exists) {
                 // TODO "don't create two phantom parents" but... why not? Maybe only if there are two or more children.
-                pt1x = pt1y = pt2x = pt2y = null;
+                pt1x = null;
+                pt1y = null;
+                pt2x = null;
+                pt2y = null;
             } else if (indi1 == null) {
                 pt2x = indi2.x();
                 pt2y = indi2.y();

@@ -139,7 +139,7 @@ public class Selection {
             //  Move selection near (graphically on the chart) to their
             //  "closest" (relationship-wise) unselected relative.
 
-            //  maxr = empty
+            //  maxR = empty
             //  maxd = -INF
             //  for each indi S in the selection
             //      for each related indi (parent, sibling, spouse, child) R of S

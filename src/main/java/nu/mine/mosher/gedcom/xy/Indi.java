@@ -66,8 +66,11 @@ public class Indi {
     private Selection selection;
 
     private final List<Fami> rFamiSpouseTo = new ArrayList<>();
-    private final List<Fami> rFamiChildTo = new ArrayList<>(); // TODO handle CHILD_LINKAGE_STATUS & PEDIGREE_LINKAGE_TYPE (different line styles?)
-
+    private final List<Fami> rFamiChildTo = new ArrayList<>();
+    // TODO handle CHILD_LINKAGE_STATUS & PEDIGREE_LINKAGE_TYPE (different line styles?)
+    // TODO can we include ASSO (indi -> indi) records (with RELA)
+    // TODO Notice ASSO can also point to SUBM! Weird. Maybe we should add SUBM to chart (or maybe only if it's referenced)
+    // TODO ??? INDI.ALIA, INDI.ANCI, INDI.DESI, INDI.BIRT.FAMC, INDI.ADOP.FAMC.ADOP
 
     public Indi(final TreeNode<GedcomLine> node, final Optional<Point2D> wxyOriginal, String id, String idCoords, String name, String lifespan, final long nBirthForSort, String tagline, final int sex) {
         final String n = name == null ? "" : name;

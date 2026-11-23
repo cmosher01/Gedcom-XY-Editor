@@ -324,6 +324,7 @@ public class FamilyChart {
         out.println("2 VERS 5.5.1");
         out.println("2 FORM LINEAGE-LINKED");
         out.println("1 SOUR _XY EDITOR");
+        // TODO timestamp
 
         this.indis.stream().filter(i -> exportAll || i.dirty()).forEach(i -> {
             i.saveXyToTree();

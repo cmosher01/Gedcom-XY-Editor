@@ -1,0 +1,26 @@
+0 HEAD
+1 SUBM @SUBM1@
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @SUBM1@ SUBM
+1 NAME Christopher Alan Mosher
+0 @I1@ INDI
+1 NAME no _XY
+0 @I2@ INDI
+1 NAME empty _XY
+1 _XY
+0 @I3@ INDI
+1 NAME _XY invalid value
+1 _XY invalid value
+0 @I4@ INDI
+1 NAME _XY Inf Inf
+1 _XY Inf Inf
+0 @I5@ INDI
+1 NAME _XY NaN NaN
+1 _XY NaN NaN
+0 @I6@ INDI
+1 NAME _XY 2e309 2e309
+1 _XY 2e309 2e309
+0 TRLR

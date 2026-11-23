@@ -72,37 +72,56 @@ lines for family relationships) onto the drop-line chart.
 
 
 
-GUI mouse input/actions in content area:
-	hover
-		over an individual:
-			hand pointing cursor
-		otherwise:
-			arrow cursor
-
-	click
-		if on an individual:
-			toggle that individual into, or out off, the Selection
-		otherwise:
-			clear the Selection
-
-	drag
-		an individual in the Selection:
-			moves all individuals in the Selection
-		an individual not in the Selection:
-			adds that individuals to the Selection and
-			moves all individuals in the Selection
-		not on an individual (i.e., the background of the canvas):
-			visually move the entire canvas around under the window
-
-	[SHIFT]drag:
-		select all and only the individuals that intersect the rectange
-		described by click-position and current-mouse-position
 
 
-	scroll:
-		visually zooms the canvas in or out
-			pivoting at the mouse position
-			within min/max limits
+
+
+User inputs to graphical interface of canvas, and corresponding actions
+
+
+
+CURSOR APPEARANCE:
+
+hover:
+    over an individual:
+        hand pointing cursor
+    otherwise:
+        arrow cursor
+
+
+
+VISUAL ZOOM AND PAN:
+
+drag:
+    not on an individual (i.e., the background of the canvas):
+        visually move (pan) the entire canvas around under the window
+
+wheel scroll, or two-finger trackpad drag towards/away:
+    visually zoom the canvas in or out
+        pivoting at the mouse position
+        within min/max limits
+
+
+
+SELECTING AND MOVING (EDITING):
+
+click:
+    if on an individual:
+        toggle that individual into, or out of, the Selection
+    otherwise:
+        clear the Selection
+
+drag:
+    an individual in the Selection:
+        move all individuals in the Selection
+    an individual not in the Selection:
+        add that individual to the Selection and
+        move all individuals in the Selection
+
+[SHIFT]drag:
+    select all and only the individuals that intersect the rectangle
+    described by click-position and current-mouse-position
+
 
 
 
